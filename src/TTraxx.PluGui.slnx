@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Project Path="TTraxx.PluGui.Gui/TTraxx.PluGui.Gui.csproj" />
+  <Project Path="TTraxx.PluGui.Harness.NPlug.Core/TTraxx.PluGui.Harness.NPlug.Core.csproj" />
+  <Project Path="TTraxx.PluGui.Harness.NPlug.Runners.Linux/TTraxx.PluGui.Harness.NPlug.Runners.Linux.csproj" />
+  <Project Path="TTraxx.PluGui.Harness.NPlug.Runners.Win32/TTraxx.PluGui.Harness.NPlug.Runners.Win32.csproj" />
+  <Project Path="TTraxx.PluGui.Harness.NPlug.Runners/TTraxx.PluGui.Harness.NPlug.Runners.csproj" />
+  <Project Path="TTraxx.PluGui.NPlug/TTraxx.PluGui.NPlug.csproj" />
+</Solution>

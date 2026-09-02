@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NPlug" Version="0.5.0.380" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TTraxx.PluGui.Gui\TTraxx.PluGui.Gui.csproj" />
+  </ItemGroup>
+
+</Project>

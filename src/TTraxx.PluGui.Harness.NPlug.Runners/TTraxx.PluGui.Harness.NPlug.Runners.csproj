@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TTraxx.PluGui.Harness.NPlug.Core\TTraxx.PluGui.Harness.NPlug.Core.csproj" />
+    <ProjectReference Include="..\TTraxx.PluGui.Harness.NPlug.Runners.Linux\TTraxx.PluGui.Harness.NPlug.Runners.Linux.csproj" />
+    <ProjectReference Include="..\TTraxx.PluGui.Harness.NPlug.Runners.Win32\TTraxx.PluGui.Harness.NPlug.Runners.Win32.csproj" />
+  </ItemGroup>
+
+</Project>
