@@ -8,16 +8,19 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
     environment: release
     permissions:
       contents: read
       id-token: write   # required for OIDC token issuance
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
@@ -35,7 +38,7 @@ jobs:
         run: dotnet test --no-build -c Release
 
       - name: Pack
-        run: dotnet pack --no-build -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ./nupkgs
+        run: dotnet pack --no-build -c Release -p:Version=${{ steps.version.outputs.VERSION }} -o ../nupkgs
 
       - name: NuGet login (OIDC → temp API key)
         uses: NuGet/login@v1
@@ -44,4 +47,4 @@ jobs:
           user: ${{ vars.NUGET_USER }}
 
       - name: Push to NuGet.org
-        run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "../nupkgs/*.nupkg" --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
