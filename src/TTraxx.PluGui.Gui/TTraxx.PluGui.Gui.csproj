@@ -3,11 +3,23 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PublishAot>true</PublishAot>
     <Nullable>enable</Nullable>
     <IsAotCompatible>true</IsAotCompatible>
+
+    <PackageId>TTraxx.PluGui.Gui</PackageId>
+    <Description>Reusable cross-platform GUI library for audio plugin (VST) UIs (SkiaSharp-based).</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>PluGui_250x250.png</PackageIcon>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../assets/PluGui_250x250.png" Pack="true" PackagePath="\" />
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="SkiaSharp" Version="4.151.1" />

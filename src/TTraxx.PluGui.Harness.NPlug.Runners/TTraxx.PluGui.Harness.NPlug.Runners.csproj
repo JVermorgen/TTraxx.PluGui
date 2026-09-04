@@ -4,7 +4,18 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <PackageId>TTraxx.PluGui.Harness.NPlug.Runners</PackageId>
+    <Description>Test harness for NPlug implementations of the TTraxx.PluGui GUI library.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>PluGui_250x250.png</PackageIcon>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../assets/PluGui_250x250.png" Pack="true" PackagePath="\" />
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\TTraxx.PluGui.Harness.NPlug.Core\TTraxx.PluGui.Harness.NPlug.Core.csproj" />

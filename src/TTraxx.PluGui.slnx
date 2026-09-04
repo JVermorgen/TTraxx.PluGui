@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
   </Folder>
   <Project Path="TTraxx.PluGui.Gui/TTraxx.PluGui.Gui.csproj" />
   <Project Path="TTraxx.PluGui.Harness.NPlug.Core/TTraxx.PluGui.Harness.NPlug.Core.csproj" />
