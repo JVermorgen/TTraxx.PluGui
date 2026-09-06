@@ -48,3 +48,10 @@ jobs:
 
       - name: Push to NuGet.org (prerelease)
         run: dotnet nuget push "../nupkgs/*.nupkg" --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Unlist internal-only packages
+        run: |
+          dotnet nuget delete TTraxx.PluGui.Harness.NPlug.Core ${{ steps.version.outputs.VERSION }} \
+            --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --non-interactive
