@@ -6,7 +6,10 @@ public class ParameterControlInfo() : IParameterControlInfo
 {
     public required int ParameterId { get; init; }
     public required string Label { get; init; }
-    public required string Unit { get; init; }
-    public int? StepCount { get; init => field = value == 0 ? null : value + 1; }  // number of positions, null = continuous
     public required double DefaultNormalizedValue { get; init; }
+    public required string Unit { get; init; }
+
+    public int StepCount { get; init; }
+
+    public int? PositionCount => StepCount is int steps && steps != 0 ? steps + 1 : null;
 }

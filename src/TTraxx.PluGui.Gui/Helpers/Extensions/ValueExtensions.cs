@@ -1,12 +1,12 @@
-﻿namespace TTraxx.PluGui.Gui.Helpers;
+﻿namespace TTraxx.PluGui.Gui.Helpers.Extensions;
 
-public static class ValueHelpers
+public static class ValueExtensions
 {
     // Auto-converts large Hz values to kHz for a shorter, more compact
     // display (3000 Hz -> "3.0 kHz") instead of always keeping the raw unit.
-    public static string Format(this double plainValue, string unit)
+    internal static string Format(this double plainValue, string unit)
     {
-        double displayValue = plainValue;
+        var displayValue = plainValue;
 
         if (unit == "Hz" && Math.Abs(plainValue) >= 1000)
         {
@@ -14,7 +14,7 @@ public static class ValueHelpers
             displayValue = plainValue / 1000.0;
         }
 
-        string formatter = unit switch
+        var formatter = unit switch
         {
             "Hz" => "F0",
             "kHz" => "0.#",
@@ -26,10 +26,7 @@ public static class ValueHelpers
             _ => "0.##"
         };
 
-        string text = displayValue.ToString($"{formatter}");
+        var text = displayValue.ToString($"{formatter}");
         return unit != "" ? $"{text} {unit}" : text;
     }
-
-    // Converts degrees to radians.
-    public static double DegToRad(this double deg) => deg * Math.PI / 180.0;
 }

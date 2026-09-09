@@ -42,7 +42,7 @@ public sealed class Win32HarnessRunner : IHarnessRunner
         (var windowWidth, var windowHeight) = ToWindowSize(initialSize.Right - initialSize.Left, initialSize.Bottom - initialSize.Top);
 
         var hInstance = GetModuleHandle(null);
-        var className = $"OriGen8Harness_{Guid.NewGuid():N}";
+        var className = $"PluGuiHarness_{Guid.NewGuid():N}";
 
         WNDCLASSEXW wc = new()
         {

@@ -1,9 +1,9 @@
 ﻿namespace TTraxx.PluGui.Gui.Panels.Configuration;
 
 /// <summary>
-/// Logical (non-scaled) dimensions and title for a MetalicPanel —
+/// Logical (non-scaled) dimensions and title for a Plugin Panel —
 /// same convention as the Control configurations: numbers here are
-/// the same units as in GetLayout. MetalicPanel rescales itself via
+/// the same units as in GetLayout. PluginPanel rescales itself via
 /// Globals.Instance.Rescale when drawing.
 /// </summary>
 public sealed class PluginPanelConfiguration

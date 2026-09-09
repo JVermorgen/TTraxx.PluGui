@@ -72,7 +72,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
         _display = Xlib.XOpenDisplay(nint.Zero);
         if (_display == nint.Zero) return false;
 
-        int screen = Xlib.XDefaultScreen(_display);
+        var screen = Xlib.XDefaultScreen(_display);
         _visual = Xlib.XDefaultVisual(_display, screen);
         _depth = Xlib.XDefaultDepth(_display, screen);
 
@@ -100,8 +100,8 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
         // Attach call) a SetBounds() request that we had to defer? Apply it now.
         if (_pendingWidth is int pw && _pendingHeight is int ph)
         {
-            int px = _pendingX ?? 0;
-            int py = _pendingY ?? 0;
+            var px = _pendingX ?? 0;
+            var py = _pendingY ?? 0;
             _pendingX = null;
             _pendingY = null;
             _pendingWidth = null;
@@ -155,7 +155,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     }
 
     /// <summary>
-    /// Called FROM the NPlug/VST3 bridge code, NOT from OriGen8.Gui itself —
+    /// Called FROM the VST3 bridge code —
     /// the host reports via IRunLoop.onFDIsSet that there is activity on
     /// GetConnectionFd(), and only then may events be processed. Never
     /// poll blocking by itself.
@@ -169,7 +169,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
         while (Xlib.XPending(_display) > 0)
         {
             var evt = new XEvent();
-            nint evtPtr = (nint)(&evt);
+            var evtPtr = (nint)(&evt);
             _ = Xlib.XNextEvent(_display, evtPtr);
             DispatchEvent(evt, evtPtr);
         }
@@ -194,16 +194,16 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                 {
                     // X11 has no separate wheel event — scroll comes in as
                     // ButtonPress with button 4 (up) or 5 (down).
-                    int ticks = buttonDown.button == 4 ? 1 : -1;
+                    var ticks = buttonDown.button == 4 ? 1 : -1;
                     _host?.OnWheel(buttonDown.x, buttonDown.y, ticks);
                 }
                 else if (buttonDown.button == 1)
                 {
-                    ulong clickTime = (ulong)buttonDown.time; // XButtonEvent.time is an X11 Timestamp (ms since server start), not wall-clock — only usable relatively
-                    int dx = buttonDown.x - _lastClickX;
-                    int dy = buttonDown.y - _lastClickY;
-                    bool withinTime = clickTime - _lastClickTimeMs <= DoubleClickThresholdMs;
-                    bool withinDistance = (dx * dx) + (dy * dy) <= DoubleClickMaxDistance * DoubleClickMaxDistance;
+                    var clickTime = (ulong)buttonDown.time; // XButtonEvent.time is an X11 Timestamp (ms since server start), not wall-clock — only usable relatively
+                    var dx = buttonDown.x - _lastClickX;
+                    var dy = buttonDown.y - _lastClickY;
+                    var withinTime = clickTime - _lastClickTimeMs <= DoubleClickThresholdMs;
+                    var withinDistance = (dx * dx) + (dy * dy) <= DoubleClickMaxDistance * DoubleClickMaxDistance;
 
                     if (withinTime && withinDistance)
                     {
@@ -249,7 +249,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
         _h = h;
 
         _pixelBuffer = new byte[w * h * 4];
-        nint pixels = GCHandle.Alloc(_pixelBuffer, GCHandleType.Pinned).AddrOfPinnedObject();
+        var pixels = GCHandle.Alloc(_pixelBuffer, GCHandleType.Pinned).AddrOfPinnedObject();
 
         var info = new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Premul);
         _skSurface = SKSurface.Create(info, pixels, w * 4);
@@ -272,7 +272,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
 
         fixed (byte* ptr = _pixelBuffer)
         {
-            nint image = Xlib.XCreateImage(_display, _visual, (uint)_depth, XlibConstants.ZPixmap, 0, ptr, (uint)_w, (uint)_h, 32, _w * 4);
+            var image = Xlib.XCreateImage(_display, _visual, (uint)_depth, XlibConstants.ZPixmap, 0, ptr, (uint)_w, (uint)_h, 32, _w * 4);
             _ = Xlib.XPutImage(_display, _window, _gc, image, 0, 0, 0, 0, (uint)_w, (uint)_h);
         }
     }

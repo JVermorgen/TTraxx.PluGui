@@ -81,7 +81,7 @@ internal sealed class ControlManager
 
     public void OnWheel(int x, int y, int delta)
     {
-        var control = HitTestControls(x, y);
+        var control = _capturedControl ?? HitTestControls(x, y);
         if (control is null) return;
         control.OnWheel(new WheelEventArgs(x - control.X, y - control.Y, delta));
     }

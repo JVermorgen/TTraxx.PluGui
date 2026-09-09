@@ -4,11 +4,28 @@ namespace TTraxx.PluGui.Gui.Helpers;
 
 public static class Icons
 {
-    public static SKPath ArrowRight => BuildArrowRight();
-    public static SKPath Sine => BuildSine();
-    public static SKPath Saw => BuildSaw();
-    public static SKPath Pulse => BuildPulse();
-    public static SKPath Triangle => BuildTriangle();
+    private static volatile SKPath? _arrowRight;
+    private static volatile SKPath? _sine;
+    private static volatile SKPath? _saw;
+    private static volatile SKPath? _pulse;
+    private static volatile SKPath? _triangle;
+
+    public static SKPath ArrowRight => _arrowRight ??= BuildArrowRight();
+    public static SKPath Sine => _sine ??= BuildSine();
+    public static SKPath Saw => _saw ??= BuildSaw();
+    public static SKPath Pulse => _pulse ??= BuildPulse();
+    public static SKPath Triangle => _triangle ??= BuildTriangle();
+
+    internal static void InvalidateCache()
+    {
+        // Deliberately not disposing: a draw on the UI thread may still
+        // hold a reference, and Hot Reload callbacks don't arrive on it.
+        _arrowRight = null;
+        _sine = null;
+        _saw = null;
+        _pulse = null;
+        _triangle = null;
+    }
 
     #region Private Methods
     private static SKPath BuildArrowRight()
