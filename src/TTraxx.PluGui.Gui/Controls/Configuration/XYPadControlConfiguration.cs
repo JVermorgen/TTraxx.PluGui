@@ -1,27 +1,17 @@
 ﻿using TTraxx.PluGui.Gui.Controls.Configuration.Base;
-using TTraxx.PluGui.Gui.Controls.Configuration.Base.Interfaces;
 
 namespace TTraxx.PluGui.Gui.Controls.Configuration;
 
 public class XYPadControlConfiguration() : ParameterControlConfiguration
 {
-    public required IParameterControlInfo ParameterXInfo { get; init; }
-    public required IParameterControlInfo ParameterYInfo { get; init; }
-    public required Func<double> GetNormalizedXValue { get; init; }
-    public required Func<double> GetNormalizedYValue { get; init; }
-    public double MinXValue { get; init; } = 0f;
-    public double MaxXValue { get; init; } = 1f;
-    public double MinYValue { get; init; } = 0f;
-    public double MaxYValue { get; init; } = 1f;
-    public required Action BeginGroupAction { get; init; }
-    public required Action BeginXAction { get; init; }
-    public required Action<double> PerformXAction { get; init; }
-    public required Action EndXAction { get; init; }
-    public required Action BeginYAction { get; init; }
-    public required Action<double> PerformYAction { get; init; }
-    public required Action EndYAction { get; init; }
-    public required Action EndGroupAction { get; init; }
-    public XYPadModulationIndicator? MorphEnvelopeIndicator { get; init; }
+    public required ParameterBinding XParameter { get; init; }
+    public required ParameterBinding YParameter { get; init; }
+
+    public Action? BeginGroupEdit { get; init; }
+    public Action? EndGroupEdit { get; init; }
+
+    public XYPadModulationIndicator? ModulationIndicator { get; init; }
+    public Func<XYPadStyle>? Style { get; init; }
 }
 
 /// <summary>

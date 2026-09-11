@@ -4,10 +4,11 @@ using TTraxx.PluGui.Gui.Input;
 
 namespace TTraxx.PluGui.Gui.Controls.Manager;
 
-internal sealed class ControlManager
+internal sealed class ControlManager : IDisposable
 {
     private readonly List<AbstractControlBase> _controls = [];
     private AbstractControlBase? _capturedControl;
+    private AbstractControlBase? _hoveredControl;
 
     public void Add(AbstractControlBase control) => _controls.Add(control);
 
@@ -15,6 +16,16 @@ internal sealed class ControlManager
     {
         if (_capturedControl != null && !desired.Contains(_capturedControl))
             _capturedControl = null;
+
+        if (_hoveredControl is not null && !desired.Contains(_hoveredControl))
+            _hoveredControl = null;
+
+        // Dispose controls that are being dropped, but never one that is
+        // also in the new set - rebuilds commonly reuse instances.
+        foreach (var control in _controls)
+        {
+            if (!desired.Contains(control)) control.Dispose();
+        }
 
         _controls.Clear();
         _controls.AddRange(desired);
@@ -34,9 +45,10 @@ internal sealed class ControlManager
     public bool TryFindParameter(int x, int y, out int parameterId)
     {
         var control = HitTestControls(x, y); // reuses the existing private hit-test loop
-        if (control is not null)
+        var info = control?.GetParameterInfo(x - control.X, y - control.Y);
+        if (info is not null)
         {
-            parameterId = control.GetParameterInfo(x, y).ParameterId;
+            parameterId = info.ParameterId;
             return true;
         }
         parameterId = default;
@@ -48,17 +60,21 @@ internal sealed class ControlManager
     {
         for (var i = _controls.Count - 1; i >= 0; i--)
         {
-            if (_controls[i].HitTest(x, y)) return _controls[i];
+            var control = _controls[i];
+            if (control.HitTest(x - control.X, y - control.Y)) return control;
         }
         return null;
     }
+
+    private static PointerEventArgs ToLocal(AbstractControlBase control, int x, int y)
+    => new(x - control.X, y - control.Y);
 
     public void OnPointerDown(int x, int y)
     {
         var control = HitTestControls(x, y);
         if (control is null) return;
         _capturedControl = control;
-        control.OnPointerDown(new PointerEventArgs(x - control.X, y - control.Y));
+        control.OnPointerDown(ToLocal(control, x, y));
     }
 
     public void OnPointerMove(int x, int y)
@@ -67,8 +83,9 @@ internal sealed class ControlManager
         // even outside its own HitTest boundaries — matches the behavior
         // of the old per-control SetCapture.
         var target = _capturedControl ?? HitTestControls(x, y);
+        UpdateHover(_capturedControl is null ? target : null);
         if (target is null) return;
-        target.OnPointerMove(new PointerEventArgs(x - target.X, y - target.Y));
+        target.OnPointerMove(ToLocal(target, x, y));
     }
 
     public void OnPointerUp(int x, int y)
@@ -76,7 +93,10 @@ internal sealed class ControlManager
         var target = _capturedControl;
         _capturedControl = null;
         if (target is null) return;
-        target.OnPointerUp(new PointerEventArgs(x - target.X, y - target.Y));
+        target.OnPointerUp(ToLocal(target, x, y));
+
+        // Re-evaluate hover: the pointer may have been released elsewhere.
+        UpdateHover(HitTestControls(x, y));
     }
 
     public void OnWheel(int x, int y, int delta)
@@ -90,6 +110,26 @@ internal sealed class ControlManager
     {
         var control = HitTestControls(x, y);
         if (control is null) return;
-        control.OnDoubleClick(new PointerEventArgs(x - control.X, y - control.Y));
+        control.OnDoubleClick(ToLocal(control, x, y));
+    }
+
+    /// <summary>Called by the window when the pointer leaves it entirely.</summary>
+    public void OnPointerLeaveWindow() => UpdateHover(null);
+
+    private void UpdateHover(AbstractControlBase? target)
+    {
+        if (ReferenceEquals(_hoveredControl, target)) return;
+
+        _hoveredControl?.OnPointerLeave();
+        _hoveredControl = target;
+        _hoveredControl?.OnPointerEnter();
+    }
+
+    public void Dispose()
+    {
+        foreach (var control in _controls) control.Dispose();
+        _controls.Clear();
+        _capturedControl = null;
+        _hoveredControl = null;
     }
 }

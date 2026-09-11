@@ -6,7 +6,7 @@ using TTraxx.PluGui.Gui.Input;
 
 namespace TTraxx.PluGui.Gui.Controls.Base;
 
-public abstract class AbstractControlBase(IParameterControlConfiguration config)
+public abstract class AbstractControlBase(IControlConfiguration config) : IDisposable
 {
     protected int _x;
     protected int _y;
@@ -16,18 +16,30 @@ public abstract class AbstractControlBase(IParameterControlConfiguration config)
     protected int _containerW = 1;
     protected int _containerH = 1;
 
-    protected Guid _id = config.Id;
-
-    public int X => _x;
-    public int Y => _y;
-
     private Action? _invalidateRequest;
 
-    /// <summary>Bound by PluginEditorWindow when adding this control, so the control can request a redraw without knowing anything about Win32/Cocoa/X11 itself.</summary>
+    protected IControlConfiguration Config { get; } = config;
+
+    protected Guid Id => Config.Id;
+    public int X => _x;
+    public int Y => _y;
+    public int Width => _w;
+    public int Height => _h;
+    public SKRect Bounds => new(_x, _y, _x + _w, _y + _h);
+
+    protected bool IsHovered { get; private set; }
+
+    protected bool IsEnabled => Config.IsEnabled();
+
+    /// <summary>
+    /// Bound by the window when the control is added, so a control can ask
+    /// for a redraw without knowing anything about Win32/Cocoa/X11.
+    /// </summary>
     public void BindInvalidate(Action invalidateRequest) => _invalidateRequest = invalidateRequest;
 
     public void Refresh() => _invalidateRequest?.Invoke();
 
+    /// <summary>Bounds are given in unscaled design units and rescaled here.</summary>
     public void SetBounds(int x, int y, int w, int h)
     {
         _x = Globals.Rescale(x);
@@ -43,18 +55,34 @@ public abstract class AbstractControlBase(IParameterControlConfiguration config)
         Refresh();
     }
 
-    /// <summary>Draws in local coordinates (0,0 = top-left corner of this control). The canvas is already translated by ControlManager.Draw, so this remains identical to the old DrawSkia content.</summary>
+    /// <summary>
+    /// Draws in local coordinates (0,0 = top-left corner of this control).
+    /// The canvas is already translated by ControlManager.Draw
+    /// </summary>
     public abstract void Draw(SKCanvas canvas);
 
-    /// <summary>Takes GLOBAL (window-relative) coordinates — unchanged from how HitTest already worked.</summary>
-    public abstract bool HitTest(int x, int y);
+    public virtual bool HitTest(int localX, int localY)
+        => localX >= 0 && localX < _w && localY >= 0 && localY < _h;
 
-    public abstract IParameterControlInfo GetParameterInfo(int xPos, int yPos);
+    public virtual IParameterControlInfo? GetParameterInfo(int localX, int localY) => null;
 
-    /// <summary>Takes LOCAL (control-relative) coordinates — same reference frame as the old WM_MOUSEMOVE lParam within its own HWND.</summary>
+    public virtual void OnPointerEnter()
+    {
+        IsHovered = true;
+        Refresh();
+    }
+    public virtual void OnPointerLeave()
+    {
+        IsHovered = false;
+        Refresh();
+    }
+
     public virtual void OnPointerDown(PointerEventArgs e) { }
     public virtual void OnPointerMove(PointerEventArgs e) { }
     public virtual void OnPointerUp(PointerEventArgs e) { }
     public virtual void OnWheel(WheelEventArgs e) { }
     public virtual void OnDoubleClick(PointerEventArgs e) { }
+
+    /// <summary>Override to release cached Skia resources (SKShader, SKPicture, ...).</summary>
+    public virtual void Dispose() => GC.SuppressFinalize(this);
 }

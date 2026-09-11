@@ -1,6 +1,7 @@
 ﻿using SkiaSharp;
 using TTraxx.PluGui.Gui.Controls.Base;
 using TTraxx.PluGui.Gui.Controls.Configuration;
+using TTraxx.PluGui.Gui.Controls.Configuration.Base;
 using TTraxx.PluGui.Gui.Controls.Configuration.Base.Interfaces;
 using TTraxx.PluGui.Gui.Helpers;
 using TTraxx.PluGui.Gui.Helpers.Extensions;
@@ -11,39 +12,35 @@ using TTraxx.PluGui.Gui.Input;
 namespace TTraxx.PluGui.Gui.Controls;
 
 /// <summary>
-/// A styled rotary knob: a background arc, a filled progress arc, and a
-/// pointer line. Sweeps 270 degrees, the conventional audio-plugin knob
-/// range. Value is always normalized (0..1); drag behaviour is
-/// vertical-drag-to-change.
+/// Rotary knob: background arc, filled value arc, pointer line. Vertical
+/// drag changes the value; wheel and double-click-to-default are supported.
+/// Geometry and feel are configurable through KnobStyle.
 /// </summary>
 public sealed class KnobControl(KnobControlConfiguration config) : AbstractControlBase(config)
 {
-    private const double StartAngleDeg = -135;
     private const double SkiaArcStartAngleDeg = 135;
-    private const double SweepDeg = 270;
-    private const double DragPixelsForFullSweep = 200.0;
-
-    private const int PTR_STEPS = 72;
 
     private bool _isDragging;
     private double _dragStartValue;
     private int _dragStartY;
 
-    private readonly Dictionary<KnobSizes, int> _knobSizeToRadiusMapping = new()
-    {
-        { KnobSizes.S, 42 },
-        { KnobSizes.M, 46 },
-        { KnobSizes.L, 52 },
-        { KnobSizes.XL, 64 }
-    };
+    private ParameterBinding Parameter => config.Parameter;
+    private KnobStyle Style => config.Style?.Invoke() ?? KnobStyle.Default;
+
+    private int RadiusFor(KnobSizes size)
+        => Style.Radii.TryGetValue(size, out var r) ? r : KnobStyle.Default.Radii[size];
+
+    private float Radius => Math.Max(2, (Globals.Rescale(RadiusFor(config.KnobSize)) / 2f) - Globals.Rescale(2));
+    private float CenterX => _w / 2f;
+    private float CenterY => (Globals.Rescale(RadiusFor(config.KnobSize)) / 2f) + Globals.Rescale(21);
 
     public override void OnPointerDown(PointerEventArgs e)
     {
-        if (!config.IsEnabled()) return;
+        if (!IsEnabled) return;
         _isDragging = true;
-        config.BeginAction();
+        Parameter.BeginEdit();
         _dragStartY = e.Y;
-        _dragStartValue = Math.Clamp(config.GetNormalizedValue(), 0.0f, 1.0f);
+        _dragStartValue = Parameter.Normalized;
         Refresh();
     }
 
@@ -51,108 +48,92 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
     {
         if (!_isDragging) return;
 
-        if (!config.IsEnabled())
+        if (!IsEnabled)
         {
             _isDragging = false;
-            config.EndAction();
+            Parameter.EndEdit();
             Refresh();
             return;
         }
 
         var dy = e.Y - _dragStartY;
-        var newNorm = QuantizeIfStepped(Math.Clamp(_dragStartValue - (dy / DragPixelsForFullSweep), 0.0, 1.0));
-        config.PerformAction(newNorm);
+        var newNorm = Parameter.Quantize(Math.Clamp(_dragStartValue - (dy / Style.DragPixelsForFullSweep), 0.0, 1.0));
+        Parameter.SetNormalizedValue(newNorm);
         Refresh();
     }
 
     public override void OnPointerUp(PointerEventArgs e)
     {
-        if (_isDragging && config.IsEnabled())
-        {
-            _isDragging = false;
-            config.EndAction();
-            Refresh();
-        }
+        if (!_isDragging) return;
+        _isDragging = false;
+        Parameter.EndEdit();
+        Refresh();
     }
 
     public override void OnWheel(WheelEventArgs e)
     {
-        if (!config.IsEnabled()) return;
-        var wheelTicks = e.Delta;
+        if (!IsEnabled) return;
+
         double n;
-        if (config.ParameterInfo.PositionCount is int positions && positions > 1)
+        if (Parameter.Info.PositionCount is int positions && positions > 1)
         {
-            var currentStep = (int)Math.Round(config.GetNormalizedValue() * (positions - 1));
-            var newStep = Math.Clamp(currentStep + wheelTicks, 0, positions - 1);
+            var currentStep = (int)Math.Round(Parameter.Normalized * (positions - 1));
+            var newStep = Math.Clamp(currentStep + e.Delta, 0, positions - 1);
             n = (double)newStep / (positions - 1);
         }
         else
         {
-            n = config.GetNormalizedValue() + (wheelTicks * (1.0 / PTR_STEPS));
+            n = Math.Clamp(Parameter.Normalized + (e.Delta * (1.0 / Style.WheelSteps)), 0.0, 1.0);
         }
-        config.BeginAction();
-        config.PerformAction(n);
-        config.EndAction();
+
+        Parameter.Edit(n);
         Refresh();
     }
 
     public override void OnDoubleClick(PointerEventArgs e)
     {
-        if (!config.IsEnabled()) return;
-        var norm0 = QuantizeIfStepped((0.0 - config.MinValue) / (config.MaxValue - config.MinValue));
-        config.BeginAction();
-        config.PerformAction(norm0);
-        config.EndAction();
+        if (!IsEnabled) return;
+        Parameter.Edit(Parameter.Quantize(Parameter.Info.DefaultNormalizedValue));
         Refresh();
     }
 
-    public override bool HitTest(int x, int y)
+    public override bool HitTest(int localX, int localY)
     {
-        var circleSize = Globals.Rescale(_knobSizeToRadiusMapping[config.KnobSize]);
-        var localCx = _w / 2;
-        var localCy = (circleSize / 2) + Globals.Rescale(21);
-        var globalCx = _x + localCx;
-        var globalCy = _y + localCy;
-        var drawRadius = Math.Max(2, (circleSize / 2) - Globals.Rescale(2));
-
-        var dx = x - globalCx;
-        var dy = y - globalCy;
-        return (dx * dx) + (dy * dy) <= drawRadius * drawRadius;
+        var dx = localX - CenterX;
+        var dy = localY - CenterY;
+        return (dx * dx) + (dy * dy) <= Radius * Radius;
     }
 
-    public override IParameterControlInfo GetParameterInfo(int xPos, int yPos) => config.ParameterInfo;
+    public override IParameterControlInfo GetParameterInfo(int localX, int localY) => Parameter.Info;
 
     public override void Draw(SKCanvas canvas)
     {
-        var value = Math.Clamp(config.GetNormalizedValue(), 0.0, 1.0);
-        var enabled = config.IsEnabled();
+        var value = Parameter.Normalized;
+        var enabled = IsEnabled;
 
-        var circleSize = Globals.Rescale(_knobSizeToRadiusMapping[config.KnobSize]);
-        var cx = _w / 2;
-        var cy = (circleSize / 2) + Globals.Rescale(21);
-        var drawRadius = Math.Max(2, (circleSize / 2) - Globals.Rescale(2));
-
-        var filledSweep = SweepDeg * value;
+        var cx = CenterX;
+        var cy = CenterY;
+        var drawRadius = Radius;
+        var filledSweep = Style.SweepDeg * value;
 
         var trackColor = enabled
                             ? Theme.Current.AccentDim
                             : Theme.Current.AccentDim.WithAlpha(40);
         var valueColor = !enabled
                             ? Theme.Current.Accent.WithAlpha(60)
-                            : _isDragging ? Theme.Current.Accent2 : Theme.Current.Accent;
+                            : _isDragging || IsHovered ? Theme.Current.Accent2 : Theme.Current.Accent;
         var pointerColor = enabled
                             ? Theme.Current.TextPrimary
                             : Theme.Current.TextPrimary.WithAlpha(70);
 
-        if (config.ParameterInfo.PositionCount is int positionCount && positionCount > 1)
+        if (Parameter.Info.PositionCount is int positionCount && positionCount > 1)
         {
-            var tickColor = trackColor;
-            var tickInnerR = drawRadius * 1.02;
-            var tickOuterR = drawRadius * 1.35;
+            var tickInnerR = drawRadius * Style.TickInnerRadiusFactor;
+            var tickOuterR = drawRadius * Style.TickOuterRadiusFactor;
 
             using SKPaint tickPaint = new()
             {
-                Color = tickColor,
+                Color = trackColor,
                 IsAntialias = true,
                 StrokeWidth = Globals.RescaleExact(1.0f),
                 StrokeCap = SKStrokeCap.Butt
@@ -161,7 +142,7 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
             for (var s = 0; s < positionCount; s++)
             {
                 var stepNorm = (double)s / (positionCount - 1);
-                var tickAngle = (StartAngleDeg - (SweepDeg * stepNorm)).DegToRad();
+                var tickAngle = (Style.StartAngleDeg - (Style.SweepDeg * stepNorm)).DegToRad();
 
                 canvas.DrawLine(
                     cx + (float)(Math.Cos(tickAngle) * tickInnerR), cy - (float)(Math.Sin(tickAngle) * tickInnerR),
@@ -170,16 +151,9 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
             }
         }
 
-        var dimmedArcWidth = config.KnobSize switch
-        {
-            KnobSizes.XL => Globals.RescaleExact(2.8f),
-            _ => Globals.RescaleExact(2.0f)
-        };
-        var accentArcWidth = config.KnobSize switch
-        {
-            KnobSizes.XL => Globals.RescaleExact(4.2f),
-            _ => Globals.RescaleExact(3.0f)
-        };
+        var isXL = config.KnobSize == KnobSizes.XL;
+        var trackWidth = Globals.RescaleExact(isXL ? Style.TrackStrokeWidthXL : Style.TrackStrokeWidth);
+        var valueWidth = Globals.RescaleExact(isXL ? Style.ValueStrokeWidthXL : Style.ValueStrokeWidth);
 
         SKRect arcRect = new(cx - drawRadius, cy - drawRadius, cx + drawRadius, cy + drawRadius);
 
@@ -188,11 +162,11 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
             Color = trackColor,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
-            StrokeWidth = dimmedArcWidth,
+            StrokeWidth = trackWidth,
             StrokeCap = SKStrokeCap.Butt
         })
         {
-            canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + filledSweep), (float)(SweepDeg - filledSweep), false, trackPaint);
+            canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + filledSweep), (float)(Style.SweepDeg - filledSweep), false, trackPaint);
         }
 
         using (SKPaint valuePaint = new()
@@ -200,14 +174,14 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
             Color = valueColor,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
-            StrokeWidth = accentArcWidth,
+            StrokeWidth = valueWidth,
             StrokeCap = SKStrokeCap.Butt
         })
         {
             canvas.DrawArc(arcRect, (float)SkiaArcStartAngleDeg, (float)filledSweep, false, valuePaint);
         }
 
-        var pointerAngle = (StartAngleDeg - (SweepDeg * value)).DegToRad();
+        var pointerAngle = (Style.StartAngleDeg - (Style.SweepDeg * value)).DegToRad();
         var innerR = drawRadius * 0.25;
         var outerR = drawRadius * 0.85;
         using (SKPaint pointerPaint = new()
@@ -233,42 +207,38 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
         if (titleY + Globals.Rescale(11) <= _h)
         {
             fontPaint.Color = enabled ? Theme.Current.TextDim : Theme.Current.TextDisabled;
-            canvas.DrawTextTopAligned(config.ParameterInfo.Label, cx, titleY, SKTextAlign.Center, font, fontPaint);
+            canvas.DrawTextTopAligned(Parameter.Info.Label, cx, titleY, SKTextAlign.Center, font, fontPaint);
         }
 
         var rangeY = titleY - Globals.Rescale(15);
         if (rangeY + Globals.Rescale(9) <= _h)
         {
-            if (config.ParameterInfo.PositionCount is int)
+            if (Parameter.Info.PositionCount is int)
             {
-                var plainValue = config.MinValue + ((config.MaxValue - config.MinValue) * value);
-                var currentText = config.CustomValueFormatter?.Invoke(plainValue) ?? plainValue.Format(config.ParameterInfo.Unit);
                 fontPaint.Color = enabled ? Theme.Current.Accent : Theme.Current.TextDisabled;
-                canvas.DrawTextTopAligned(currentText, cx, rangeY, SKTextAlign.Center, smallFont, fontPaint);
+                canvas.DrawTextTopAligned(FormatValue(value), cx, rangeY, SKTextAlign.Center, smallFont, fontPaint);
             }
             else
             {
-                var minText = $"{config.MinValue.Format(config.ParameterInfo.Unit)}";
                 fontPaint.Color = enabled ? Theme.Current.TextDim : Theme.Current.TextDisabled;
-                canvas.DrawTextTopAligned(minText, Globals.Rescale(5), rangeY, SKTextAlign.Left, smallFont, fontPaint);
-
-                var maxText = $"{config.MaxValue.Format(config.ParameterInfo.Unit)}";
-                canvas.DrawTextTopAligned(maxText, _w - Globals.Rescale(5), rangeY, SKTextAlign.Right, smallFont, fontPaint);
+                canvas.DrawTextTopAligned(Parameter.MinValue.Format(Parameter.Info.Unit),
+                    Globals.Rescale(5), rangeY, SKTextAlign.Left, smallFont, fontPaint);
+                canvas.DrawTextTopAligned(Parameter.MaxValue.Format(Parameter.Info.Unit),
+                    _w - Globals.Rescale(5), rangeY, SKTextAlign.Right, smallFont, fontPaint);
             }
         }
 
-        if (_isDragging && config.ParameterInfo.PositionCount is null)
+        if (_isDragging && Parameter.Info.PositionCount is null)
         {
-            var plainValue = config.MinValue + ((config.MaxValue - config.MinValue) * value);
-            var liveText = config.CustomValueFormatter?.Invoke(plainValue) ?? plainValue.Format(config.ParameterInfo.Unit);
             var liveY = Math.Max(0, cy - drawRadius - Globals.RescaleExact(18));
             fontPaint.Color = Theme.Current.Accent2;
-            canvas.DrawTextTopAligned(liveText, cx, liveY, SKTextAlign.Center, font, fontPaint);
+            canvas.DrawTextTopAligned(FormatValue(value), cx, liveY, SKTextAlign.Center, font, fontPaint);
         }
     }
 
-    private double QuantizeIfStepped(double normalized)
-        => (config.ParameterInfo.PositionCount is int positions && positions > 1)
-            ? Math.Round(normalized * (positions - 1)) / (positions - 1)
-            : normalized;
+    private string FormatValue(double normalized)
+    {
+        var plain = Parameter.ToPlain(normalized);
+        return Parameter.ValueFormatter?.Invoke(plain) ?? plain.Format(Parameter.Info.Unit);
+    }
 }

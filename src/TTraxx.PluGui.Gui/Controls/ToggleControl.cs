@@ -1,6 +1,7 @@
 ﻿using SkiaSharp;
 using TTraxx.PluGui.Gui.Controls.Base;
 using TTraxx.PluGui.Gui.Controls.Configuration;
+using TTraxx.PluGui.Gui.Controls.Configuration.Base;
 using TTraxx.PluGui.Gui.Controls.Configuration.Base.Interfaces;
 using TTraxx.PluGui.Gui.Helpers;
 using TTraxx.PluGui.Gui.Helpers.Extensions;
@@ -12,24 +13,23 @@ namespace TTraxx.PluGui.Gui.Controls;
 
 public sealed class ToggleControl(ToggleControlConfiguration config) : AbstractControlBase(config)
 {
+    private ParameterBinding Parameter => config.Parameter;
+
+    private bool IsOn => Parameter.Normalized >= 0.5;
+
     public override void OnPointerDown(PointerEventArgs e)
     {
-        if (!config.IsEnabled()) return;
-        var isOn = config.GetNormalizedValue() >= 0.5;
-        config.BeginAction();
-        config.PerformAction(isOn ? 0.0 : 1.0);
-        config.EndAction();
+        if (!IsEnabled) return;
+        Parameter.Edit(IsOn ? 0.0 : 1.0);
         Refresh();
     }
 
-    public override bool HitTest(int x, int y) => x >= _x && x <= _x + _w && y >= _y && y <= _y + _h;
-
-    public override IParameterControlInfo GetParameterInfo(int xPos, int yPos) => config.ParameterInfo;
+    public override IParameterControlInfo? GetParameterInfo(int localX, int localY) => Parameter.Info;
 
     public override void Draw(SKCanvas canvas)
     {
-        var isOn = config.GetNormalizedValue() >= 0.5;
-        var enabled = config.IsEnabled();
+        var isOn = IsOn;
+        var enabled = IsEnabled;
 
         var pillH = Math.Min(_h - Globals.Rescale(12), Globals.Rescale(14));
         var pillW = pillH * 2;
@@ -71,7 +71,7 @@ public sealed class ToggleControl(ToggleControlConfiguration config) : AbstractC
                 Size = Globals.Rescale(11),
                 Typeface = Fonts.Current.Bold,
             };
-            canvas.DrawTextTopAligned(config.ParameterInfo.Label, _w / 2f, labelY, SKTextAlign.Center, font, paint);
+            canvas.DrawTextTopAligned(Parameter.Info.Label, _w / 2f, labelY, SKTextAlign.Center, font, paint);
         }
     }
 }
