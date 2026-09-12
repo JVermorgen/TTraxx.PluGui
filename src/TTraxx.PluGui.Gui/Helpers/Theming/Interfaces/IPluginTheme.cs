@@ -21,4 +21,10 @@ public interface IPluginTheme
     SKColor GlowCore { get; }
     SKColor GlowMid { get; }
     SKColor GlowOuter { get; }
+
+    SKColor MenuBackground { get; }
+    SKColor MenuBorder { get; }
+    SKColor MenuItemHoverBackground { get; }
+    SKColor MenuTextPrimary { get; }
+    SKColor MenuTextDisabled { get; }
 }

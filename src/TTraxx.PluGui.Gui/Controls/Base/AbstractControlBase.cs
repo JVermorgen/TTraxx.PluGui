@@ -66,6 +66,9 @@ public abstract class AbstractControlBase(IControlConfiguration config) : IDispo
 
     public virtual IParameterControlInfo? GetParameterInfo(int localX, int localY) => null;
 
+    /// <summary>Override to offer right-click menu items (e.g. "Reset to Default"). Empty by default - no menu shown.</summary>
+    public virtual IReadOnlyList<ContextMenuItem> GetContextMenuItems() => [];
+
     public virtual void OnPointerEnter()
     {
         IsHovered = true;

@@ -19,6 +19,9 @@ public sealed record KnobStyle
     /// <summary>Vertical drag distance, in unscaled pixels, for a full 0..1 sweep.</summary>
     public double DragPixelsForFullSweep { get; init; } = 200.0;
 
+    /// <summary>Multiplier applied to DragPixelsForFullSweep while Shift is held, for finer adjustments.</summary>
+    public double FineTuneDivisor { get; init; } = 4.0;
+
     /// <summary>Wheel resolution for continuous parameters: 1/N per tick.</summary>
     public int WheelSteps { get; init; } = 72;
 

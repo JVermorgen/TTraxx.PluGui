@@ -52,6 +52,18 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : AbstractCon
         return isBottomRightHalf ? config.YParameter.Info : config.XParameter.Info;
     }
 
+    public override IReadOnlyList<ContextMenuItem> GetContextMenuItems() =>
+    [
+        new("Reset to Default", () =>
+        {
+            config.BeginGroupEdit?.Invoke();
+            config.XParameter.Edit(config.XParameter.Quantize(config.XParameter.Info.DefaultNormalizedValue));
+            config.YParameter.Edit(config.YParameter.Quantize(config.YParameter.Info.DefaultNormalizedValue));
+            config.EndGroupEdit?.Invoke();
+            Refresh();
+        }, IsEnabled)
+    ];
+
     private void ApplyFromPointer(int localX, int localY)
     {
         var newX = Math.Clamp(localX / (double)_w, 0.0, 1.0);

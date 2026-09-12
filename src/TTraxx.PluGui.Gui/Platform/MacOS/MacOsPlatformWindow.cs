@@ -1,6 +1,7 @@
 ﻿using SkiaSharp;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using TTraxx.PluGui.Gui.Input;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal.Constants;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal.Structs;
@@ -55,6 +56,7 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
     private static readonly nint s_selConvertPointFromView;
     private static readonly nint s_selClickCount;
     private static readonly nint s_selDeltaY;
+    private static readonly nint s_selModifierFlags;
     private static readonly nint s_selInitWithRectOptionsOwnerUserInfo;
     private static readonly nint s_selAddTrackingArea;
     private static readonly nint s_selRemoveTrackingArea;
@@ -114,6 +116,7 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
         s_selConvertPointFromView = ObjC.Sel("convertPoint:fromView:");
         s_selClickCount = ObjC.Sel("clickCount");
         s_selDeltaY = ObjC.Sel("deltaY");
+        s_selModifierFlags = ObjC.Sel("modifierFlags");
         s_selInitWithRectOptionsOwnerUserInfo = ObjC.Sel("initWithRect:options:owner:userInfo:");
         s_selAddTrackingArea = ObjC.Sel("addTrackingArea:");
         s_selRemoveTrackingArea = ObjC.Sel("removeTrackingArea:");
@@ -128,6 +131,7 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
         _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("isFlipped"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, byte>)&IsFlippedImp, "c@:");
         _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("drawRect:"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, CGRect, void>)&DrawRectImp, "v@:{CGRect={CGPoint=dd}{CGSize=dd}}");
         _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("mouseDown:"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, nint, void>)&MouseDownImp, "v@:@");
+        _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("rightMouseDown:"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, nint, void>)&RightMouseDownImp, "v@:@");
         _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("mouseUp:"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, nint, void>)&MouseUpImp, "v@:@");
         _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("mouseDragged:"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, nint, void>)&MouseMovedImp, "v@:@");
         _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("mouseMoved:"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, nint, void>)&MouseMovedImp, "v@:@");
@@ -294,7 +298,13 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
         var (x, y) = GetLocalPoint(eventPtr);
         // Cocoa telt dubbelklikken al zelf (clickCount) - geen X11-achtige handmatige timing/afstand-logica nodig.
         if ((long)ObjC.MsgSendNInt(eventPtr, s_selClickCount) >= 2) _host?.OnDoubleClick(x, y);
-        else _host?.OnPointerDown(x, y);
+        else _host?.OnPointerDown(x, y, GetModifiers(eventPtr));
+    }
+
+    private void HandleRightMouseDown(nint eventPtr)
+    {
+        var (x, y) = GetLocalPoint(eventPtr);
+        _host?.OnContextMenu(x, y);
     }
 
     private void HandleMouseUp(nint eventPtr)
@@ -306,7 +316,16 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
     private void HandleMouseMoved(nint eventPtr)
     {
         var (x, y) = GetLocalPoint(eventPtr);
-        _host?.OnPointerMove(x, y);
+        _host?.OnPointerMove(x, y, GetModifiers(eventPtr));
+    }
+
+    private static KeyModifiers GetModifiers(nint eventPtr)
+    {
+        var flags = ObjC.MsgSendNUInt(eventPtr, s_selModifierFlags);
+        var modifiers = KeyModifiers.None;
+        if ((flags & NSEventConstants.ModifierFlagShift) != 0) modifiers |= KeyModifiers.Shift;
+        if ((flags & NSEventConstants.ModifierFlagControl) != 0) modifiers |= KeyModifiers.Control;
+        return modifiers;
     }
 
     private void HandleScrollWheel(nint eventPtr)
@@ -339,6 +358,12 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
     private static void MouseDownImp(nint self, nint _cmd, nint evt)
     {
         if (TryGetOwner(self, out var window)) window.HandleMouseDown(evt);
+    }
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static void RightMouseDownImp(nint self, nint _cmd, nint evt)
+    {
+        if (TryGetOwner(self, out var window)) window.HandleRightMouseDown(evt);
     }
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]

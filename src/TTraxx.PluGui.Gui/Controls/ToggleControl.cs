@@ -26,6 +26,15 @@ public sealed class ToggleControl(ToggleControlConfiguration config) : AbstractC
 
     public override IParameterControlInfo? GetParameterInfo(int localX, int localY) => Parameter.Info;
 
+    public override IReadOnlyList<ContextMenuItem> GetContextMenuItems() =>
+    [
+        new("Reset to Default", () =>
+        {
+            Parameter.Edit(Parameter.Quantize(Parameter.Info.DefaultNormalizedValue));
+            Refresh();
+        }, IsEnabled)
+    ];
+
     public override void Draw(SKCanvas canvas)
     {
         var isOn = IsOn;

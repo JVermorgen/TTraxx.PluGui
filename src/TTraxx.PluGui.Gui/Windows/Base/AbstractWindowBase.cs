@@ -1,6 +1,8 @@
 ﻿using SkiaSharp;
 using TTraxx.PluGui.Gui.Controls.Base;
 using TTraxx.PluGui.Gui.Controls.Manager;
+using TTraxx.PluGui.Gui.Controls.Overlay;
+using TTraxx.PluGui.Gui.Input;
 using TTraxx.PluGui.Gui.Windows.Factories;
 using TTraxx.PluGui.Gui.Windows.Interfaces;
 
@@ -18,6 +20,7 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
 
     internal IPlatformWindow PlatformWindow { get; } = PlatformWindowFactory.Create();
     private readonly ControlManager _controlManager = new();
+    private ContextMenuOverlay? _contextMenu;
 
     public bool AttachToParent(nint parentHandle, int width, int height)
     {
@@ -44,21 +47,66 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
     {
         DrawBackground(canvas, width, height);
         _controlManager.Draw(canvas);
+        _contextMenu?.Draw(canvas);
     }
 
     void IPlatformWindowHost.OnResize(int width, int height)
     {
         _windowWidth = width;
         _windowHeight = height;
+        _contextMenu = null; // its position was computed against the old size
         ApplyLayout();
         PlatformWindow.Invalidate();
     }
 
-    void IPlatformWindowHost.OnPointerDown(int x, int y) => _controlManager.OnPointerDown(x, y);
-    void IPlatformWindowHost.OnPointerMove(int x, int y) => _controlManager.OnPointerMove(x, y);
+    void IPlatformWindowHost.OnPointerDown(int x, int y, KeyModifiers modifiers)
+    {
+        if (_contextMenu is { } menu)
+        {
+            menu.HandleClick(x, y);
+            _contextMenu = null;
+            PlatformWindow.Invalidate();
+            return;
+        }
+        _controlManager.OnPointerDown(x, y, modifiers);
+    }
+
+    void IPlatformWindowHost.OnPointerMove(int x, int y, KeyModifiers modifiers)
+    {
+        if (_contextMenu is { } menu)
+        {
+            menu.UpdateHover(x, y);
+            PlatformWindow.Invalidate();
+            return;
+        }
+        _controlManager.OnPointerMove(x, y, modifiers);
+    }
+
     void IPlatformWindowHost.OnPointerUp(int x, int y) => _controlManager.OnPointerUp(x, y);
-    void IPlatformWindowHost.OnWheel(int x, int y, int ticks) => _controlManager.OnWheel(x, y, ticks);
-    void IPlatformWindowHost.OnDoubleClick(int x, int y) => _controlManager.OnDoubleClick(x, y);
+
+    void IPlatformWindowHost.OnWheel(int x, int y, int ticks, KeyModifiers modifiers)
+    {
+        if (_contextMenu != null) return; // ignore scroll while a menu is open
+        _controlManager.OnWheel(x, y, ticks, modifiers);
+    }
+
+    void IPlatformWindowHost.OnDoubleClick(int x, int y)
+    {
+        if (_contextMenu != null)
+        {
+            _contextMenu = null;
+            PlatformWindow.Invalidate();
+            return;
+        }
+        _controlManager.OnDoubleClick(x, y);
+    }
+
+    void IPlatformWindowHost.OnContextMenu(int x, int y)
+    {
+        var items = _controlManager.FindControlAt(x, y)?.GetContextMenuItems();
+        _contextMenu = items is { Count: > 0 } ? new ContextMenuOverlay(x, y, items, _windowWidth, _windowHeight) : null;
+        PlatformWindow.Invalidate();
+    }
 
     protected abstract void DrawBackground(SKCanvas canvas, int width, int height);
     protected abstract IEnumerable<(AbstractControlBase Control, int X, int Y, int W, int H)> BuildLayout();

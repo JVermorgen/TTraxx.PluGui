@@ -9,4 +9,8 @@ internal static class XlibConstants
     internal const nint StructureNotifyMask = 1 << 17;
 
     internal const int ZPixmap = 2;
+
+    // XButtonEvent/XMotionEvent.state modifier bits.
+    internal const uint ShiftMask = 1 << 0;
+    internal const uint ControlMask = 1 << 2;
 }

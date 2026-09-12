@@ -75,6 +75,9 @@ internal static partial class ObjC
     internal static partial nint MsgSendNInt(nint receiver, nint selector); // clickCount (NSInteger)
 
     [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]
+    internal static partial nuint MsgSendNUInt(nint receiver, nint selector); // modifierFlags (NSEventModifierFlags/NSUInteger)
+
+    [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]
     internal static partial nint MsgSendIdWithCGRect(nint receiver, nint selector, CGRect frame); // initWithFrame:
 
     [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]

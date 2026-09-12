@@ -55,6 +55,9 @@ internal sealed class ControlManager : IDisposable
         return false;
     }
 
+    /// <summary>Used by the window layer to find the right-click target for a context menu, outside the normal pointer-event flow.</summary>
+    public AbstractControlBase? FindControlAt(int x, int y) => HitTestControls(x, y);
+
     /// <summary>Back-to-front (reversed drawing order), so when overlapping the topmost (last drawn) control gets a hit first.</summary>
     private AbstractControlBase? HitTestControls(int x, int y)
     {
@@ -66,18 +69,18 @@ internal sealed class ControlManager : IDisposable
         return null;
     }
 
-    private static PointerEventArgs ToLocal(AbstractControlBase control, int x, int y)
-    => new(x - control.X, y - control.Y);
+    private static PointerEventArgs ToLocal(AbstractControlBase control, int x, int y, KeyModifiers modifiers = KeyModifiers.None)
+    => new(x - control.X, y - control.Y, modifiers);
 
-    public void OnPointerDown(int x, int y)
+    public void OnPointerDown(int x, int y, KeyModifiers modifiers = KeyModifiers.None)
     {
         var control = HitTestControls(x, y);
         if (control is null) return;
         _capturedControl = control;
-        control.OnPointerDown(ToLocal(control, x, y));
+        control.OnPointerDown(ToLocal(control, x, y, modifiers));
     }
 
-    public void OnPointerMove(int x, int y)
+    public void OnPointerMove(int x, int y, KeyModifiers modifiers = KeyModifiers.None)
     {
         // As long as there is a capture (dragging), everything goes to that control,
         // even outside its own HitTest boundaries — matches the behavior
@@ -85,7 +88,7 @@ internal sealed class ControlManager : IDisposable
         var target = _capturedControl ?? HitTestControls(x, y);
         UpdateHover(_capturedControl is null ? target : null);
         if (target is null) return;
-        target.OnPointerMove(ToLocal(target, x, y));
+        target.OnPointerMove(ToLocal(target, x, y, modifiers));
     }
 
     public void OnPointerUp(int x, int y)
@@ -99,11 +102,11 @@ internal sealed class ControlManager : IDisposable
         UpdateHover(HitTestControls(x, y));
     }
 
-    public void OnWheel(int x, int y, int delta)
+    public void OnWheel(int x, int y, int delta, KeyModifiers modifiers = KeyModifiers.None)
     {
         var control = _capturedControl ?? HitTestControls(x, y);
         if (control is null) return;
-        control.OnWheel(new WheelEventArgs(x - control.X, y - control.Y, delta));
+        control.OnWheel(new WheelEventArgs(x - control.X, y - control.Y, delta, modifiers));
     }
 
     public void OnDoubleClick(int x, int y)

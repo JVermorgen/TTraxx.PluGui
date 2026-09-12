@@ -116,10 +116,10 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
                 break;
             case WindowMessageConstants.WM_LBUTTONDOWN:
                 User32.SetCapture(_hwnd);
-                _host?.OnPointerDown(User32Helpers.GetX(lParam), User32Helpers.GetY(lParam));
+                _host?.OnPointerDown(User32Helpers.GetX(lParam), User32Helpers.GetY(lParam), User32Helpers.GetKeyModifiers(wParam));
                 return nint.Zero;
             case WindowMessageConstants.WM_MOUSEMOVE:
-                _host?.OnPointerMove(User32Helpers.GetX(lParam), User32Helpers.GetY(lParam));
+                _host?.OnPointerMove(User32Helpers.GetX(lParam), User32Helpers.GetY(lParam), User32Helpers.GetKeyModifiers(wParam));
                 return nint.Zero;
             case WindowMessageConstants.WM_LBUTTONUP:
                 _host?.OnPointerUp(User32Helpers.GetX(lParam), User32Helpers.GetY(lParam));
@@ -129,10 +129,13 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
                 Point pt = new() { X = User32Helpers.GetX(lParam), Y = User32Helpers.GetY(lParam) };
                 User32.ScreenToClient(_hwnd, ref pt);
                 int ticks = User32Helpers.GetWheel(wParam) / WindowMessageConstants.WHEEL_DELTA;
-                _host?.OnWheel(pt.X, pt.Y, ticks);
+                _host?.OnWheel(pt.X, pt.Y, ticks, User32Helpers.GetKeyModifiers(wParam));
                 return nint.Zero;
             case WindowMessageConstants.WM_LBUTTONDBLCLK:
                 _host?.OnDoubleClick(User32Helpers.GetX(lParam), User32Helpers.GetY(lParam));
+                return nint.Zero;
+            case WindowMessageConstants.WM_RBUTTONDOWN:
+                _host?.OnContextMenu(User32Helpers.GetX(lParam), User32Helpers.GetY(lParam));
                 return nint.Zero;
         }
 

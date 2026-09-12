@@ -1,5 +1,6 @@
 ﻿using SkiaSharp;
 using System.Runtime.InteropServices;
+using TTraxx.PluGui.Gui.Input;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal.Constants;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal.Structs;
@@ -195,7 +196,11 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                     // X11 has no separate wheel event — scroll comes in as
                     // ButtonPress with button 4 (up) or 5 (down).
                     var ticks = buttonDown.button == 4 ? 1 : -1;
-                    _host?.OnWheel(buttonDown.x, buttonDown.y, ticks);
+                    _host?.OnWheel(buttonDown.x, buttonDown.y, ticks, ToModifiers(buttonDown.state));
+                }
+                else if (buttonDown.button == 3)
+                {
+                    _host?.OnContextMenu(buttonDown.x, buttonDown.y);
                 }
                 else if (buttonDown.button == 1)
                 {
@@ -215,7 +220,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                     }
                     else
                     {
-                        _host?.OnPointerDown(buttonDown.x, buttonDown.y);
+                        _host?.OnPointerDown(buttonDown.x, buttonDown.y, ToModifiers(buttonDown.state));
                         _lastClickTimeMs = clickTime;
                         _lastClickX = buttonDown.x;
                         _lastClickY = buttonDown.y;
@@ -228,7 +233,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                 break;
             case XEventType.MotionNotify:
                 var motion = Marshal.PtrToStructure<XMotionEvent>(rawEventPtr);
-                _host?.OnPointerMove(motion.x, motion.y);
+                _host?.OnPointerMove(motion.x, motion.y, ToModifiers(motion.state));
                 break;
             case XEventType.ConfigureNotify:
                 var configure = Marshal.PtrToStructure<XConfigureEvent>(rawEventPtr);
@@ -239,6 +244,14 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                 }
                 break;
         }
+    }
+
+    private static KeyModifiers ToModifiers(uint state)
+    {
+        var modifiers = KeyModifiers.None;
+        if ((state & XlibConstants.ShiftMask) != 0) modifiers |= KeyModifiers.Shift;
+        if ((state & XlibConstants.ControlMask) != 0) modifiers |= KeyModifiers.Control;
+        return modifiers;
     }
 
     private void EnsureSurface(int w, int h)

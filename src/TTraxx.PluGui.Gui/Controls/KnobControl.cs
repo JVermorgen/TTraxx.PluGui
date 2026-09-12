@@ -21,8 +21,8 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
     private const double SkiaArcStartAngleDeg = 135;
 
     private bool _isDragging;
-    private double _dragStartValue;
-    private int _dragStartY;
+    private double _dragValue;
+    private int _lastPointerY;
 
     private ParameterBinding Parameter => config.Parameter;
     private KnobStyle Style => config.Style?.Invoke() ?? KnobStyle.Default;
@@ -39,11 +39,16 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
         if (!IsEnabled) return;
         _isDragging = true;
         Parameter.BeginEdit();
-        _dragStartY = e.Y;
-        _dragStartValue = Parameter.Normalized;
+        _lastPointerY = e.Y;
+        _dragValue = Parameter.Normalized;
         Refresh();
     }
 
+    /// <summary>
+    /// Applies the incremental (not absolute-from-drag-start) mouse delta to
+    /// the running value, so toggling Shift (fine-tune) mid-drag changes the
+    /// rate for subsequent movement without jumping the current value.
+    /// </summary>
     public override void OnPointerMove(PointerEventArgs e)
     {
         if (!_isDragging) return;
@@ -56,9 +61,15 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
             return;
         }
 
-        var dy = e.Y - _dragStartY;
-        var newNorm = Parameter.Quantize(Math.Clamp(_dragStartValue - (dy / Style.DragPixelsForFullSweep), 0.0, 1.0));
-        Parameter.SetNormalizedValue(newNorm);
+        var dy = e.Y - _lastPointerY;
+        _lastPointerY = e.Y;
+
+        var sweepPixels = e.Modifiers.HasFlag(KeyModifiers.Shift)
+            ? Style.DragPixelsForFullSweep * Style.FineTuneDivisor
+            : Style.DragPixelsForFullSweep;
+
+        _dragValue = Math.Clamp(_dragValue - (dy / sweepPixels), 0.0, 1.0);
+        Parameter.SetNormalizedValue(Parameter.Quantize(_dragValue));
         Refresh();
     }
 
@@ -93,6 +104,11 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
     public override void OnDoubleClick(PointerEventArgs e)
     {
         if (!IsEnabled) return;
+        ResetToDefault();
+    }
+
+    private void ResetToDefault()
+    {
         Parameter.Edit(Parameter.Quantize(Parameter.Info.DefaultNormalizedValue));
         Refresh();
     }
@@ -105,6 +121,11 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
     }
 
     public override IParameterControlInfo GetParameterInfo(int localX, int localY) => Parameter.Info;
+
+    public override IReadOnlyList<ContextMenuItem> GetContextMenuItems() =>
+    [
+        new("Reset to Default", ResetToDefault, IsEnabled)
+    ];
 
     public override void Draw(SKCanvas canvas)
     {

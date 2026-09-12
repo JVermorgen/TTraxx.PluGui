@@ -14,6 +14,7 @@ namespace TTraxx.PluGui.Harness.NPlug.Runners.Win32;
 public sealed class Win32HarnessRunner : IHarnessRunner
 {
     private const uint WindowStyle = 0x00C00000 | 0x00080000; // WS_CAPTION | WS_SYSMENU: fixed size, no resize border/min/max
+    private const uint WS_EX_TOPMOST = 0x00000008;
     private const int CW_USEDEFAULT = unchecked((int)0x80000000);
     private const int SW_SHOW = 5;
     private const uint WM_DESTROY = 0x0002;
@@ -54,7 +55,8 @@ public sealed class Win32HarnessRunner : IHarnessRunner
         };
         if (RegisterClassExW(ref wc) == 0) throw new InvalidOperationException("RegisterClassExW failed.");
 
-        var hwnd = CreateWindowExW(0, className, plugin.DisplayName, WindowStyle,
+        var exStyle = plugin.AlwaysOnTop ? WS_EX_TOPMOST : 0u;
+        var hwnd = CreateWindowExW(exStyle, className, plugin.DisplayName, WindowStyle,
             CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nint.Zero, nint.Zero, hInstance, nint.Zero);
         if (hwnd == nint.Zero) throw new InvalidOperationException("CreateWindowExW failed.");
 

@@ -12,6 +12,7 @@ public abstract class AbstractHarnessPluginBase<TController, TModel, TView>(Audi
 {
     public abstract string DisplayName { get; }
     public virtual AudioPluginViewPlatform Platform => platform;
+    public virtual bool AlwaysOnTop => false;
 
     public virtual IAudioPluginView Create()
     {

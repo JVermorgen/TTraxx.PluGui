@@ -22,4 +22,10 @@ public sealed class DefaultPluginTheme : IPluginTheme
     public SKColor GlowCore => new(240, 240, 240, 255);
     public SKColor GlowMid => new(240, 240, 240, 110);
     public SKColor GlowOuter => new(240, 240, 240, 45);
+
+    public SKColor MenuBackground => new(30, 30, 30);
+    public SKColor MenuBorder => new(60, 60, 60);
+    public SKColor MenuItemHoverBackground => new(230, 230, 230, 60);
+    public SKColor MenuTextPrimary => new(255, 255, 255);
+    public SKColor MenuTextDisabled => new(75, 75, 75);
 }
