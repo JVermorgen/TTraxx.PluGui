@@ -8,9 +8,16 @@ using TTraxx.PluGui.Gui.Windows.Interfaces;
 
 namespace TTraxx.PluGui.Gui.Platform.Linux;
 
-internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSource
+internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSource, ITimerPumpSource
 {
     private const string UIEngineLibraryName = "libSkiaSharp";
+
+    // Matches Win32PlatformWindow's own SetTimer rate, so a continuously
+    // repainting control (e.g. the level meter) animates at the same speed
+    // regardless of platform.
+    private const int ContinuousRepaintIntervalMs = 33;
+
+    private bool _continuousRepaintEnabled;
 
     private nint _display;
     private nint _window;
@@ -50,6 +57,8 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     static LinuxPlatformWindow() => Libc.EnsureOwnDirectoryLoaded(UIEngineLibraryName);
 
     public IEventPumpSource EventPumpSource => this; // X11 has no native message loop of its own - the host must poll our fd
+
+    public ITimerPumpSource? TimerPumpSource => _continuousRepaintEnabled ? this : null;
 
     /// <summary>
     /// <para>
@@ -143,14 +152,18 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     }
 
     /// <summary>
-    /// No-op: unlike Win32/Cocoa, X11 gives a plain client window no timer of
-    /// its own to drive a self-repaint. The correct fix is the host-provided
-    /// IAudioPluginRunLoop.RegisterTimer (Steinberg::Linux::IRunLoop), but
-    /// that's an NPlug/VST3 concept this platform-agnostic layer doesn't see -
-    /// it would have to be wired in at the view level instead. Until then, a
-    /// control that sets NeedsContinuousRepaint simply won't animate on Linux.
+    /// Unlike Win32/Cocoa, X11 gives a plain client window no timer of its own
+    /// to drive a self-repaint. Since this platform-agnostic layer can't see
+    /// the VST3-level IAudioPluginRunLoop.RegisterTimer (Steinberg::Linux::IRunLoop)
+    /// itself, it just records the request and exposes itself via
+    /// TimerPumpSource - the view-level code that DOES know about NPlug is
+    /// responsible for registering/unregistering that with the host.
     /// </summary>
-    public void SetContinuousRepaint(bool enabled) { }
+    public void SetContinuousRepaint(bool enabled) => _continuousRepaintEnabled = enabled;
+
+    int ITimerPumpSource.PreferredIntervalMilliseconds => ContinuousRepaintIntervalMs;
+
+    void ITimerPumpSource.OnTimerTick() => Invalidate();
 
     public void Destroy()
     {

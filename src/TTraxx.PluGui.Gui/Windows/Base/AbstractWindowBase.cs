@@ -166,4 +166,7 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
 
     /// <summary>Non-null when this platform requires an external event pump (see IEventPumpSource).</summary>
     public IEventPumpSource? EventPumpSource => PlatformWindow.EventPumpSource;
+
+    /// <summary>Non-null when this platform needs an externally-driven repaint timer (see ITimerPumpSource).</summary>
+    public ITimerPumpSource? TimerPumpSource => PlatformWindow.TimerPumpSource;
 }

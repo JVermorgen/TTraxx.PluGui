@@ -36,6 +36,8 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
 
     public IEventPumpSource? EventPumpSource => null; // Win32 has its own message loop (WndProc) — no external pump needed
 
+    public ITimerPumpSource? TimerPumpSource => null; // Win32 drives its own repaint timer via SetTimer/WM_TIMER — no external pump needed
+
     public float GetInitialScaleFactor(nint parentHandle) => Shcore.DetermineInitialScale(parentHandle);
 
     public bool Attach(nint parentHandle, int width, int height, IPlatformWindowHost host)

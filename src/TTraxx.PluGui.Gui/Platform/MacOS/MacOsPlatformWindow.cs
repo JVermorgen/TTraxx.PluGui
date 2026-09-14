@@ -145,6 +145,8 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
 
     public IEventPumpSource? EventPumpSource => null; // Cocoa's own run loop is already pumped by the host — no X11-like fd-polling needed
 
+    public ITimerPumpSource? TimerPumpSource => null; // not implemented yet - see SetContinuousRepaint below
+
     public float GetInitialScaleFactor(nint parentHandle)
     {
         // The real backingScaleFactor comes from the NSWindow that contains

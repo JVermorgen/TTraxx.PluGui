@@ -24,4 +24,13 @@ internal interface IPlatformWindow
     /// already have their own message loop (Win32, macOS).
     /// </summary>
     IEventPumpSource? EventPumpSource { get; }
+
+    /// <summary>
+    /// Non-null only while this platform has no timer of its own (currently
+    /// only X11/Linux) AND SetContinuousRepaint(true) is currently in effect -
+    /// see <see cref="ITimerPumpSource"/>. Null on platforms with a self-driven
+    /// timer (Win32), platforms without one implemented yet (macOS), and
+    /// whenever no continuously-repainting control is present.
+    /// </summary>
+    ITimerPumpSource? TimerPumpSource { get; }
 }
