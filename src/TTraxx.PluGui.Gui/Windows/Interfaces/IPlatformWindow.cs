@@ -10,6 +10,15 @@ internal interface IPlatformWindow
     void Destroy();
 
     /// <summary>
+    /// Starts (true) or stops (false) a self-owned periodic repaint, for
+    /// controls that animate on their own (e.g. a level meter) and can't
+    /// rely on Invalidate() being called by anything else. Idempotent.
+    /// Platforms without a way to drive this themselves (see
+    /// LinuxPlatformWindow) may no-op.
+    /// </summary>
+    void SetContinuousRepaint(bool enabled);
+
+    /// <summary>
     /// Non-null when this platform requires an external event pump
     /// (see <see cref="IEventPumpSource"/>). Null on platforms that
     /// already have their own message loop (Win32, macOS).

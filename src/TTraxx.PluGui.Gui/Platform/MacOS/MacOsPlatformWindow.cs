@@ -200,6 +200,16 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
         ObjC.MsgSendVoidWithBool(_view, s_selSetNeedsDisplay, true);
     }
 
+    /// <summary>
+    /// No-op for now: a real implementation needs an NSTimer scheduled against
+    /// this view (a new objc_msgSend shape mixing an NSTimeInterval double with
+    /// pointer/BOOL args, calling back into a new registered selector) - untested,
+    /// unverifiable raw-runtime code on a backend that's already unconfirmed on
+    /// real hardware (see the type-level note above). A control that sets
+    /// NeedsContinuousRepaint simply won't animate on macOS until this is wired up.
+    /// </summary>
+    public void SetContinuousRepaint(bool enabled) { }
+
     public void Destroy()
     {
         if (_isDestroyed) return;

@@ -69,6 +69,14 @@ public abstract class AbstractControlBase(IControlConfiguration config) : IDispo
     /// <summary>Override to offer right-click menu items (e.g. "Reset to Default"). Empty by default - no menu shown.</summary>
     public virtual IReadOnlyList<ContextMenuItem> GetContextMenuItems() => [];
 
+    /// <summary>
+    /// True for controls that animate on their own (e.g. a level meter) and
+    /// therefore need the window to keep repainting even when nothing else
+    /// changed. False by default - most controls only need a redraw in
+    /// response to an actual interaction or parameter change.
+    /// </summary>
+    public virtual bool NeedsContinuousRepaint => false;
+
     public virtual void OnPointerEnter()
     {
         IsHovered = true;

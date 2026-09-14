@@ -49,7 +49,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
 
     static LinuxPlatformWindow() => Libc.EnsureOwnDirectoryLoaded(UIEngineLibraryName);
 
-    public IEventPumpSource EventPumpSource => this; // X11 heeft geen eigen message loop - de host moet onze fd pollen
+    public IEventPumpSource EventPumpSource => this; // X11 has no native message loop of its own - the host must poll our fd
 
     /// <summary>
     /// <para>
@@ -59,10 +59,8 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     /// environments also do) and fall back to physical screen size in mm.
     /// </para>
     /// <para>
-    /// Reuse _display if Attach() has already run (the normal case —
-    /// Attached() in SpectralMorphView calls AttachToParent() before
-    /// GetInitialScaleFactor()); otherwise we briefly open a connection
-    /// here just for this query.
+    /// Reuse _display if Attach() has already run before GetInitialScaleFactor());
+    /// otherwise we briefly open a connection here just for this query.
     /// </para>
     /// </summary>
     public float GetInitialScaleFactor(nint parentHandle) => Xlib.DetermineInitialScale(_display);
@@ -143,6 +141,16 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
         if (!_isAttached || _isDestroyed) return;
         Repaint(); // no separate dirty-flag needed: X11 has no "InvalidateRect" equivalent that you trigger yourself; direct repainting here is the pragmatic approach until we fully wire up events
     }
+
+    /// <summary>
+    /// No-op: unlike Win32/Cocoa, X11 gives a plain client window no timer of
+    /// its own to drive a self-repaint. The correct fix is the host-provided
+    /// IAudioPluginRunLoop.RegisterTimer (Steinberg::Linux::IRunLoop), but
+    /// that's an NPlug/VST3 concept this platform-agnostic layer doesn't see -
+    /// it would have to be wired in at the view level instead. Until then, a
+    /// control that sets NeedsContinuousRepaint simply won't animate on Linux.
+    /// </summary>
+    public void SetContinuousRepaint(bool enabled) { }
 
     public void Destroy()
     {
@@ -270,9 +278,9 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
 
     private void Repaint()
     {
-        // Zonder deze guard kan een late/geneste paint-aanroep (bv. net na
-        // Destroy(), of vóór Attach() volledig is afgerond) XPutImage
-        // aanroepen met een _display/_window van nint.Zero -> SIGSEGV.
+        // Without this guard, a late/nested paint call (e.g. just after
+        // Destroy(), or before Attach() has fully completed) can call
+        // XPutImage with _display/_window set to nint.Zero -> SIGSEGV.
         if (!_isAttached || _isDestroyed) return;
         if (_skSurface is null || _pixelBuffer is null) return;
 

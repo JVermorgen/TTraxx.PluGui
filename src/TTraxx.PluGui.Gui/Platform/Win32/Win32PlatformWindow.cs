@@ -13,7 +13,11 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
 {
     private const string UIEngineLibraryName = "libSkiaSharp";
 
+    private const nint ContinuousRepaintTimerId = 1;
+    private const uint ContinuousRepaintIntervalMs = 33; // ~30 Hz
+
     private nint _hwnd;
+    private bool _continuousRepaintActive;
     private nint _origWndProc = nint.Zero;
     private GCHandle _selfHandle;
     private IPlatformWindowHost? _host;
@@ -59,6 +63,16 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
     public void Invalidate()
     {
         if (_hwnd != nint.Zero) User32.InvalidateRect(_hwnd, nint.Zero, false);
+    }
+
+    public void SetContinuousRepaint(bool enabled)
+    {
+        if (enabled == _continuousRepaintActive) return;
+        _continuousRepaintActive = enabled;
+        if (_hwnd == nint.Zero) return;
+
+        if (enabled) User32.SetTimer(_hwnd, ContinuousRepaintTimerId, ContinuousRepaintIntervalMs, nint.Zero);
+        else User32.KillTimer(_hwnd, ContinuousRepaintTimerId);
     }
 
     public void Destroy()
@@ -136,6 +150,9 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
                 return nint.Zero;
             case WindowMessageConstants.WM_RBUTTONDOWN:
                 _host?.OnContextMenu(User32Helpers.GetX(lParam), User32Helpers.GetY(lParam));
+                return nint.Zero;
+            case WindowMessageConstants.WM_TIMER:
+                if (wParam == ContinuousRepaintTimerId) Invalidate();
                 return nint.Zero;
         }
 

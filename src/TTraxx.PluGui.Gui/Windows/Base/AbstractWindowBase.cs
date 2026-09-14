@@ -136,6 +136,7 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
 
         ApplyLayout();
         _controlManager.Sync(_layout.ConvertAll(e => e.Control));
+        PlatformWindow.SetContinuousRepaint(_controlManager.HasContinuousRepaintControls());
     }
 
     private void ApplyLayout()

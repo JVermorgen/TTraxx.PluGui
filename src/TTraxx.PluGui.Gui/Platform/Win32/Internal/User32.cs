@@ -60,6 +60,13 @@ internal static partial class User32
     internal static partial bool ReleaseCapture();
 
     [LibraryImport("user32.dll")]
+    internal static partial nint SetTimer(nint hWnd, nint nIDEvent, uint uElapse, nint lpTimerFunc);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool KillTimer(nint hWnd, nint uIDEvent);
+
+    [LibraryImport("user32.dll")]
     private static partial int GetDpiForWindow(nint hWnd);
 
     [LibraryImport("user32.dll")]

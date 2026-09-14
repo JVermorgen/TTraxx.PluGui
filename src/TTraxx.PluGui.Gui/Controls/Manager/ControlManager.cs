@@ -58,6 +58,16 @@ internal sealed class ControlManager : IDisposable
     /// <summary>Used by the window layer to find the right-click target for a context menu, outside the normal pointer-event flow.</summary>
     public AbstractControlBase? FindControlAt(int x, int y) => HitTestControls(x, y);
 
+    /// <summary>True when any current control (e.g. a level meter) needs the window to keep repainting on its own.</summary>
+    public bool HasContinuousRepaintControls()
+    {
+        foreach (var control in _controls)
+        {
+            if (control.NeedsContinuousRepaint) return true;
+        }
+        return false;
+    }
+
     /// <summary>Back-to-front (reversed drawing order), so when overlapping the topmost (last drawn) control gets a hit first.</summary>
     private AbstractControlBase? HitTestControls(int x, int y)
     {
