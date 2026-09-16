@@ -28,7 +28,7 @@ public sealed class HarnessSettingsPanel(bool initialAlwaysOnTop, Action<bool> o
     /// <summary>The "show control bounds" switch outlines the plugin's own controls, not the switch bar itself.</summary>
     protected override bool ParticipatesInDebugBoundsOverlay => false;
 
-    protected override IEnumerable<(AbstractControlBase Control, int X, int Y, int W, int H)> BuildLayout()
+    protected override IEnumerable<ControlPlacement> BuildLayout()
     {
         yield return (new HarnessToggleControl(new ToggleControlConfiguration
         {

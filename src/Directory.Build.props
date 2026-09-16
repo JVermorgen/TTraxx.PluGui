@@ -9,5 +9,12 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+    <!-- Ship the XML docs with every package: without this, none of the doc comments
+         in this repo reach a consumer's IntelliSense. CS1591 is suppressed so enabling
+         it doesn't bury the build in "missing XML comment" warnings for members that
+         are self-explanatory. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 </Project>

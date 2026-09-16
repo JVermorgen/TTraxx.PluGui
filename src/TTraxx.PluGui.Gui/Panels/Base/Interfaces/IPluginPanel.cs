@@ -25,8 +25,8 @@ public interface IPluginPanel
     /// GetLayout itself: that's called multiple times per session (on
     /// attach and on every resize) and would grow the list on re-registration.
     /// </summary>
-    (AbstractControlBase Control, int X, int Y, int W, int H) AddControl(AbstractControlBase control, int relativeX, int relativeY, int width, int height);
+    ControlPlacement AddControl(AbstractControlBase control, int relativeX, int relativeY, int width, int height);
 
     /// <summary>All registered children, with ABSOLUTE (window-relative) coordinates — directly usable in GetLayout.</summary>
-    IReadOnlyList<(AbstractControlBase Control, int X, int Y, int W, int H)> Controls { get; }
+    IReadOnlyList<ControlPlacement> Controls { get; }
 }

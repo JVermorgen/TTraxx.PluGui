@@ -26,13 +26,20 @@ namespace TTraxx.PluGui.Gui.Windows.Base;
 /// Optionally, <see cref="ConfigureSizing"/> can register window-specific sizing overrides via
 /// <see cref="RegisterSizing{TConfig}"/> before the first <see cref="BuildLayout"/> call.
 ///
-/// <see cref="AttachToParent"/> creates the native window and runs the first build; the host
-/// (VST3 editor, harness, ...) then drives <see cref="SetBounds"/> on resize and <see cref="Destroy"/>
-/// on teardown. Everything else (pointer/wheel/paint routing, control caching, panel drawing) is
-/// handled internally - see the private <c>Build</c>/<c>ApplyLayout</c> methods and the explicit
+/// This type serves two audiences, and they're deliberately kept apart:
+/// <list type="bullet">
+/// <item>A DERIVED WINDOW uses the protected surface below (BuildLayout/DrawBackground/Place/
+/// PlaceGrid/RegisterPanel/RegisterSizing) - that's what deriving from this class is for.</item>
+/// <item>A HOST (VST3 editor view, harness, ...) drives the window through <see cref="IPluginWindow"/>:
+/// <see cref="AttachToParent"/> creates the native window and runs the first build, then
+/// <see cref="SetBounds"/> on resize and <see cref="Destroy"/> on teardown. Host-side code should
+/// depend on that interface rather than on this class.</item>
+/// </list>
+/// Everything else (pointer/wheel/paint routing, control caching, panel drawing) is handled
+/// internally - see the private <c>Build</c>/<c>ApplyLayout</c> methods and the explicit
 /// <see cref="IPlatformWindowHost"/> implementation below.
 /// </summary>
-public abstract class AbstractWindowBase : IPlatformWindowHost
+public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPlatformWindowHost
 {
     private int _windowWidth;
     private int _windowHeight;
@@ -47,7 +54,7 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
     // Non-null only while a Build() is in progress; tracks which cached control ids this
     // build actually used, so Build() can evict the ones that weren't (removed controls).
     private HashSet<Guid>? _buildIdsInProgress;
-    private List<(AbstractControlBase Control, int X, int Y, int W, int H)> _layout = [];
+    private List<ControlPlacement> _layout = [];
     private List<IPluginPanel> _registeredPanels = [];
     private ContextMenuOverlay? _contextMenu;
     // Set once ConfigureSizing() has run for this window instance, so it's called exactly once
@@ -56,15 +63,7 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
 
     private IPlatformWindow PlatformWindow { get; } = PlatformWindowFactory.Create();
 
-    /// <summary>
-    /// Creates the native platform window as a child of <paramref name="parentHandle"/> and runs the
-    /// first <see cref="BuildLayout"/>. Call once, when the host (VST3 editor, harness, ...) attaches
-    /// the plugin's view to its own window.
-    /// </summary>
-    /// <param name="parentHandle">Native handle (HWND, NSView, X11 Window) of the host's parent window.</param>
-    /// <param name="width">Initial window width, in the same (unscaled) units passed to <see cref="SetBounds"/>.</param>
-    /// <param name="height">Initial window height.</param>
-    /// <returns><c>false</c> if the platform layer failed to attach (e.g. invalid handle); the window is unusable in that case.</returns>
+    /// <inheritdoc/>
     public bool AttachToParent(nint parentHandle, int width, int height)
     {
         _windowWidth = width;
@@ -76,11 +75,7 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
         return true;
     }
 
-    /// <summary>
-    /// Resizes/repositions the native window and re-applies the current layout against the new size
-    /// (controls don't get rebuilt - only re-bounded), then repaints. Call whenever the host resizes
-    /// the plugin view (e.g. the user dragging the editor's corner).
-    /// </summary>
+    /// <inheritdoc/>
     public void SetBounds(int x, int y, int width, int height)
     {
         _windowWidth = width;
@@ -91,36 +86,32 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
         PlatformWindow.Invalidate();
     }
 
-    /// <summary>Requests a repaint without changing layout or control state - e.g. after a model value changed outside of user input.</summary>
+    /// <inheritdoc/>
     public void RefreshUI() => PlatformWindow.Invalidate();
 
-    /// <summary>
-    /// Hit-tests (<paramref name="x"/>, <paramref name="y"/>) against the current layout and, if a
-    /// control bound to a parameter is found there, returns that parameter's id. Used by hosts that
-    /// need to resolve "what parameter is under this point" outside of normal pointer dispatch (e.g.
-    /// tooltips, host-driven automation gestures).
-    /// </summary>
-    /// <returns><c>true</c> if a parameter-bound control was found at that position.</returns>
+    /// <inheritdoc/>
     public bool TryFindParameter(int x, int y, out int parameterId) => _controlManager.TryFindParameter(x, y, out parameterId);
 
-    /// <summary>Tears down the native platform window. Call once, when the host detaches/closes the plugin view. Override to release additional derived-window resources, calling the base implementation.</summary>
+    /// <inheritdoc/>
+    /// <remarks>Override to release additional derived-window resources, calling the base implementation.</remarks>
     public virtual void Destroy() => PlatformWindow.Destroy();
 
-    /// <summary>
-    /// Harness-only: calls BuildLayout() again (Hot Reload of
-    /// positions, panels, or new/removed controls) and synchronizes
-    /// the control-manager. A production host never calls this.
-    /// </summary>
-    public void RebuildControls() => Build();
-
-    /// <summary>Initial DPI/content scale for the current platform (see IPlatformWindow.GetInitialScaleFactor).</summary>
+    /// <inheritdoc/>
     public float GetInitialScaleFactor(nint parentHandle) => PlatformWindow.GetInitialScaleFactor(parentHandle);
 
-    /// <summary>Non-null when this platform requires an external event pump (see IEventPumpSource).</summary>
+    /// <inheritdoc/>
     public IEventPumpSource? EventPumpSource => PlatformWindow.EventPumpSource;
 
-    /// <summary>Non-null when this platform needs an externally-driven repaint timer (see ITimerPumpSource).</summary>
+    /// <inheritdoc/>
     public ITimerPumpSource? TimerPumpSource => PlatformWindow.TimerPumpSource;
+
+    /// <summary>
+    /// Harness-only: calls BuildLayout() again (Hot Reload of positions, panels, or
+    /// new/removed controls) and synchronizes the control-manager. A production host never
+    /// calls this - which is why it's an explicit <see cref="IHotReloadTarget"/> implementation,
+    /// kept off the window's everyday surface. Cast to that interface to reach it.
+    /// </summary>
+    void IHotReloadTarget.RebuildControls() => Build();
 
     /// <summary>
     /// Whether this window honors Globals.ShowControlBounds (the harness's "show
@@ -138,13 +129,14 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
     protected abstract void DrawBackground(SKCanvas canvas, int width, int height);
 
     /// <summary>
-    /// Declares every control the window shows, as a sequence of (control, absolute X, absolute Y,
-    /// width, height) tuples. Called once on <see cref="AttachToParent"/> and again on <see cref="RebuildControls"/>
-    /// (hot reload only - a production host never triggers a rebuild). Implement by yielding
-    /// <see cref="Place"/>/<see cref="PlaceGrid"/> calls; controls are cached across rebuilds by their
-    /// configuration's Id, so re-running this doesn't recreate controls that are still present.
+    /// Declares every control the window shows, as a sequence of <see cref="ControlPlacement"/>
+    /// (control + absolute X/Y, width, height). Called once on <see cref="AttachToParent"/> and
+    /// again on a hot-reload rebuild (see <see cref="IHotReloadTarget"/> - a production host never
+    /// triggers one). Implement by yielding <see cref="Place"/>/<see cref="PlaceGrid"/> calls;
+    /// controls are cached across rebuilds by their configuration's Id, so re-running this doesn't
+    /// recreate controls that are still present.
     /// </summary>
-    protected abstract IEnumerable<(AbstractControlBase Control, int X, int Y, int W, int H)> BuildLayout();
+    protected abstract IEnumerable<ControlPlacement> BuildLayout();
 
     /// <summary>
     /// Returns the cached control for <paramref name="configId"/>, creating it via <paramref name="factory"/>
@@ -188,7 +180,7 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
     /// are then added on top regardless (e.g. for a panel whose labels need more room than the
     /// control's own natural size).
     /// </summary>
-    protected (AbstractControlBase Control, int X, int Y, int W, int H) Place<TConfig, TControl>(
+    protected ControlPlacement Place<TConfig, TControl>(
         TConfig config,
         Func<TConfig, TControl> factory,
         int x, int y,
@@ -205,7 +197,9 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
         w += extraWidth;
         h += extraHeight;
 
-        return panel?.AddControl(control, x, y, w, h) ?? (control, x, y, w, h);
+        return panel is null
+            ? new ControlPlacement(control, x, y, w, h)
+            : panel.AddControl(control, x, y, w, h);
     }
 
     /// <summary>
@@ -216,7 +210,7 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
     /// including it - no need to special-case a ragged row or a hole in the middle of the grid.
     /// Every other parameter behaves exactly as on Place(), which this calls once per entry.
     /// </summary>
-    protected IEnumerable<(AbstractControlBase Control, int X, int Y, int W, int H)> PlaceGrid<TConfig, TControl>(
+    protected IEnumerable<ControlPlacement> PlaceGrid<TConfig, TControl>(
         IEnumerable<(TConfig Config, int Row, int Column)> cells,
         Func<TConfig, TControl> factory,
         int originX, int originY,
@@ -278,9 +272,9 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
         if (width is int w && height is int h) return (w, h);
 
         // A window-specific override (RegisterSizing<TConfig>()) wins over the config's own default.
-        if (config is IControlConfiguration sized && _sizingStrategies.TryGetValue(typeof(TConfig), out var overrideSizing))
+        if (_sizingStrategies.TryGetValue(typeof(TConfig), out var overrideSizing))
         {
-            var (ow, oh) = overrideSizing(sized.ControlSize);
+            var (ow, oh) = overrideSizing(config.ControlSize);
             return (width ?? ow, height ?? oh);
         }
 
@@ -301,7 +295,7 @@ public abstract class AbstractWindowBase : IPlatformWindowHost
 
     // Runs ConfigureSizing() once, then (re-)runs BuildLayout(), evicts cache entries the build no
     // longer referenced, applies the resulting layout, and syncs the control manager. Called from
-    // AttachToParent() and RebuildControls().
+    // AttachToParent() and IHotReloadTarget.RebuildControls().
     private void Build()
     {
         if (!_sizingConfigured)
