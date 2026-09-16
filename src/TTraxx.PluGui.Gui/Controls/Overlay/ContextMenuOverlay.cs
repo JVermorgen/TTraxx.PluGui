@@ -1,15 +1,11 @@
 using SkiaSharp;
-using TTraxx.PluGui.Gui.Helpers;
-using TTraxx.PluGui.Gui.Helpers.Extensions;
-using TTraxx.PluGui.Gui.Helpers.Theming;
-using TTraxx.PluGui.Gui.Helpers.Typography;
-using TTraxx.PluGui.Gui.Input;
+using TTraxx.PluGui.Gui;
 
 namespace TTraxx.PluGui.Gui.Controls.Overlay;
 
 /// <summary>
 /// A small floating right-click menu. Unlike a normal control it isn't part
-/// of ControlManager's layout/hit-test list: AbstractWindowBase owns a single
+/// of ControlManager's layout/hit-test list: PluginWindow owns a single
 /// instance directly so it can always sit on top and swallow the very next
 /// click regardless of what control is underneath.
 /// </summary>
@@ -20,19 +16,21 @@ internal sealed class ContextMenuOverlay
     private const int MinWidth = 120;
 
     private readonly IReadOnlyList<ContextMenuItem> _items;
+    private readonly RenderContext _context;
     private readonly SKRect _bounds;
     private int _hoveredIndex = -1;
 
     /// <summary>x, y and containerW/H are already-scaled pixel coordinates, matching everything else the platform layer reports.</summary>
-    public ContextMenuOverlay(int x, int y, IReadOnlyList<ContextMenuItem> items, int containerW, int containerH)
+    public ContextMenuOverlay(int x, int y, IReadOnlyList<ContextMenuItem> items, int containerW, int containerH, RenderContext context)
     {
         _items = items;
+        _context = context;
 
-        using SKFont font = new() { Size = Globals.Rescale(11), Typeface = Fonts.Current.Regular };
-        var paddingPx = Globals.Rescale(HorizontalPadding);
-        var rowHeightPx = Globals.Rescale(RowHeight);
+        using SKFont font = new() { Size = _context.Rescale(11), Typeface = _context.Fonts.Regular };
+        var paddingPx = _context.Rescale(HorizontalPadding);
+        var rowHeightPx = _context.Rescale(RowHeight);
 
-        var width = Globals.Rescale(MinWidth);
+        var width = _context.Rescale(MinWidth);
         foreach (var item in items)
         {
             var textWidth = font.MeasureText(item.Label, out _);
@@ -70,17 +68,17 @@ internal sealed class ContextMenuOverlay
 
     public void Draw(SKCanvas canvas)
     {
-        var radius = Globals.RescaleExact(4f);
+        var radius = _context.RescaleExact(4f);
 
-        using (SKPaint bgPaint = new() { Color = Theme.Current.MenuBackground, IsAntialias = true, Style = SKPaintStyle.Fill })
+        using (SKPaint bgPaint = new() { Color = _context.Theme.MenuBackground, IsAntialias = true, Style = SKPaintStyle.Fill })
             canvas.DrawRoundRect(_bounds, radius, radius, bgPaint);
 
-        using (SKPaint borderPaint = new() { Color = Theme.Current.MenuBorder, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 })
+        using (SKPaint borderPaint = new() { Color = _context.Theme.MenuBorder, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 })
             canvas.DrawRoundRect(_bounds, radius, radius, borderPaint);
 
-        using SKFont font = new() { Size = Globals.Rescale(11), Typeface = Fonts.Current.Regular };
+        using SKFont font = new() { Size = _context.Rescale(11), Typeface = _context.Fonts.Regular };
         var rowH = RowHeightPx;
-        var textX = _bounds.Left + Globals.Rescale(HorizontalPadding);
+        var textX = _bounds.Left + _context.Rescale(HorizontalPadding);
 
         // Center on the font's actual glyph-box height (ascent + descent), not the
         // nominal font.Size - those two aren't equal, and using Size visibly throws
@@ -95,13 +93,13 @@ internal sealed class ContextMenuOverlay
 
             if (i == _hoveredIndex && item.IsEnabled)
             {
-                using SKPaint hoverPaint = new() { Color = Theme.Current.MenuItemHoverBackground, IsAntialias = true, Style = SKPaintStyle.Fill };
+                using SKPaint hoverPaint = new() { Color = _context.Theme.MenuItemHoverBackground, IsAntialias = true, Style = SKPaintStyle.Fill };
                 canvas.DrawRoundRect(new SKRect(_bounds.Left, rowTop, _bounds.Left + _bounds.Width, rowTop + rowH), radius, radius, hoverPaint);
             }
 
             using SKPaint textPaint = new()
             {
-                Color = item.IsEnabled ? Theme.Current.MenuTextPrimary : Theme.Current.MenuTextDisabled,
+                Color = item.IsEnabled ? _context.Theme.MenuTextPrimary : _context.Theme.MenuTextDisabled,
                 IsAntialias = true
             };
             canvas.DrawTextTopAligned(item.Label, textX, rowTop + ((rowH - textHeight) / 2f), SKTextAlign.Left, font, textPaint);

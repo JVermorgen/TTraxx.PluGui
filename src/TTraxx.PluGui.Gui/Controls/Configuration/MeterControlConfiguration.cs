@@ -1,7 +1,5 @@
-using TTraxx.PluGui.Gui.Controls.Configuration.Base;
-using TTraxx.PluGui.Gui.Controls.Configuration.Interfaces;
 
-namespace TTraxx.PluGui.Gui.Controls.Configuration;
+namespace TTraxx.PluGui.Gui;
 
 public sealed class MeterControlConfiguration() : ControlConfiguration, ISizedControlConfiguration
 {

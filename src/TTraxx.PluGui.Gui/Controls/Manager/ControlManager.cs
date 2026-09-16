@@ -1,6 +1,5 @@
 ﻿using SkiaSharp;
-using TTraxx.PluGui.Gui.Controls.Base;
-using TTraxx.PluGui.Gui.Input;
+using TTraxx.PluGui.Gui;
 
 namespace TTraxx.PluGui.Gui.Controls.Manager;
 
@@ -16,13 +15,13 @@ internal sealed class ControlManager : IDisposable
         IsAntialias = false // crisp 1px outline, no half-pixel blur
     };
 
-    private readonly List<AbstractControlBase> _controls = [];
-    private AbstractControlBase? _capturedControl;
-    private AbstractControlBase? _hoveredControl;
+    private readonly List<PluginControl> _controls = [];
+    private PluginControl? _capturedControl;
+    private PluginControl? _hoveredControl;
 
-    public void Add(AbstractControlBase control) => _controls.Add(control);
+    public void Add(PluginControl control) => _controls.Add(control);
 
-    public void Sync(IReadOnlyList<AbstractControlBase> desired)
+    public void Sync(IReadOnlyList<PluginControl> desired)
     {
         if (_capturedControl != null && !desired.Contains(_capturedControl))
             _capturedControl = null;
@@ -41,7 +40,7 @@ internal sealed class ControlManager : IDisposable
         _controls.AddRange(desired);
     }
 
-    /// <summary>showDebugBounds is decided by the caller (see AbstractWindowBase.ParticipatesInDebugBoundsOverlay) rather than read from Globals here, so a window can opt out regardless of the global flag.</summary>
+    /// <summary>showDebugBounds is decided by the caller (see PluginWindow.ParticipatesInDebugBoundsOverlay) rather than read from Globals here, so a window can opt out regardless of the global flag.</summary>
     public void Draw(SKCanvas canvas, bool showDebugBounds)
     {
         foreach (var control in _controls)
@@ -69,7 +68,7 @@ internal sealed class ControlManager : IDisposable
     }
 
     /// <summary>Used by the window layer to find the right-click target for a context menu, outside the normal pointer-event flow.</summary>
-    public AbstractControlBase? FindControlAt(int x, int y) => HitTestControls(x, y);
+    public PluginControl? FindControlAt(int x, int y) => HitTestControls(x, y);
 
     /// <summary>True when any current control (e.g. a level meter) needs the window to keep repainting on its own.</summary>
     public bool HasContinuousRepaintControls()
@@ -82,7 +81,7 @@ internal sealed class ControlManager : IDisposable
     }
 
     /// <summary>Back-to-front (reversed drawing order), so when overlapping the topmost (last drawn) control gets a hit first.</summary>
-    private AbstractControlBase? HitTestControls(int x, int y)
+    private PluginControl? HitTestControls(int x, int y)
     {
         for (var i = _controls.Count - 1; i >= 0; i--)
         {
@@ -92,7 +91,7 @@ internal sealed class ControlManager : IDisposable
         return null;
     }
 
-    private static PointerEventArgs ToLocal(AbstractControlBase control, int x, int y, KeyModifiers modifiers = KeyModifiers.None)
+    private static PointerEventArgs ToLocal(PluginControl control, int x, int y, KeyModifiers modifiers = KeyModifiers.None)
     => new(x - control.X, y - control.Y, modifiers);
 
     public void OnPointerDown(int x, int y, KeyModifiers modifiers = KeyModifiers.None)
@@ -142,7 +141,7 @@ internal sealed class ControlManager : IDisposable
     /// <summary>Called by the window when the pointer leaves it entirely.</summary>
     public void OnPointerLeaveWindow() => UpdateHover(null);
 
-    private void UpdateHover(AbstractControlBase? target)
+    private void UpdateHover(PluginControl? target)
     {
         if (ReferenceEquals(_hoveredControl, target)) return;
 

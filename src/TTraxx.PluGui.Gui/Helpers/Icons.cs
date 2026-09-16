@@ -1,6 +1,6 @@
 ﻿using SkiaSharp;
 
-namespace TTraxx.PluGui.Gui.Helpers;
+namespace TTraxx.PluGui.Gui;
 
 public static class Icons
 {

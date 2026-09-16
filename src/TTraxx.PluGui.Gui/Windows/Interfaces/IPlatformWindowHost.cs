@@ -1,9 +1,8 @@
 ﻿using SkiaSharp;
-using TTraxx.PluGui.Gui.Input;
 
-namespace TTraxx.PluGui.Gui.Windows.Interfaces;
+namespace TTraxx.PluGui.Gui;
 
-/// <summary>Implement this in AbstractWindowBase — receives callbacks from the platform layer, without AbstractWindowBase needing to know anything about Win32/Cocoa/X11.</summary>
+/// <summary>Implement this in PluginWindow — receives callbacks from the platform layer, without PluginWindow needing to know anything about Win32/Cocoa/X11.</summary>
 internal interface IPlatformWindowHost
 {
     void OnPaint(SKCanvas canvas, int width, int height);

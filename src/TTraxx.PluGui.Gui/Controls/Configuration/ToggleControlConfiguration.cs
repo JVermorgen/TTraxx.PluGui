@@ -1,7 +1,6 @@
-﻿using TTraxx.PluGui.Gui.Controls.Configuration.Base;
-using TTraxx.PluGui.Gui.Controls.Configuration.Interfaces;
+﻿using TTraxx.PluGui.Gui;
 
-namespace TTraxx.PluGui.Gui.Controls.Configuration;
+namespace TTraxx.PluGui.Gui;
 
 public class ToggleControlConfiguration() : ParameterControlConfiguration, ISizedControlConfiguration
 {

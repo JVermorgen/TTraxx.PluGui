@@ -1,4 +1,4 @@
-namespace TTraxx.PluGui.Gui.Windows.Interfaces;
+namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// <para>

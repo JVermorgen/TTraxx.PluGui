@@ -1,22 +1,13 @@
 ﻿using SkiaSharp;
-using TTraxx.PluGui.Gui.Controls.Base;
-using TTraxx.PluGui.Gui.Controls.Configuration;
-using TTraxx.PluGui.Gui.Controls.Configuration.Base;
-using TTraxx.PluGui.Gui.Controls.Configuration.Base.Interfaces;
-using TTraxx.PluGui.Gui.Helpers;
-using TTraxx.PluGui.Gui.Helpers.Extensions;
-using TTraxx.PluGui.Gui.Helpers.Theming;
-using TTraxx.PluGui.Gui.Helpers.Typography;
-using TTraxx.PluGui.Gui.Input;
 
-namespace TTraxx.PluGui.Gui.Controls;
+namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// Rotary knob: background arc, filled value arc, pointer line. Vertical
 /// drag changes the value; wheel and double-click-to-default are supported.
 /// Geometry and feel are configurable through KnobStyle.
 /// </summary>
-public sealed class KnobControl(KnobControlConfiguration config) : AbstractControlBase(config)
+public sealed class KnobControl(KnobControlConfiguration config) : PluginControl(config)
 {
     private const double SkiaArcStartAngleDeg = 135;
 
@@ -30,9 +21,9 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
     private int RadiusFor(ControlSizes size)
         => Style.Radii.TryGetValue(size, out var r) ? r : KnobStyle.Default.Radii[size];
 
-    private float Radius => Math.Max(2, (Globals.Rescale(RadiusFor(config.ControlSize)) / 2f) - Globals.Rescale(2));
+    private float Radius => Math.Max(2, (Rescale(RadiusFor(config.ControlSize)) / 2f) - Rescale(2));
     private float CenterX => _w / 2f;
-    private float CenterY => (Globals.Rescale(RadiusFor(config.ControlSize)) / 2f) + Globals.Rescale(21);
+    private float CenterY => (Rescale(RadiusFor(config.ControlSize)) / 2f) + Rescale(21);
 
     public override void OnPointerDown(PointerEventArgs e)
     {
@@ -138,14 +129,14 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
         var filledSweep = Style.SweepDeg * value;
 
         var trackColor = enabled
-                            ? Theme.Current.AccentDim
-                            : Theme.Current.AccentDim.WithAlpha(40);
+                            ? Theme.AccentDim
+                            : Theme.AccentDim.WithAlpha(40);
         var valueColor = !enabled
-                            ? Theme.Current.Accent.WithAlpha(60)
-                            : _isDragging || IsHovered ? Theme.Current.Accent2 : Theme.Current.Accent;
+                            ? Theme.Accent.WithAlpha(60)
+                            : _isDragging || IsHovered ? Theme.Accent2 : Theme.Accent;
         var pointerColor = enabled
-                            ? Theme.Current.TextPrimary
-                            : Theme.Current.TextPrimary.WithAlpha(70);
+                            ? Theme.TextPrimary
+                            : Theme.TextPrimary.WithAlpha(70);
 
         if (Parameter.Info.PositionCount is int positionCount && positionCount > 1)
         {
@@ -156,7 +147,7 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
             {
                 Color = trackColor,
                 IsAntialias = true,
-                StrokeWidth = Globals.RescaleExact(1.0f),
+                StrokeWidth = RescaleExact(1.0f),
                 StrokeCap = SKStrokeCap.Butt
             };
 
@@ -173,8 +164,8 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
         }
 
         var isXL = config.ControlSize == ControlSizes.XL;
-        var trackWidth = Globals.RescaleExact(isXL ? Style.TrackStrokeWidthXL : Style.TrackStrokeWidth);
-        var valueWidth = Globals.RescaleExact(isXL ? Style.ValueStrokeWidthXL : Style.ValueStrokeWidth);
+        var trackWidth = RescaleExact(isXL ? Style.TrackStrokeWidthXL : Style.TrackStrokeWidth);
+        var valueWidth = RescaleExact(isXL ? Style.ValueStrokeWidthXL : Style.ValueStrokeWidth);
 
         SKRect arcRect = new(cx - drawRadius, cy - drawRadius, cx + drawRadius, cy + drawRadius);
 
@@ -209,7 +200,7 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
         {
             Color = pointerColor,
             IsAntialias = true,
-            StrokeWidth = Globals.RescaleExact(1.3f),
+            StrokeWidth = RescaleExact(1.3f),
             StrokeCap = SKStrokeCap.Round
         })
         {
@@ -220,39 +211,39 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
         }
 
         using SKPaint fontPaint = new() { IsAntialias = true };
-        using SKFont font = new() { Size = Globals.Rescale(11), Typeface = Fonts.Current.Bold };
-        using SKFont smallFont = new() { Size = Globals.Rescale(8), Typeface = Fonts.Current.Regular };
+        using SKFont font = new() { Size = Rescale(11), Typeface = Fonts.Bold };
+        using SKFont smallFont = new() { Size = Rescale(8), Typeface = Fonts.Regular };
 
         var knobBottom = cy + drawRadius;
-        var titleY = knobBottom + Globals.Rescale(12);
-        if (titleY + Globals.Rescale(11) <= _h)
+        var titleY = knobBottom + Rescale(12);
+        if (titleY + Rescale(11) <= _h)
         {
-            fontPaint.Color = enabled ? Theme.Current.TextDim : Theme.Current.TextDisabled;
+            fontPaint.Color = enabled ? Theme.TextDim : Theme.TextDisabled;
             canvas.DrawTextTopAligned(Parameter.Info.Label, cx, titleY, SKTextAlign.Center, font, fontPaint);
         }
 
-        var rangeY = titleY - Globals.Rescale(15);
-        if (rangeY + Globals.Rescale(9) <= _h)
+        var rangeY = titleY - Rescale(15);
+        if (rangeY + Rescale(9) <= _h)
         {
             if (Parameter.Info.PositionCount is int)
             {
-                fontPaint.Color = enabled ? Theme.Current.Accent : Theme.Current.TextDisabled;
+                fontPaint.Color = enabled ? Theme.Accent : Theme.TextDisabled;
                 canvas.DrawTextTopAligned(FormatValue(value), cx, rangeY, SKTextAlign.Center, smallFont, fontPaint);
             }
             else
             {
-                fontPaint.Color = enabled ? Theme.Current.TextDim : Theme.Current.TextDisabled;
+                fontPaint.Color = enabled ? Theme.TextDim : Theme.TextDisabled;
                 canvas.DrawTextTopAligned(Parameter.MinValue.Format(Parameter.Info.Unit),
-                    Globals.Rescale(5), rangeY, SKTextAlign.Left, smallFont, fontPaint);
+                    Rescale(5), rangeY, SKTextAlign.Left, smallFont, fontPaint);
                 canvas.DrawTextTopAligned(Parameter.MaxValue.Format(Parameter.Info.Unit),
-                    _w - Globals.Rescale(5), rangeY, SKTextAlign.Right, smallFont, fontPaint);
+                    _w - Rescale(5), rangeY, SKTextAlign.Right, smallFont, fontPaint);
             }
         }
 
         if (_isDragging && Parameter.Info.PositionCount is null)
         {
-            var liveY = Math.Max(0, cy - drawRadius - Globals.RescaleExact(18));
-            fontPaint.Color = Theme.Current.Accent2;
+            var liveY = Math.Max(0, cy - drawRadius - RescaleExact(18));
+            fontPaint.Color = Theme.Accent2;
             canvas.DrawTextTopAligned(FormatValue(value), cx, liveY, SKTextAlign.Center, font, fontPaint);
         }
     }

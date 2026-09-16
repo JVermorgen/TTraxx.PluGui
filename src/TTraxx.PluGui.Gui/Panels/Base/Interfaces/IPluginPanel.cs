@@ -1,11 +1,10 @@
 ﻿using SkiaSharp;
-using TTraxx.PluGui.Gui.Controls.Base;
 
-namespace TTraxx.PluGui.Gui.Panels.Base.Interfaces;
+namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// Minimal drawing contract for reusable panel chrome. Unlike
-/// AbstractControlBase, a panel has no parameter binding, no
+/// PluginControl, a panel has no parameter binding, no
 /// pointer events, and no coordinate transformation of its own: the canvas
 /// that comes in here is the same canvas as in DrawBackground — so
 /// absolute, window-relative coordinates, not the per-control local
@@ -22,11 +21,11 @@ public interface IPluginPanel
     /// relativeX/relativeY, are relative to the top-left corner of the panel
     /// (Left/Top from the configuration); the panel converts that itself.
     /// Call this ONCE (e.g., in the window constructor), never from
-    /// GetLayout itself: that's called multiple times per session (on
+    /// BuildLayout() itself: that's called multiple times per session (on
     /// attach and on every resize) and would grow the list on re-registration.
     /// </summary>
-    ControlPlacement AddControl(AbstractControlBase control, int relativeX, int relativeY, int width, int height);
+    ControlPlacement AddControl(PluginControl control, int relativeX, int relativeY, int width, int height);
 
-    /// <summary>All registered children, with ABSOLUTE (window-relative) coordinates — directly usable in GetLayout.</summary>
+    /// <summary>All registered children, with ABSOLUTE (window-relative) coordinates — directly yield-returnable from a window's BuildLayout().</summary>
     IReadOnlyList<ControlPlacement> Controls { get; }
 }

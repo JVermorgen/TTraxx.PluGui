@@ -5,7 +5,7 @@ using TTraxx.PluGui.Gui.Platform.Win32.Internal;
 using TTraxx.PluGui.Gui.Platform.Win32.Internal.Constants;
 using TTraxx.PluGui.Gui.Platform.Win32.Internal.Helpers;
 using TTraxx.PluGui.Gui.Platform.Win32.Internal.Structs;
-using TTraxx.PluGui.Gui.Windows.Interfaces;
+using TTraxx.PluGui.Gui;
 
 namespace TTraxx.PluGui.Gui.Platform.Win32;
 

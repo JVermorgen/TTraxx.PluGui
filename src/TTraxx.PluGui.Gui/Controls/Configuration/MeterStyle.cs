@@ -1,6 +1,6 @@
 using SkiaSharp;
 
-namespace TTraxx.PluGui.Gui.Controls.Configuration;
+namespace TTraxx.PluGui.Gui;
 
 public sealed record MeterStyle
 {

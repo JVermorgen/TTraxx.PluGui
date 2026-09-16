@@ -1,6 +1,6 @@
 ﻿using System.Reflection.Metadata;
+using TTraxx.PluGui.Gui;
 using TTraxx.PluGui.Gui.Helpers.HotReload;
-using TTraxx.PluGui.Gui.Helpers.Typography;
 
 [assembly: MetadataUpdateHandler(typeof(GuiCacheUpdateHandler))]
 
@@ -24,14 +24,14 @@ internal static class GuiCacheUpdateHandler
         if (updatedTypes is null)
         {
             Icons.InvalidateCache();
-            Fonts.InvalidateCache();
+            PluginDefaults.InvalidateFontCache();
             return;
         }
 
         foreach (var type in updatedTypes)
         {
             if (type == typeof(Icons)) Icons.InvalidateCache();
-            if (type == typeof(DefaultPluginFonts) || type == typeof(Fonts)) Fonts.InvalidateCache();
+            if (type == typeof(DefaultPluginFonts) || type == typeof(PluginDefaults)) PluginDefaults.InvalidateFontCache();
         }
     }
 

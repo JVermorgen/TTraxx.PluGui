@@ -1,12 +1,8 @@
 ﻿using SkiaSharp;
-using TTraxx.PluGui.Gui.Controls.Configuration.Base.Interfaces;
-using TTraxx.PluGui.Gui.Controls.Configuration.Interfaces;
-using TTraxx.PluGui.Gui.Helpers;
-using TTraxx.PluGui.Gui.Input;
 
-namespace TTraxx.PluGui.Gui.Controls.Base;
+namespace TTraxx.PluGui.Gui;
 
-public abstract class AbstractControlBase(IControlConfiguration config) : IDisposable
+public abstract class PluginControl(IControlConfiguration config) : IDisposable
 {
     protected int _x;
     protected int _y;
@@ -18,7 +14,32 @@ public abstract class AbstractControlBase(IControlConfiguration config) : IDispo
 
     private Action? _invalidateRequest;
 
+    // Replaced by the owning window's context in SetBounds(). The stand-in keeps an unplaced
+    // control drawable at scale 1 with the default theme, rather than throwing mid-paint.
+    private RenderContext _context = new();
+
     protected IControlConfiguration Config { get; } = config;
+
+    /// <summary>
+    /// Scale, theme and fonts of the window this control belongs to. Assigned when the window lays
+    /// the control out; see <see cref="RenderContext"/> for why this isn't global state.
+    /// </summary>
+    protected RenderContext Context => _context;
+
+    /// <summary>Scales a design-unit length to whole pixels, at this control's window scale.</summary>
+    protected int Rescale(float designUnits) => _context.Rescale(designUnits);
+
+    /// <summary>Scales a design-unit length without rounding, at this control's window scale.</summary>
+    protected float RescaleExact(float designUnits) => _context.RescaleExact(designUnits);
+
+    /// <summary>This control's window theme.</summary>
+    protected IPluginTheme Theme => _context.Theme;
+
+    /// <summary>The metallic-panel colors of this control's window theme.</summary>
+    protected IMetallicPanelTheme MetallicTheme => _context.MetallicTheme;
+
+    /// <summary>This control's window fonts.</summary>
+    protected IPluginFonts Fonts => _context.Fonts;
 
     protected Guid Id => Config.Id;
     public int X => _x;
@@ -39,13 +60,20 @@ public abstract class AbstractControlBase(IControlConfiguration config) : IDispo
 
     public void Refresh() => _invalidateRequest?.Invoke();
 
-    /// <summary>Bounds are given in unscaled design units and rescaled here.</summary>
-    public void SetBounds(int x, int y, int w, int h)
+    /// <summary>
+    /// Bounds are given in unscaled design units and rescaled here. <paramref name="context"/> is the
+    /// owning window's - it's adopted by this control and used for every later scale/theme/font
+    /// lookup, including from HitTest and pointer handlers, so a window re-applies its layout after
+    /// the host changes scale.
+    /// </summary>
+    public void SetBounds(int x, int y, int w, int h, RenderContext context)
     {
-        _x = Globals.Rescale(x);
-        _y = Globals.Rescale(y);
-        _w = Globals.Rescale(w);
-        _h = Globals.Rescale(h);
+        _context = context;
+
+        _x = context.Rescale(x);
+        _y = context.Rescale(y);
+        _w = context.Rescale(w);
+        _h = context.Rescale(h);
     }
 
     public void SetContainerBackgroundReference(int containerW, int containerH)

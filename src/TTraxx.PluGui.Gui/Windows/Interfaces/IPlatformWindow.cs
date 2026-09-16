@@ -1,4 +1,4 @@
-﻿namespace TTraxx.PluGui.Gui.Windows.Interfaces;
+﻿namespace TTraxx.PluGui.Gui;
 
 /// <summary>Implemented per platform (Win32PlatformWindow, MacOsPlatformWindow, LinuxPlatformWindow). Manages the native window + the shared Skia surface, and routes all events to the host.</summary>
 internal interface IPlatformWindow

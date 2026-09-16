@@ -1,11 +1,11 @@
 ﻿using NPlug;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using TTraxx.PluGui.Gui.Helpers;
+using TTraxx.PluGui.Gui;
 using TTraxx.PluGui.Harness.NPlug.Core;
 using TTraxx.PluGui.Harness.NPlug.Core.Helpers;
 using TTraxx.PluGui.Harness.NPlug.Core.Interfaces;
-using TTraxx.PluGui.NPlug.Interfaces;
+using TTraxx.PluGui.NPlug;
 
 namespace TTraxx.PluGui.Harness.NPlug.Runners.Win32;
 
@@ -37,7 +37,7 @@ public sealed class Win32HarnessRunner : IHarnessRunner
     // Dev-tool settings bar shown above the plugin view - see HarnessSettingsPanel.
     // _containerHwnd is a plain, undecorated child window that exists purely to
     // offset the plugin's own view down by the bar's height; the plugin's
-    // AbstractWindowBase always attaches at (0,0) relative to whatever parent
+    // PluginWindow always attaches at (0,0) relative to whatever parent
     // it's given, so it can't be positioned directly against the top-level hwnd.
     private static nint _containerHwnd;
     private static HarnessSettingsPanel? _settingsPanel;
@@ -48,13 +48,13 @@ public sealed class Win32HarnessRunner : IHarnessRunner
     public void Run(IHarnessPlugin plugin)
     {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-        Globals.ScaleFactor = 1.0f; // safe baseline; Attached() immediately detects the actual scale
+        // Bar height starts unscaled; Attached() below determines the real scale and it is redone.
 
         var view = plugin.Create();
         var initialSize = view.Size;
         var contentWidth = initialSize.Right - initialSize.Left;
         var contentHeight = initialSize.Bottom - initialSize.Top;
-        _barHeightPhysical = Globals.Rescale(HarnessSettingsPanel.Height); // corrected below once Attached() knows the real DPI scale
+        _barHeightPhysical = HarnessSettingsPanel.Height; // corrected below once Attached() knows the real DPI scale
         (var windowWidth, var windowHeight) = ToWindowSize(contentWidth, contentHeight + _barHeightPhysical);
 
         var hInstance = GetModuleHandle(null);
@@ -75,7 +75,7 @@ public sealed class Win32HarnessRunner : IHarnessRunner
             CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nint.Zero, nint.Zero, hInstance, nint.Zero);
         if (hwnd == nint.Zero) throw new InvalidOperationException("CreateWindowExW failed.");
 
-        // Plain positioning window: the plugin's own AbstractWindowBase always
+        // Plain positioning window: the plugin's own PluginWindow always
         // attaches at (0,0) relative to whatever parent it's given, so the only
         // way to push its content down below the settings bar is to give it a
         // parent that is itself already offset.
@@ -88,14 +88,16 @@ public sealed class Win32HarnessRunner : IHarnessRunner
         // Attached() has just determined the real DPI scale (and already triggered
         // one resize using the baseline bar height above) - redo it now that both
         // the bar height and the plugin's own scaled content size are final.
-        _barHeightPhysical = Globals.Rescale(HarnessSettingsPanel.Height);
+        _typedView = view as IPluGuiPluginView;
+        var harnessScale = _typedView?.Scale ?? 1.0f;
+        _barHeightPhysical = (int)Math.Round(harnessScale * HarnessSettingsPanel.Height);
         var finalSize = view.Size;
         ResizeWindow(hwnd, finalSize.Right - finalSize.Left, finalSize.Bottom - finalSize.Top);
 
         _settingsPanel = new HarnessSettingsPanel(plugin.AlwaysOnTop, onTop => SetAlwaysOnTop(hwnd, onTop));
+        _settingsPanel.Context.Scale = harnessScale; // match the plugin editor, so the bar scales with it
         _settingsPanel.AttachToParent(hwnd, finalSize.Right - finalSize.Left, _barHeightPhysical);
 
-        _typedView = view as IPluGuiPluginView;
 
         if (_typedView is null)
         {

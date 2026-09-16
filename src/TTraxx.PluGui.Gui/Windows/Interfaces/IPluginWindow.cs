@@ -1,18 +1,26 @@
-namespace TTraxx.PluGui.Gui.Windows.Interfaces;
+
+namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// Everything a HOST needs from a plugin window - a VST3 editor view, the GUI harness,
 /// or any other embedder. This is the "drive it" half of a window; the "describe its
 /// content" half (BuildLayout/DrawBackground/Place/...) lives on
-/// <see cref="Base.AbstractWindowBase"/> and is not part of this contract.
+/// <see cref="PluginWindow"/> and is not part of this contract.
 ///
-/// Derive a window from <see cref="Base.AbstractWindowBase"/> (which implements this) -
+/// Derive a window from <see cref="PluginWindow"/> (which implements this) -
 /// implementing this interface directly means reimplementing the control cache, layout
 /// and input routing by hand. Depend on THIS type in host-side code, so an adapter can
 /// be exercised without a native window.
 /// </summary>
 public interface IPluginWindow
 {
+    /// <summary>
+    /// This window's scale, theme and fonts. A host sets <see cref="RenderContext.Scale"/> here from
+    /// the DPI/content scale it reports, then calls <see cref="SetBounds"/> so the new scale is
+    /// applied to the layout. Per window rather than per process - see <see cref="RenderContext"/>.
+    /// </summary>
+    RenderContext Context { get; }
+
     /// <summary>
     /// Creates the native platform window as a child of <paramref name="parentHandle"/> and runs the
     /// first layout build. Call once, when the host (VST3 editor, harness, ...) attaches
@@ -22,19 +30,29 @@ public interface IPluginWindow
     /// <param name="width">Initial window width, in the same (unscaled) units passed to <see cref="SetBounds"/>.</param>
     /// <param name="height">Initial window height.</param>
     /// <returns><c>false</c> if the platform layer failed to attach (e.g. invalid handle); the window is unusable in that case.</returns>
+    /// <exception cref="InvalidOperationException">This window is already attached - use one window instance per host view.</exception>
+    /// <exception cref="ObjectDisposedException">This window has already been destroyed.</exception>
     bool AttachToParent(nint parentHandle, int width, int height);
 
     /// <summary>
     /// Resizes/repositions the native window and re-applies the current layout against the new size
     /// (controls don't get rebuilt - only re-bounded), then repaints. Call whenever the host resizes
-    /// the plugin view (e.g. the user dragging the editor's corner).
+    /// the plugin view (e.g. the user dragging the editor's corner). No-op once the window has been
+    /// destroyed, so a deferred resize that races teardown is safe.
     /// </summary>
     void SetBounds(int x, int y, int width, int height);
 
-    /// <summary>Requests a repaint without changing layout or control state - e.g. after a model value changed outside of user input.</summary>
+    /// <summary>
+    /// Requests a repaint without changing layout or control state - e.g. after a model value changed
+    /// outside of user input. No-op once the window has been destroyed, so a host refresh timer that
+    /// outlives the view is safe.
+    /// </summary>
     void RefreshUI();
 
-    /// <summary>Tears down the native platform window. Call once, when the host detaches/closes the plugin view.</summary>
+    /// <summary>
+    /// Tears down the native platform window. Call when the host detaches/closes the plugin view.
+    /// Idempotent: a second call is a no-op, so overlapping teardown paths are safe.
+    /// </summary>
     void Destroy();
 
     /// <summary>

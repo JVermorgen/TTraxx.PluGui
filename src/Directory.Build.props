@@ -16,5 +16,13 @@
          are self-explanatory. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <!-- Public API tracking (PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt next to the csproj):
+         RS0016 = a public member that is not recorded, RS0017 = a recorded member that is gone.
+         Errors rather than warnings, so a change to a package surface cannot slip through CI.
+         To record the current surface after an intentional change, run from src/:
+           dotnet format analyzers PROJ/PROJ.csproj (with: diagnostics RS0016, severity warn)
+         and move entries from Unshipped to Shipped when a version is released. -->
+    <WarningsAsErrors>$(WarningsAsErrors);RS0016;RS0017</WarningsAsErrors>
   </PropertyGroup>
 </Project>

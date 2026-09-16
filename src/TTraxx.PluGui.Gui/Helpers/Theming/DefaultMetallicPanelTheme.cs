@@ -1,7 +1,6 @@
 ﻿using SkiaSharp;
-using TTraxx.PluGui.Gui.Helpers.Theming.Interfaces;
 
-namespace TTraxx.PluGui.Gui.Helpers.Theming;
+namespace TTraxx.PluGui.Gui;
 
 public sealed class DefaultMetallicPanelTheme : IMetallicPanelTheme
 {

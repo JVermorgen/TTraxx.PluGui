@@ -1,5 +1,5 @@
-﻿using TTraxx.PluGui.Gui.Controls.Configuration.Interfaces;
+﻿using TTraxx.PluGui.Gui;
 
-namespace TTraxx.PluGui.Gui.Controls.Configuration.Base;
+namespace TTraxx.PluGui.Gui;
 
 public abstract class ParameterControlConfiguration : ControlConfiguration, IParameterControlConfiguration;

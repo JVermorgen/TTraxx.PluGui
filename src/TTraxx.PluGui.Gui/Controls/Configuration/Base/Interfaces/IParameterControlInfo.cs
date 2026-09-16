@@ -1,4 +1,4 @@
-﻿namespace TTraxx.PluGui.Gui.Controls.Configuration.Base.Interfaces;
+﻿namespace TTraxx.PluGui.Gui;
 
 public interface IParameterControlInfo
 {

@@ -1,4 +1,4 @@
-﻿namespace TTraxx.PluGui.Gui.Controls.Configuration.Interfaces;
+﻿namespace TTraxx.PluGui.Gui;
 
 public interface IControlConfiguration
 {

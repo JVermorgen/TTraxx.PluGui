@@ -1,10 +1,5 @@
 using SkiaSharp;
-using TTraxx.PluGui.Gui.Controls.Base;
-using TTraxx.PluGui.Gui.Controls.Configuration;
-using TTraxx.PluGui.Gui.Controls.Configuration.Base;
-using TTraxx.PluGui.Gui.Helpers;
-using TTraxx.PluGui.Gui.Helpers.Theming;
-using TTraxx.PluGui.Gui.Windows.Base;
+using TTraxx.PluGui.Gui;
 using TTraxx.PluGui.Harness.NPlug.Core.Controls;
 
 namespace TTraxx.PluGui.Harness.NPlug.Core;
@@ -18,7 +13,7 @@ namespace TTraxx.PluGui.Harness.NPlug.Core;
 /// automatically matches the loaded plugin's theme, and is never part of a
 /// shipped plugin - only the harness runners construct one.
 /// </summary>
-public sealed class HarnessSettingsPanel(bool initialAlwaysOnTop, Action<bool> onAlwaysOnTopChanged) : AbstractWindowBase
+public sealed class HarnessSettingsPanel(bool initialAlwaysOnTop, Action<bool> onAlwaysOnTopChanged) : PluginWindow
 {
     /// <summary>Logical (unscaled) height - rescaled the same way as everything else this window lays out, so it stays proportional at high DPI.</summary>
     public const int Height = 50;
@@ -73,14 +68,14 @@ public sealed class HarnessSettingsPanel(bool initialAlwaysOnTop, Action<bool> o
     {
         using SKPaint bgPaint = new()
         {
-            Color = Theme.Current.MenuBackground,
+            Color = Theme.MenuBackground,
             Style = SKPaintStyle.Fill
         };
         canvas.DrawRect(0, 0, width, height, bgPaint);
 
         using SKPaint borderPaint = new()
         {
-            Color = Theme.Current.MenuBorder,
+            Color = Theme.MenuBorder,
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1
         };

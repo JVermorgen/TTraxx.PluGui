@@ -1,0 +1,38 @@
+abstract TTraxx.PluGui.NPlug.PluginView<TWindow>.CreateWindow() -> TWindow!
+TTraxx.PluGui.NPlug.IPluGuiPluginView
+TTraxx.PluGui.NPlug.IPluGuiPluginView.EventPumpSource.get -> TTraxx.PluGui.Gui.IEventPumpSource?
+TTraxx.PluGui.NPlug.IPluGuiPluginView.RebuildControls() -> void
+TTraxx.PluGui.NPlug.IPluGuiPluginView.RefreshUI() -> void
+TTraxx.PluGui.NPlug.IPluGuiPluginView.Scale.get -> float
+TTraxx.PluGui.NPlug.PluginView<TWindow>
+TTraxx.PluGui.NPlug.PluginView<TWindow>.ApplyScaleAndResize() -> void
+TTraxx.PluGui.NPlug.PluginView<TWindow>.EventPumpSource.get -> TTraxx.PluGui.Gui.IEventPumpSource?
+TTraxx.PluGui.NPlug.PluginView<TWindow>.Frame.get -> NPlug.IAudioPluginFrame?
+TTraxx.PluGui.NPlug.PluginView<TWindow>.GetScaledSize() -> (int Width, int Height)
+TTraxx.PluGui.NPlug.PluginView<TWindow>.PluginView(int baseWidth, int baseHeight) -> void
+TTraxx.PluGui.NPlug.PluginView<TWindow>.RebuildControls() -> void
+TTraxx.PluGui.NPlug.PluginView<TWindow>.RefreshUI() -> void
+TTraxx.PluGui.NPlug.PluginView<TWindow>.Scale.get -> float
+TTraxx.PluGui.NPlug.PluginView<TWindow>.TryRegisterRunLoop() -> void
+TTraxx.PluGui.NPlug.PluginView<TWindow>.Window.get -> TWindow?
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.Attached(nint parent, NPlug.AudioPluginViewPlatform type) -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.CanResize() -> bool
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.CheckSizeConstraint(ref NPlug.ViewRectangle rect) -> bool
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.IsPlatformTypeSupported(NPlug.AudioPluginViewPlatform type) -> bool
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.MaxScale.get -> float
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.MinScale.get -> float
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.OnEditorClosed() -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.OnFocus(bool state) -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.OnKeyDown(ushort key, short keyCode, short modifiers) -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.OnKeyUp(ushort key, short keyCode, short modifiers) -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.OnRegisterRunLoop(NPlug.IAudioPluginFrame! frame, TTraxx.PluGui.Gui.IEventPumpSource? eventPump, TTraxx.PluGui.Gui.ITimerPumpSource? timerPump) -> bool
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.OnSize(NPlug.ViewRectangle newSize) -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.OnUnregisterRunLoop() -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.OnWheel(float distance) -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.Removed() -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.SetContentScaleFactor(float factor) -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.SetFrame(NPlug.IAudioPluginFrame! frame) -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.Size.get -> NPlug.ViewRectangle
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.SupportedPlatforms.get -> NPlug.AudioPluginViewPlatform[]!
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.TryFindParameter(int xPos, int yPos, out NPlug.AudioParameterId parameterId) -> bool
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.UserUiScale.get -> float

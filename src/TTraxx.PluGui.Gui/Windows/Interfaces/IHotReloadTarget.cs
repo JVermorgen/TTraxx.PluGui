@@ -1,4 +1,4 @@
-namespace TTraxx.PluGui.Gui.Windows.Interfaces;
+namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// Dev-tooling only: re-runs a window's layout build so Hot Reload can pick up changed

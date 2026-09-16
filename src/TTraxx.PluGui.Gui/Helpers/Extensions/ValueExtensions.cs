@@ -1,4 +1,4 @@
-﻿namespace TTraxx.PluGui.Gui.Helpers.Extensions;
+﻿namespace TTraxx.PluGui.Gui;
 
 public static class ValueExtensions
 {

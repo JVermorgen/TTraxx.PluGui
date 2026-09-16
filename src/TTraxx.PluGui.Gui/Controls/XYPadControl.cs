@@ -1,20 +1,13 @@
 ﻿using SkiaSharp;
-using TTraxx.PluGui.Gui.Controls.Base;
-using TTraxx.PluGui.Gui.Controls.Configuration;
-using TTraxx.PluGui.Gui.Controls.Configuration.Base.Interfaces;
-using TTraxx.PluGui.Gui.Helpers;
-using TTraxx.PluGui.Gui.Helpers.Extensions;
-using TTraxx.PluGui.Gui.Helpers.Theming;
-using TTraxx.PluGui.Gui.Input;
 
-namespace TTraxx.PluGui.Gui.Controls;
+namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// Square 2D pad with a glowing dot at the current (X, Y) position, optional
 /// corner glyphs, and an optional read-only modulation-target indicator.
 /// Dragging positions the dot absolutely under the cursor.
 /// </summary>
-public sealed class XYPadControl(XYPadControlConfiguration config) : AbstractControlBase(config)
+public sealed class XYPadControl(XYPadControlConfiguration config) : PluginControl(config)
 {
     private double _xValue = config.XParameter.Normalized;
     private double _yValue = config.YParameter.Normalized;
@@ -85,18 +78,18 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : AbstractCon
             _yValue = config.YParameter.Normalized;
         }
 
-        var radius = Globals.Rescale(Style.CornerRadius);
+        var radius = Rescale(Style.CornerRadius);
 
         using (SKPaint borderPaint = new()
         {
-            Color = Theme.Current.XYPanelBorder,
+            Color = Theme.XYPanelBorder,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 2
         })
         {
-            var bgCenter = Theme.Current.XYPanelBackgroundShadow;
-            var bgSide = Theme.Current.XYPanelBackgroundHighlight;
+            var bgCenter = Theme.XYPanelBackgroundShadow;
+            var bgSide = Theme.XYPanelBackgroundHighlight;
             var w = _w - 1;
             var h = _h - 1;
             var gradientRadius = Math.Max(w, h) * 0.75f;
@@ -107,7 +100,7 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : AbstractCon
 
         using (SKPaint gridPaint = new()
         {
-            Color = Theme.Current.TrackBackground,
+            Color = Theme.TrackBackground,
             IsAntialias = false,
             StrokeWidth = 1
         })
@@ -121,12 +114,12 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : AbstractCon
         var dotX = (int)(_xValue * _w);
         var dotY = (int)(_yValue * _h);
 
-        using SKPaint glowOuter = new() { Color = Theme.Current.GlowOuter, IsAntialias = true, Style = SKPaintStyle.Fill };
-        using SKPaint glowMid = new() { Color = Theme.Current.GlowMid, IsAntialias = true, Style = SKPaintStyle.Fill };
-        using SKPaint glowCore = new() { Color = Theme.Current.GlowCore, IsAntialias = true, Style = SKPaintStyle.Fill };
-        canvas.DrawCircle(dotX, dotY, Globals.Rescale(Style.GlowOuterRadius), glowOuter);
-        canvas.DrawCircle(dotX, dotY, Globals.Rescale(Style.GlowMidRadius), glowMid);
-        canvas.DrawCircle(dotX, dotY, Globals.Rescale(Style.GlowCoreRadius), glowCore);
+        using SKPaint glowOuter = new() { Color = Theme.GlowOuter, IsAntialias = true, Style = SKPaintStyle.Fill };
+        using SKPaint glowMid = new() { Color = Theme.GlowMid, IsAntialias = true, Style = SKPaintStyle.Fill };
+        using SKPaint glowCore = new() { Color = Theme.GlowCore, IsAntialias = true, Style = SKPaintStyle.Fill };
+        canvas.DrawCircle(dotX, dotY, Rescale(Style.GlowOuterRadius), glowOuter);
+        canvas.DrawCircle(dotX, dotY, Rescale(Style.GlowMidRadius), glowMid);
+        canvas.DrawCircle(dotX, dotY, Rescale(Style.GlowCoreRadius), glowCore);
 
         DrawModulationIndicator(canvas, dotX, dotY);
     }
@@ -135,15 +128,15 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : AbstractCon
     {
         if (Style.CornerIcons is not { Count: > 0 } icons) return;
 
-        var dimColor = Theme.Current.TextDim;
-        float iconW = Globals.Rescale(Style.IconWidth);
-        float iconH = Globals.Rescale(Style.IconHeight);
-        var strokeW = Globals.RescaleExact(Style.IconStrokeWidth);
+        var dimColor = Theme.TextDim;
+        float iconW = Rescale(Style.IconWidth);
+        float iconH = Rescale(Style.IconHeight);
+        var strokeW = RescaleExact(Style.IconStrokeWidth);
 
-        var topY = Globals.Rescale(10) + (iconH / 2f);
-        var bottomY = _h - Globals.Rescale(24) + (iconH / 2f);
-        var leftX = Globals.Rescale(10) + (iconW / 2f);
-        var rightX = _w - Globals.Rescale(38) + (iconW / 2f);
+        var topY = Rescale(10) + (iconH / 2f);
+        var bottomY = _h - Rescale(24) + (iconH / 2f);
+        var leftX = Rescale(10) + (iconW / 2f);
+        var rightX = _w - Rescale(38) + (iconW / 2f);
 
         // Clockwise from top-left: TL, TR, BL, BR.
         ReadOnlySpan<(float X, float Y)> positions =
@@ -169,20 +162,20 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : AbstractCon
 
         using SKPaint linePaint = new()
         {
-            Color = Theme.Current.Accent2.WithAlpha(140),
+            Color = Theme.Accent2.WithAlpha(140),
             IsAntialias = true,
-            StrokeWidth = Globals.RescaleExact(1.2f),
-            PathEffect = SKPathEffect.CreateDash([Globals.RescaleExact(3f), Globals.RescaleExact(3f)], 0)
+            StrokeWidth = RescaleExact(1.2f),
+            PathEffect = SKPathEffect.CreateDash([RescaleExact(3f), RescaleExact(3f)], 0)
         };
         canvas.DrawLine(dotX, dotY, targetPxX, targetPxY, linePaint);
 
         using SKPaint ringPaint = new()
         {
-            Color = Theme.Current.Accent2,
+            Color = Theme.Accent2,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
-            StrokeWidth = Globals.RescaleExact(1.5f)
+            StrokeWidth = RescaleExact(1.5f)
         };
-        canvas.DrawCircle(targetPxX, targetPxY, Globals.Rescale(Style.IndicatorRingRadius), ringPaint);
+        canvas.DrawCircle(targetPxX, targetPxY, Rescale(Style.IndicatorRingRadius), ringPaint);
     }
 }

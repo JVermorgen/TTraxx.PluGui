@@ -5,7 +5,7 @@ using TTraxx.PluGui.Harness.NPlug.Core.Interfaces;
 
 namespace TTraxx.PluGui.Harness.NPlug.Core;
 
-public abstract class AbstractHarnessPluginBase<TController, TModel, TView>(AudioPluginViewPlatform platform) : IHarnessPlugin
+public abstract class HarnessPlugin<TController, TModel, TView>(AudioPluginViewPlatform platform) : IHarnessPlugin
     where TController : AudioController<TModel>, new()
     where TModel : AudioProcessorModel, new()
     where TView : IAudioPluginView

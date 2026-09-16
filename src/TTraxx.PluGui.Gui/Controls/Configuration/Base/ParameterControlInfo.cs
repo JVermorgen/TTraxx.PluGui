@@ -1,6 +1,6 @@
-﻿using TTraxx.PluGui.Gui.Controls.Configuration.Base.Interfaces;
+﻿using TTraxx.PluGui.Gui;
 
-namespace TTraxx.PluGui.Gui.Controls.Configuration.Base;
+namespace TTraxx.PluGui.Gui;
 
 public class ParameterControlInfo() : IParameterControlInfo
 {

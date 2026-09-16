@@ -1,4 +1,4 @@
-﻿using TTraxx.PluGui.Gui.Windows.Interfaces;
+﻿using TTraxx.PluGui.Gui;
 
 namespace TTraxx.PluGui.Gui.Windows.Factories;
 

@@ -153,6 +153,13 @@ csharp_style_unused_value_expression_statement_preference = discard_variable
 # 'using' directive preferences
 csharp_using_directive_placement = outside_namespace
 
+# Namespace preferences
+# IDE0130 (namespace must match folder structure) is off by design: the public surface is
+# deliberately flat (everything a consumer touches lives in TTraxx.PluGui.Gui), while the folders
+# stay grouped by kind - Controls/, Panels/, Windows/, Helpers/ - so the source is still navigable.
+# Matching the two would either re-nest the namespaces or flatten ~60 files into one directory.
+dotnet_diagnostic.IDE0130.severity = none
+
 # New line preferences
 csharp_style_allow_blank_line_after_colon_in_constructor_initializer_experimental = true
 csharp_style_allow_blank_line_after_token_in_arrow_expression_clause_experimental = true

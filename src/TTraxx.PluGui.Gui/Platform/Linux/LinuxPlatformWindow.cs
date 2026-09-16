@@ -1,10 +1,9 @@
 ﻿using SkiaSharp;
 using System.Runtime.InteropServices;
-using TTraxx.PluGui.Gui.Input;
+using TTraxx.PluGui.Gui;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal.Constants;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal.Structs;
-using TTraxx.PluGui.Gui.Windows.Interfaces;
 
 namespace TTraxx.PluGui.Gui.Platform.Linux;
 

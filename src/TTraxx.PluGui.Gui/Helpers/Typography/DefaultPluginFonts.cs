@@ -1,7 +1,6 @@
 ﻿using SkiaSharp;
-using TTraxx.PluGui.Gui.Helpers.Typography.Interfaces;
 
-namespace TTraxx.PluGui.Gui.Helpers.Typography;
+namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// Resolves a neutral UI sans-serif per platform, trying each candidate

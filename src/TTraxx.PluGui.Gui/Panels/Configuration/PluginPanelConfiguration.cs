@@ -1,10 +1,10 @@
-﻿namespace TTraxx.PluGui.Gui.Panels.Configuration;
+﻿namespace TTraxx.PluGui.Gui;
 
 /// <summary>
-/// Logical (non-scaled) dimensions and title for a Plugin Panel —
-/// same convention as the Control configurations: numbers here are
-/// the same units as in GetLayout. PluginPanel rescales itself via
-/// Globals.Instance.Rescale when drawing.
+/// Logical (non-scaled) dimensions and title for a plugin panel —
+/// same convention as the control configurations: numbers here are
+/// the same design units as in BuildLayout(). The panel rescales them
+/// itself, at its window's RenderContext scale, when drawing.
 /// </summary>
 public sealed class PluginPanelConfiguration
 {

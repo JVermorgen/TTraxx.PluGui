@@ -1,10 +1,10 @@
 ﻿using NPlug;
 using System.Runtime.InteropServices;
-using TTraxx.PluGui.Gui.Helpers;
+using TTraxx.PluGui.Gui;
 using TTraxx.PluGui.Harness.NPlug.Core;
 using TTraxx.PluGui.Harness.NPlug.Core.Helpers;
 using TTraxx.PluGui.Harness.NPlug.Core.Interfaces;
-using TTraxx.PluGui.NPlug.Interfaces;
+using TTraxx.PluGui.NPlug;
 
 namespace TTraxx.PluGui.Harness.NPlug.Runners.Linux;
 
@@ -30,13 +30,13 @@ public sealed partial class XlibHarnessRunner : IHarnessRunner
         var display = XOpenDisplay(nint.Zero);
         if (display == nint.Zero) throw new InvalidOperationException("Kon geen X11-connectie openen.");
 
-        Globals.ScaleFactor = 1.0f;
+        // Bar height starts unscaled; Attached() below determines the real scale and it is redone.
 
         var view = plugin.Create();
         var initialSize = view.Size;
         var contentWidth = initialSize.Right - initialSize.Left;
         var contentHeight = initialSize.Bottom - initialSize.Top;
-        var barHeightPhysical = Globals.Rescale(HarnessSettingsPanel.Height); // corrected below once Attached() knows the real DPI scale
+        var barHeightPhysical = HarnessSettingsPanel.Height; // corrected below once Attached() knows the real DPI scale
 
         var screen = XDefaultScreen(display);
         var root = XRootWindow(display, screen);
@@ -49,7 +49,7 @@ public sealed partial class XlibHarnessRunner : IHarnessRunner
 
         if (plugin.AlwaysOnTop) SetAlwaysOnTop(display, window, root, true);
 
-        // Plain positioning window: the plugin's own AbstractWindowBase always
+        // Plain positioning window: the plugin's own PluginWindow always
         // attaches at (0,0) relative to whatever parent it's given, so the only
         // way to push its content down below the settings bar is to give it a
         // parent that is itself already offset.
@@ -74,14 +74,17 @@ public sealed partial class XlibHarnessRunner : IHarnessRunner
         // one resize via ResizeContent using the baseline bar height above) - redo
         // it now that both the bar height and the plugin's own scaled content size
         // are final.
-        barHeightPhysical = Globals.Rescale(HarnessSettingsPanel.Height);
+        var typedView = view as IPluGuiPluginView;
+        var harnessScale = typedView?.Scale ?? 1.0f;
+        barHeightPhysical = (int)Math.Round(harnessScale * HarnessSettingsPanel.Height);
         var finalSize = view.Size;
         ResizeContent(finalSize.Right - finalSize.Left, finalSize.Bottom - finalSize.Top);
 
         settingsPanel = new HarnessSettingsPanel(plugin.AlwaysOnTop, onTop => SetAlwaysOnTop(display, window, root, onTop));
+        settingsPanel.Context.Scale = harnessScale; // match the plugin editor, so the bar scales with it
         settingsPanel.AttachToParent(window, finalSize.Right - finalSize.Left, barHeightPhysical);
 
-        var typedView = view as IPluGuiPluginView;
+
 
         Action? refreshAction = null;
         Action? rebuildControlsAction = null;

@@ -1,62 +1,56 @@
 ﻿using SkiaSharp;
-using TTraxx.PluGui.Gui.Helpers;
-using TTraxx.PluGui.Gui.Helpers.Extensions;
-using TTraxx.PluGui.Gui.Helpers.Theming;
-using TTraxx.PluGui.Gui.Helpers.Typography;
-using TTraxx.PluGui.Gui.Panels.Base;
-using TTraxx.PluGui.Gui.Panels.Configuration;
 
-namespace TTraxx.PluGui.Gui.Panels;
+namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// A "brushed metal" panel with a title and arrow icon. Instantiate once
 /// per panel and call Draw every frame.
 /// </summary>
-public sealed class MetallicPluginPanel(PluginPanelConfiguration config) : AbstractPluginPanelBase(config)
+public sealed class MetallicPluginPanel(RenderContext context, PluginPanelConfiguration config) : PluginPanel(context, config)
 {
     public override void Draw(SKCanvas canvas)
     {
-        canvas.FillRoundRectVerticalGradient(Left, FromTop(-24), Width, Globals.RescaleExact(34), CornerRadius, Theme.CurrentMetallic.PanelMetalHeaderHighlight, Theme.CurrentMetallic.PanelMetalHeaderShadow);
+        canvas.FillRoundRectVerticalGradient(Left, FromTop(-24), Width, RescaleExact(34), CornerRadius, MetallicTheme.PanelMetalHeaderHighlight, MetallicTheme.PanelMetalHeaderShadow);
 
         using SKPaint headerBorderPaint = new()
         {
-            Color = Theme.CurrentMetallic.PanelMetalBorder,
+            Color = MetallicTheme.PanelMetalBorder,
             Style = SKPaintStyle.Stroke,
-            StrokeWidth = Globals.RescaleExact(0.3f),
+            StrokeWidth = RescaleExact(0.3f),
             IsAntialias = true
         };
-        canvas.DrawRoundRect(Left, FromTop(-24), Width, Globals.RescaleExact(34), CornerRadius, CornerRadius, headerBorderPaint);
+        canvas.DrawRoundRect(Left, FromTop(-24), Width, RescaleExact(34), CornerRadius, CornerRadius, headerBorderPaint);
 
-        canvas.FillRoundRectVerticalGradient(Left, Top, Width, Height, CornerRadius, Theme.CurrentMetallic.PanelMetalTop, Theme.CurrentMetallic.PanelMetalBottom);
+        canvas.FillRoundRectVerticalGradient(Left, Top, Width, Height, CornerRadius, MetallicTheme.PanelMetalTop, MetallicTheme.PanelMetalBottom);
 
         using SKPaint borderPaint = new()
         {
-            Color = Theme.CurrentMetallic.PanelMetalBorder,
+            Color = MetallicTheme.PanelMetalBorder,
             Style = SKPaintStyle.Stroke,
-            StrokeWidth = Globals.RescaleExact(0.3f),
+            StrokeWidth = RescaleExact(0.3f),
             IsAntialias = true
         };
         canvas.DrawRoundRect(Left, Top, Width, Height, CornerRadius, CornerRadius, borderPaint);
 
         using SKPaint sheenPaint = new()
         {
-            Color = Theme.CurrentMetallic.PanelMetalSheen,
-            StrokeWidth = Globals.RescaleExact(0.2f),
+            Color = MetallicTheme.PanelMetalSheen,
+            StrokeWidth = RescaleExact(0.2f),
             IsAntialias = true
         };
         canvas.DrawLine(FromLeft(8), FromTop(3), FromRight(8), FromTop(3), sheenPaint);
 
-        canvas.DrawIconFill(Icons.ArrowRight, FromLeft(27), FromTop(-12), Globals.RescaleExact(8), Theme.Current.TextPrimary);
+        canvas.DrawIconFill(Icons.ArrowRight, FromLeft(27), FromTop(-12), RescaleExact(8), Theme.TextPrimary);
 
         using SKPaint titlePaint = new()
         {
-            Color = Theme.Current.TextPrimary,
+            Color = Theme.TextPrimary,
             IsAntialias = true
         };
         using SKFont titleFont = new()
         {
-            Size = Globals.RescaleExact(11),
-            Typeface = Fonts.Current.Bold
+            Size = RescaleExact(11),
+            Typeface = Fonts.Bold
         };
         canvas.DrawTextTopAligned(_config.Title, FromLeft(35), FromTop(-20), SKTextAlign.Left, titleFont, titlePaint);
     }
@@ -73,25 +67,25 @@ public sealed class MetallicPluginPanel(PluginPanelConfiguration config) : Abstr
 
         using SKPaint textPaint = new()
         {
-            Color = Theme.Current.TextDim,
+            Color = Theme.TextDim,
             IsAntialias = true
         };
         using SKFont textFont = new()
         {
-            Size = Globals.RescaleExact(9),
-            Typeface = Fonts.Current.Bold
+            Size = RescaleExact(9),
+            Typeface = Fonts.Bold
         };
 
         var textWidth = textFont.MeasureText(text, out _);
-        var textPad = Globals.RescaleExact(8);
+        var textPad = RescaleExact(8);
         var centerX = Left + (Width / 2f);
         var textLeft = centerX - (textWidth / 2f);
         var textRight = centerX + (textWidth / 2f);
 
         using SKPaint linePaint = new()
         {
-            Color = Theme.Current.TextDim,
-            StrokeWidth = Globals.RescaleExact(0.5f),
+            Color = Theme.TextDim,
+            StrokeWidth = RescaleExact(0.5f),
             IsAntialias = true
         };
         canvas.DrawLine(left, lineY, textLeft - textPad, lineY, linePaint);

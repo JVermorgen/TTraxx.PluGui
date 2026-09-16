@@ -1,16 +1,9 @@
 ﻿using SkiaSharp;
-using TTraxx.PluGui.Gui.Controls.Base;
-using TTraxx.PluGui.Gui.Controls.Configuration;
-using TTraxx.PluGui.Gui.Controls.Configuration.Interfaces;
 using TTraxx.PluGui.Gui.Controls.Manager;
 using TTraxx.PluGui.Gui.Controls.Overlay;
-using TTraxx.PluGui.Gui.Helpers;
-using TTraxx.PluGui.Gui.Input;
-using TTraxx.PluGui.Gui.Panels.Base.Interfaces;
 using TTraxx.PluGui.Gui.Windows.Factories;
-using TTraxx.PluGui.Gui.Windows.Interfaces;
 
-namespace TTraxx.PluGui.Gui.Windows.Base;
+namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// Base class for a plugin's top-level GUI window. Owns the platform window (created via
@@ -35,18 +28,22 @@ namespace TTraxx.PluGui.Gui.Windows.Base;
 /// <see cref="SetBounds"/> on resize and <see cref="Destroy"/> on teardown. Host-side code should
 /// depend on that interface rather than on this class.</item>
 /// </list>
+///
+/// LIFECYCLE: attaching twice throws (it would leak the first native window), <see cref="Destroy"/>
+/// is idempotent, and SetBounds/RefreshUI/TryFindParameter no-op once the window is destroyed - so a
+/// host refresh timer or a deferred resize that races teardown can't reach a dead native window.
 /// Everything else (pointer/wheel/paint routing, control caching, panel drawing) is handled
 /// internally - see the private <c>Build</c>/<c>ApplyLayout</c> methods and the explicit
 /// <see cref="IPlatformWindowHost"/> implementation below.
 /// </summary>
-public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPlatformWindowHost
+public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformWindowHost
 {
     private int _windowWidth;
     private int _windowHeight;
 
     // Controls survive across rebuilds, keyed by their configuration's Id, so BuildLayout()
     // can be re-run (e.g. on hot reload) without losing per-control state (drag position, focus, ...).
-    private readonly Dictionary<Guid, AbstractControlBase> _controlCache = [];
+    private readonly Dictionary<Guid, PluginControl> _controlCache = [];
     // Window-specific overrides registered via RegisterSizing(), keyed by config type.
     private readonly Dictionary<Type, Func<ControlSizes, (int Width, int Height)>> _sizingStrategies = [];
     private readonly ControlManager _controlManager = new();
@@ -61,16 +58,55 @@ public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPla
     // regardless of how many times Build() (via RebuildControls()) runs afterward.
     private bool _sizingConfigured;
 
+    // Lifecycle guards. Attaching twice would leak the first native window and orphan its
+    // controls, so that's treated as a programming error and throws. Everything else is lenient
+    // on purpose: a host can legitimately call RefreshUI()/SetBounds() from a timer or a deferred
+    // resize that races Destroy(), so those no-op once the native window is gone.
+    private bool _isAttached;
+    private bool _isDestroyed;
+
     private IPlatformWindow PlatformWindow { get; } = PlatformWindowFactory.Create();
+
+    /// <inheritdoc/>
+    public RenderContext Context { get; } = new();
+
+    /// <summary>Scales a design-unit length to whole pixels, at this window's scale.</summary>
+    protected int Rescale(float designUnits) => Context.Rescale(designUnits);
+
+    /// <summary>Scales a design-unit length without rounding, at this window's scale.</summary>
+    protected float RescaleExact(float designUnits) => Context.RescaleExact(designUnits);
+
+    /// <summary>This window's theme.</summary>
+    protected IPluginTheme Theme => Context.Theme;
+
+    /// <summary>The metallic-panel colors of this window's theme.</summary>
+    protected IMetallicPanelTheme MetallicTheme => Context.MetallicTheme;
+
+    /// <summary>This window's fonts.</summary>
+    protected IPluginFonts Fonts => Context.Fonts;
+
+    /// <summary>
+    /// True between a successful <see cref="AttachToParent"/> and <see cref="Destroy"/> - i.e. while
+    /// a native window actually exists. Check this before touching platform resources from a derived
+    /// window's own timers or callbacks.
+    /// </summary>
+    protected bool IsLive => _isAttached && !_isDestroyed;
 
     /// <inheritdoc/>
     public bool AttachToParent(nint parentHandle, int width, int height)
     {
+        ObjectDisposedException.ThrowIf(_isDestroyed, this);
+        if (_isAttached)
+            throw new InvalidOperationException(
+                $"{GetType().Name} is already attached. Use one window instance per host view - " +
+                "re-attaching would leak the native window the first call created.");
+
         _windowWidth = width;
         _windowHeight = height;
 
         if (!PlatformWindow.Attach(parentHandle, width, height, this)) return false;
 
+        _isAttached = true;
         Build();
         return true;
     }
@@ -78,6 +114,8 @@ public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPla
     /// <inheritdoc/>
     public void SetBounds(int x, int y, int width, int height)
     {
+        if (!IsLive) return;
+
         _windowWidth = width;
         _windowHeight = height;
 
@@ -87,14 +125,35 @@ public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPla
     }
 
     /// <inheritdoc/>
-    public void RefreshUI() => PlatformWindow.Invalidate();
+    public void RefreshUI()
+    {
+        if (!IsLive) return;
+        PlatformWindow.Invalidate();
+    }
 
     /// <inheritdoc/>
-    public bool TryFindParameter(int x, int y, out int parameterId) => _controlManager.TryFindParameter(x, y, out parameterId);
+    public bool TryFindParameter(int x, int y, out int parameterId)
+    {
+        if (!IsLive)
+        {
+            parameterId = 0;
+            return false;
+        }
+
+        return _controlManager.TryFindParameter(x, y, out parameterId);
+    }
 
     /// <inheritdoc/>
-    /// <remarks>Override to release additional derived-window resources, calling the base implementation.</remarks>
-    public virtual void Destroy() => PlatformWindow.Destroy();
+    public void Destroy()
+    {
+        if (_isDestroyed) return;
+
+        _isDestroyed = true;
+        _isAttached = false;
+
+        OnDestroying();
+        PlatformWindow.Destroy();
+    }
 
     /// <inheritdoc/>
     public float GetInitialScaleFactor(nint parentHandle) => PlatformWindow.GetInitialScaleFactor(parentHandle);
@@ -111,7 +170,21 @@ public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPla
     /// calls this - which is why it's an explicit <see cref="IHotReloadTarget"/> implementation,
     /// kept off the window's everyday surface. Cast to that interface to reach it.
     /// </summary>
-    void IHotReloadTarget.RebuildControls() => Build();
+    void IHotReloadTarget.RebuildControls()
+    {
+        if (!IsLive) return;
+        Build();
+    }
+
+    /// <summary>
+    /// Called once, from <see cref="Destroy"/>, just before the native window goes away - for a
+    /// derived window to release resources of its own. No-op by default.
+    ///
+    /// This is a hook rather than an overridable Destroy() on purpose: teardown order and the
+    /// "exactly once" guarantee stay with the base class, so a derived window can't break them by
+    /// forgetting a base call.
+    /// </summary>
+    protected virtual void OnDestroying() { }
 
     /// <summary>
     /// Whether this window honors Globals.ShowControlBounds (the harness's "show
@@ -144,7 +217,7 @@ public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPla
     /// cache eviction. Prefer <see cref="Create{TConfig,TControl}"/> when the control's own configuration
     /// already carries its Id - it's the same thing without repeating the config.
     /// </summary>
-    protected TControl GetOrCreate<TControl>(Guid configId, Func<TControl> factory) where TControl : AbstractControlBase
+    protected TControl GetOrCreate<TControl>(Guid configId, Func<TControl> factory) where TControl : PluginControl
     {
         _buildIdsInProgress?.Add(configId);
 
@@ -163,7 +236,7 @@ public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPla
     /// </summary>
     protected TControl Create<TConfig, TControl>(TConfig config, Func<TConfig, TControl> factory)
         where TConfig : IControlConfiguration
-        where TControl : AbstractControlBase
+        where TControl : PluginControl
         => GetOrCreate(config.Id, () => factory(config));
 
     /// <summary>
@@ -190,7 +263,7 @@ public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPla
         int extraHeight = 0,
         IPluginPanel? panel = null)
         where TConfig : IControlConfiguration
-        where TControl : AbstractControlBase
+        where TControl : PluginControl
     {
         var control = Create(config, factory);
         var (w, h) = ResolveBounds(config, width, height);
@@ -219,7 +292,7 @@ public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPla
         int extraWidth = 0, int extraHeight = 0,
         IPluginPanel? panel = null)
         where TConfig : IControlConfiguration
-        where TControl : AbstractControlBase
+        where TControl : PluginControl
     {
         foreach (var (config, row, column) in cells)
         {
@@ -329,7 +402,7 @@ public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPla
         {
             control.BindInvalidate(PlatformWindow.Invalidate);
             control.SetContainerBackgroundReference(_windowWidth, _windowHeight);
-            control.SetBounds(x, y, w, h);
+            control.SetBounds(x, y, w, h, Context);
         }
     }
 
@@ -394,7 +467,7 @@ public abstract class AbstractWindowBase : IPluginWindow, IHotReloadTarget, IPla
     void IPlatformWindowHost.OnContextMenu(int x, int y)
     {
         var items = _controlManager.FindControlAt(x, y)?.GetContextMenuItems();
-        _contextMenu = items is { Count: > 0 } ? new ContextMenuOverlay(x, y, items, _windowWidth, _windowHeight) : null;
+        _contextMenu = items is { Count: > 0 } ? new ContextMenuOverlay(x, y, items, _windowWidth, _windowHeight, Context) : null;
         PlatformWindow.Invalidate();
     }
 

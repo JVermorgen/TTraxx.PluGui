@@ -1,11 +1,10 @@
 ﻿using SkiaSharp;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using TTraxx.PluGui.Gui.Input;
+using TTraxx.PluGui.Gui;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal.Constants;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal.Structs;
-using TTraxx.PluGui.Gui.Windows.Interfaces;
 
 namespace TTraxx.PluGui.Gui.Platform.MacOS;
 

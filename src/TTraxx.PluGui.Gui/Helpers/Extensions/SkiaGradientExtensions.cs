@@ -1,6 +1,6 @@
 ﻿using SkiaSharp;
 
-namespace TTraxx.PluGui.Gui.Helpers.Extensions;
+namespace TTraxx.PluGui.Gui;
 
 public static class SkiaGradientExtensions
 {

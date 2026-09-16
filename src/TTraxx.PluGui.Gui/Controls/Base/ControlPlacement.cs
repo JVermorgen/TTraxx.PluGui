@@ -1,4 +1,4 @@
-namespace TTraxx.PluGui.Gui.Controls.Base;
+namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// One control placed in a window's layout: the control itself plus its ABSOLUTE
@@ -17,9 +17,9 @@ namespace TTraxx.PluGui.Gui.Controls.Base;
 /// <param name="Y">Absolute, window-relative top edge.</param>
 /// <param name="W">Width in the same (already scaled) units as X/Y.</param>
 /// <param name="H">Height in the same (already scaled) units as X/Y.</param>
-public readonly record struct ControlPlacement(AbstractControlBase Control, int X, int Y, int W, int H)
+public readonly record struct ControlPlacement(PluginControl Control, int X, int Y, int W, int H)
 {
     /// <summary>Lets a layout still be written as a plain <c>(control, x, y, w, h)</c> tuple.</summary>
-    public static implicit operator ControlPlacement((AbstractControlBase Control, int X, int Y, int W, int H) placement)
+    public static implicit operator ControlPlacement((PluginControl Control, int X, int Y, int W, int H) placement)
         => new(placement.Control, placement.X, placement.Y, placement.W, placement.H);
 }

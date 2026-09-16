@@ -1,4 +1,4 @@
-namespace TTraxx.PluGui.Gui.Input;
+namespace TTraxx.PluGui.Gui;
 
 [Flags]
 public enum KeyModifiers

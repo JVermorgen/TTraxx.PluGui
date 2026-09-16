@@ -1,6 +1,6 @@
 ﻿using SkiaSharp;
 
-namespace TTraxx.PluGui.Gui.Helpers.Theming.Interfaces;
+namespace TTraxx.PluGui.Gui;
 
 public interface IPluginTheme
 {
