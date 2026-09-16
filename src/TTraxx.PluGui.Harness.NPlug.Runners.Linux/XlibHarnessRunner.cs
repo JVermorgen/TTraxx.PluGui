@@ -1,6 +1,7 @@
 ﻿using NPlug;
 using System.Runtime.InteropServices;
 using TTraxx.PluGui.Gui.Helpers;
+using TTraxx.PluGui.Harness.NPlug.Core;
 using TTraxx.PluGui.Harness.NPlug.Core.Helpers;
 using TTraxx.PluGui.Harness.NPlug.Core.Interfaces;
 using TTraxx.PluGui.NPlug.Interfaces;
@@ -18,6 +19,7 @@ public sealed partial class XlibHarnessRunner : IHarnessRunner
     private const int ClientMessage = 33;
     private const long SubstructureRedirectMask = 1L << 20;
     private const long SubstructureNotifyMask = 1L << 19;
+    private const long NetWmStateRemove = 0;
     private const long NetWmStateAdd = 1;
     private const int ClientMessageBufferSize = 96;
 
@@ -32,20 +34,52 @@ public sealed partial class XlibHarnessRunner : IHarnessRunner
 
         var view = plugin.Create();
         var initialSize = view.Size;
+        var contentWidth = initialSize.Right - initialSize.Left;
+        var contentHeight = initialSize.Bottom - initialSize.Top;
+        var barHeightPhysical = Globals.Rescale(HarnessSettingsPanel.Height); // corrected below once Attached() knows the real DPI scale
 
         var screen = XDefaultScreen(display);
         var root = XRootWindow(display, screen);
         var window = XCreateSimpleWindow(display, root, 100, 100,
-            (uint)(initialSize.Right - initialSize.Left), (uint)(initialSize.Bottom - initialSize.Top), 1, 0, 0);
+            (uint)contentWidth, (uint)(contentHeight + barHeightPhysical), 1, 0, 0);
         _ = XStoreName(display, window, plugin.DisplayName);
         _ = XSelectInput(display, window, StructureNotifyMask);
         _ = XMapWindow(display, window);
         _ = XFlush(display);
 
-        if (plugin.AlwaysOnTop) RequestAlwaysOnTop(display, window, root);
+        if (plugin.AlwaysOnTop) SetAlwaysOnTop(display, window, root, true);
 
-        view.SetFrame(new XlibHarnessPluginFrame(display, window));
-        view.Attached(window, plugin.Platform);
+        // Plain positioning window: the plugin's own AbstractWindowBase always
+        // attaches at (0,0) relative to whatever parent it's given, so the only
+        // way to push its content down below the settings bar is to give it a
+        // parent that is itself already offset.
+        var containerWindow = XCreateSimpleWindow(display, window, 0, barHeightPhysical, (uint)contentWidth, (uint)contentHeight, 0, 0, 0);
+        _ = XMapWindow(display, containerWindow);
+        _ = XFlush(display);
+
+        HarnessSettingsPanel? settingsPanel = null;
+
+        void ResizeContent(int w, int h)
+        {
+            _ = XResizeWindow(display, window, (uint)w, (uint)(h + barHeightPhysical));
+            _ = XResizeWindow(display, containerWindow, (uint)w, (uint)h);
+            settingsPanel?.SetBounds(0, 0, w, barHeightPhysical);
+            _ = XFlush(display);
+        }
+
+        view.SetFrame(new XlibHarnessPluginFrame(ResizeContent));
+        view.Attached(containerWindow, plugin.Platform);
+
+        // Attached() has just determined the real DPI scale (and already triggered
+        // one resize via ResizeContent using the baseline bar height above) - redo
+        // it now that both the bar height and the plugin's own scaled content size
+        // are final.
+        barHeightPhysical = Globals.Rescale(HarnessSettingsPanel.Height);
+        var finalSize = view.Size;
+        ResizeContent(finalSize.Right - finalSize.Left, finalSize.Bottom - finalSize.Top);
+
+        settingsPanel = new HarnessSettingsPanel(plugin.AlwaysOnTop, onTop => SetAlwaysOnTop(display, window, root, onTop));
+        settingsPanel.AttachToParent(window, finalSize.Right - finalSize.Left, barHeightPhysical);
 
         var typedView = view as IPluGuiPluginView;
 
@@ -88,11 +122,18 @@ public sealed partial class XlibHarnessRunner : IHarnessRunner
                     typedView.RebuildControls();
                 }
 
+                // The settings bar opens its own, independent X11 connection (same as
+                // the plugin's own view does) - see LinuxPlatformWindow.Attach - so
+                // pumping it here never contends with the plugin's or the top-level
+                // window's event queues above.
+                settingsPanel.EventPumpSource?.ProcessPendingEvents();
+
                 Thread.Sleep(8);
             }
         }
         finally { Marshal.FreeHGlobal(eventBuffer); }
 
+        settingsPanel.Destroy();
         view.Removed();
     }
 
@@ -114,8 +155,8 @@ public sealed partial class XlibHarnessRunner : IHarnessRunner
     [LibraryImport("libX11")]
     private static partial int XSendEvent(nint display, nint window, [MarshalAs(UnmanagedType.Bool)] bool propagate, long event_mask, nint event_send);
 
-    /// <summary>Asks the window manager to keep this window above others, via the standard EWMH _NET_WM_STATE/_NET_WM_STATE_ABOVE ClientMessage (same mechanism tools like wmctrl use).</summary>
-    private static void RequestAlwaysOnTop(nint display, nint window, nint root)
+    /// <summary>Asks the window manager to add or remove the "keep above others" state at runtime, via the standard EWMH _NET_WM_STATE/_NET_WM_STATE_ABOVE ClientMessage (same mechanism tools like wmctrl use).</summary>
+    private static void SetAlwaysOnTop(nint display, nint window, nint root, bool onTop)
     {
         var wmState = XInternAtom(display, "_NET_WM_STATE", false);
         var wmStateAbove = XInternAtom(display, "_NET_WM_STATE_ABOVE", false);
@@ -130,7 +171,7 @@ public sealed partial class XlibHarnessRunner : IHarnessRunner
             Marshal.WriteIntPtr(eventBuffer, 32, window);
             Marshal.WriteIntPtr(eventBuffer, 40, wmState);
             Marshal.WriteInt32(eventBuffer, 48, 32); // format: data is 32-bit values
-            Marshal.WriteInt64(eventBuffer, 56, NetWmStateAdd); // data.l[0]
+            Marshal.WriteInt64(eventBuffer, 56, onTop ? NetWmStateAdd : NetWmStateRemove); // data.l[0]
             Marshal.WriteIntPtr(eventBuffer, 64, wmStateAbove);  // data.l[1]
             Marshal.WriteInt64(eventBuffer, 80, 1);              // data.l[3]: source indication = normal application
 

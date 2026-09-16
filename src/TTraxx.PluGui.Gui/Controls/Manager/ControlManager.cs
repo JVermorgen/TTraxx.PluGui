@@ -6,6 +6,16 @@ namespace TTraxx.PluGui.Gui.Controls.Manager;
 
 internal sealed class ControlManager : IDisposable
 {
+    // Fixed, theme-independent color: outlines must stay visible regardless
+    // of whatever the current control/theme happens to be drawing.
+    private static readonly SKPaint DebugBoundsPaint = new()
+    {
+        Color = new SKColor(255, 0, 255),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 1,
+        IsAntialias = false // crisp 1px outline, no half-pixel blur
+    };
+
     private readonly List<AbstractControlBase> _controls = [];
     private AbstractControlBase? _capturedControl;
     private AbstractControlBase? _hoveredControl;
@@ -31,13 +41,16 @@ internal sealed class ControlManager : IDisposable
         _controls.AddRange(desired);
     }
 
-    public void Draw(SKCanvas canvas)
+    /// <summary>showDebugBounds is decided by the caller (see AbstractWindowBase.ParticipatesInDebugBoundsOverlay) rather than read from Globals here, so a window can opt out regardless of the global flag.</summary>
+    public void Draw(SKCanvas canvas, bool showDebugBounds)
     {
         foreach (var control in _controls)
         {
             canvas.Save();
             canvas.Translate(control.X, control.Y);
             control.Draw(canvas);
+            if (showDebugBounds)
+                canvas.DrawRect(0, 0, control.Width, control.Height, DebugBoundsPaint);
             canvas.Restore();
         }
     }

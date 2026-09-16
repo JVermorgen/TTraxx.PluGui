@@ -16,14 +16,16 @@ public interface IPluginPanel
     void Draw(SKCanvas canvas);
 
     /// <summary>
-    /// Registers a control as a child of this panel. x/y are relative
-    /// to the top-left corner of the panel (Left/Top from the configuration),
-    /// not absolute window-relative — the panel converts that itself.
+    /// Registers a control as a child of this panel and returns its placement with
+    /// ABSOLUTE (window-relative) coordinates - directly yield-returnable from
+    /// BuildLayout(), the same way as a control placed with no panel at all. x/y in,
+    /// relativeX/relativeY, are relative to the top-left corner of the panel
+    /// (Left/Top from the configuration); the panel converts that itself.
     /// Call this ONCE (e.g., in the window constructor), never from
     /// GetLayout itself: that's called multiple times per session (on
     /// attach and on every resize) and would grow the list on re-registration.
     /// </summary>
-    void AddControl(AbstractControlBase control, int relativeX, int relativeY, int width, int height);
+    (AbstractControlBase Control, int X, int Y, int W, int H) AddControl(AbstractControlBase control, int relativeX, int relativeY, int width, int height);
 
     /// <summary>All registered children, with ABSOLUTE (window-relative) coordinates — directly usable in GetLayout.</summary>
     IReadOnlyList<(AbstractControlBase Control, int X, int Y, int W, int H)> Controls { get; }

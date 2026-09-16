@@ -1,8 +1,9 @@
 ﻿using TTraxx.PluGui.Gui.Controls.Configuration.Base;
+using TTraxx.PluGui.Gui.Controls.Configuration.Interfaces;
 
 namespace TTraxx.PluGui.Gui.Controls.Configuration;
 
-public class XYPadControlConfiguration() : ParameterControlConfiguration
+public class XYPadControlConfiguration() : ParameterControlConfiguration, ISizedControlConfiguration
 {
     public required ParameterBinding XParameter { get; init; }
     public required ParameterBinding YParameter { get; init; }
@@ -12,6 +13,8 @@ public class XYPadControlConfiguration() : ParameterControlConfiguration
 
     public XYPadModulationIndicator? ModulationIndicator { get; init; }
     public Func<XYPadStyle>? Style { get; init; }
+
+    public (int Width, int Height) ResolveBounds() => (Style?.Invoke() ?? XYPadStyle.Default).Bounds[ControlSize];
 }
 
 /// <summary>

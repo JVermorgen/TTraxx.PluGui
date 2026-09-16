@@ -33,4 +33,15 @@ public sealed record MeterStyle
     public SKColor NormalColor { get; init; } = new(80, 220, 120);
     public SKColor WarningColor { get; init; } = new(240, 200, 60);
     public SKColor ClipColor { get; init; } = new(230, 70, 70);
+
+    private static IReadOnlyDictionary<ControlSizes, (int Width, int Height)> DefaultBounds
+        => new Dictionary<ControlSizes, (int Width, int Height)>
+        {
+                { ControlSizes.S, (24, 94) },
+                { ControlSizes.M, (28, 100) },
+                { ControlSizes.L, (30, 105) },
+                { ControlSizes.XL, (30, 116) }
+        };
+
+    public IReadOnlyDictionary<ControlSizes, (int Width, int Height)> Bounds { get; init; } = DefaultBounds;
 }

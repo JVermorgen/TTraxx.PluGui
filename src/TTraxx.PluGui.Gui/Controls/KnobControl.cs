@@ -27,12 +27,12 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
     private ParameterBinding Parameter => config.Parameter;
     private KnobStyle Style => config.Style?.Invoke() ?? KnobStyle.Default;
 
-    private int RadiusFor(KnobSizes size)
+    private int RadiusFor(ControlSizes size)
         => Style.Radii.TryGetValue(size, out var r) ? r : KnobStyle.Default.Radii[size];
 
-    private float Radius => Math.Max(2, (Globals.Rescale(RadiusFor(config.KnobSize)) / 2f) - Globals.Rescale(2));
+    private float Radius => Math.Max(2, (Globals.Rescale(RadiusFor(config.ControlSize)) / 2f) - Globals.Rescale(2));
     private float CenterX => _w / 2f;
-    private float CenterY => (Globals.Rescale(RadiusFor(config.KnobSize)) / 2f) + Globals.Rescale(21);
+    private float CenterY => (Globals.Rescale(RadiusFor(config.ControlSize)) / 2f) + Globals.Rescale(21);
 
     public override void OnPointerDown(PointerEventArgs e)
     {
@@ -172,7 +172,7 @@ public sealed class KnobControl(KnobControlConfiguration config) : AbstractContr
             }
         }
 
-        var isXL = config.KnobSize == KnobSizes.XL;
+        var isXL = config.ControlSize == ControlSizes.XL;
         var trackWidth = Globals.RescaleExact(isXL ? Style.TrackStrokeWidthXL : Style.TrackStrokeWidth);
         var valueWidth = Globals.RescaleExact(isXL ? Style.ValueStrokeWidthXL : Style.ValueStrokeWidth);
 

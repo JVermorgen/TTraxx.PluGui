@@ -20,8 +20,12 @@ public abstract class AbstractPluginPanelBase(PluginPanelConfiguration config) :
     private readonly List<(AbstractControlBase Control, int X, int Y, int W, int H)> _controls = [];
     public IReadOnlyList<(AbstractControlBase Control, int X, int Y, int W, int H)> Controls => _controls;
 
-    public void AddControl(AbstractControlBase control, int relativeX, int relativeY, int width, int height)
-        => _controls.Add((control, _config.Left + relativeX, _config.Top + relativeY, width, height));
+    public (AbstractControlBase Control, int X, int Y, int W, int H) AddControl(AbstractControlBase control, int relativeX, int relativeY, int width, int height)
+    {
+        var placed = (control, _config.Left + relativeX, _config.Top + relativeY, width, height);
+        _controls.Add(placed);
+        return placed;
+    }
 
     public abstract void Draw(SKCanvas canvas);
 

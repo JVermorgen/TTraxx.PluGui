@@ -4,6 +4,10 @@ namespace TTraxx.PluGui.Gui.Helpers.Theming.Interfaces;
 
 public interface IPluginTheme
 {
+    SKColor Background { get; }
+    SKColor BackgroundHighlight { get; }
+    SKColor BackgroundShadow { get; }
+
     SKColor Accent { get; }
     SKColor AccentDim { get; }
     SKColor Accent2 { get; }

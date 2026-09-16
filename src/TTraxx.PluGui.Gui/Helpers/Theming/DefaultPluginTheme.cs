@@ -5,8 +5,12 @@ namespace TTraxx.PluGui.Gui.Helpers.Theming;
 
 public sealed class DefaultPluginTheme : IPluginTheme
 {
+    public SKColor Background => new(20, 20, 20);
+    public SKColor BackgroundHighlight => new(30, 30, 30);
+    public SKColor BackgroundShadow => new(10, 10, 10);
+
     public SKColor Accent => new(230, 230, 230);
-    public SKColor AccentDim => new(100, 100, 100);
+    public SKColor AccentDim => new(120, 120, 120);
     public SKColor Accent2 => new(220, 255, 180);
 
     public SKColor TextPrimary => new(255, 255, 255);

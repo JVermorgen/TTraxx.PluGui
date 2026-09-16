@@ -23,4 +23,13 @@ public sealed record XYPadStyle
     /// </summary>
     public IReadOnlyList<SKPath>? CornerIcons { get; init; } =
         [Icons.Sine, Icons.Saw, Icons.Pulse, Icons.Triangle];
+
+    /// <summary>An XY pad's full layout box per ControlSizes tier. Only S is defined so far - no control uses another tier yet.</summary>
+    private static IReadOnlyDictionary<ControlSizes, (int Width, int Height)> DefaultBounds
+        => new Dictionary<ControlSizes, (int Width, int Height)>
+        {
+            { ControlSizes.S, (220, 220) }
+        };
+
+    public IReadOnlyDictionary<ControlSizes, (int Width, int Height)> Bounds { get; init; } = DefaultBounds;
 }

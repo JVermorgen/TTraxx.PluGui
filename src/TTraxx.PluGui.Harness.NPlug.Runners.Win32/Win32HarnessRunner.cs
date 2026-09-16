@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using TTraxx.PluGui.Gui.Helpers;
+using TTraxx.PluGui.Harness.NPlug.Core;
 using TTraxx.PluGui.Harness.NPlug.Core.Helpers;
 using TTraxx.PluGui.Harness.NPlug.Core.Interfaces;
 using TTraxx.PluGui.NPlug.Interfaces;
@@ -15,10 +16,12 @@ public sealed class Win32HarnessRunner : IHarnessRunner
 {
     private const uint WindowStyle = 0x00C00000 | 0x00080000; // WS_CAPTION | WS_SYSMENU: fixed size, no resize border/min/max
     private const uint WS_EX_TOPMOST = 0x00000008;
+    private const uint WS_CHILD = 0x40000000, WS_VISIBLE = 0x10000000;
     private const int CW_USEDEFAULT = unchecked((int)0x80000000);
     private const int SW_SHOW = 5;
     private const uint WM_DESTROY = 0x0002;
-    private const uint SWP_NOMOVE = 0x0002, SWP_NOZORDER = 0x0004;
+    private const uint SWP_NOMOVE = 0x0002, SWP_NOZORDER = 0x0004, SWP_NOSIZE = 0x0001;
+    private static readonly nint HWND_TOPMOST = -1, HWND_NOTOPMOST = -2;
     private const int IDC_ARROW = 32512;
     private const int DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = -4;
 
@@ -31,6 +34,15 @@ public sealed class Win32HarnessRunner : IHarnessRunner
 
     private static IPluGuiPluginView? _typedView;
 
+    // Dev-tool settings bar shown above the plugin view - see HarnessSettingsPanel.
+    // _containerHwnd is a plain, undecorated child window that exists purely to
+    // offset the plugin's own view down by the bar's height; the plugin's
+    // AbstractWindowBase always attaches at (0,0) relative to whatever parent
+    // it's given, so it can't be positioned directly against the top-level hwnd.
+    private static nint _containerHwnd;
+    private static HarnessSettingsPanel? _settingsPanel;
+    private static int _barHeightPhysical;
+
     public AudioPluginViewPlatform Platform => AudioPluginViewPlatform.Hwnd;
 
     public void Run(IHarnessPlugin plugin)
@@ -40,7 +52,10 @@ public sealed class Win32HarnessRunner : IHarnessRunner
 
         var view = plugin.Create();
         var initialSize = view.Size;
-        (var windowWidth, var windowHeight) = ToWindowSize(initialSize.Right - initialSize.Left, initialSize.Bottom - initialSize.Top);
+        var contentWidth = initialSize.Right - initialSize.Left;
+        var contentHeight = initialSize.Bottom - initialSize.Top;
+        _barHeightPhysical = Globals.Rescale(HarnessSettingsPanel.Height); // corrected below once Attached() knows the real DPI scale
+        (var windowWidth, var windowHeight) = ToWindowSize(contentWidth, contentHeight + _barHeightPhysical);
 
         var hInstance = GetModuleHandle(null);
         var className = $"PluGuiHarness_{Guid.NewGuid():N}";
@@ -60,8 +75,25 @@ public sealed class Win32HarnessRunner : IHarnessRunner
             CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nint.Zero, nint.Zero, hInstance, nint.Zero);
         if (hwnd == nint.Zero) throw new InvalidOperationException("CreateWindowExW failed.");
 
+        // Plain positioning window: the plugin's own AbstractWindowBase always
+        // attaches at (0,0) relative to whatever parent it's given, so the only
+        // way to push its content down below the settings bar is to give it a
+        // parent that is itself already offset.
+        _containerHwnd = CreateWindowExW(0, "STATIC", "", WS_CHILD | WS_VISIBLE,
+            0, _barHeightPhysical, contentWidth, contentHeight, hwnd, nint.Zero, hInstance, nint.Zero);
+
         view.SetFrame(new Win32HarnessPluginFrame(hwnd));
-        view.Attached(hwnd, plugin.Platform);
+        view.Attached(_containerHwnd, plugin.Platform);
+
+        // Attached() has just determined the real DPI scale (and already triggered
+        // one resize using the baseline bar height above) - redo it now that both
+        // the bar height and the plugin's own scaled content size are final.
+        _barHeightPhysical = Globals.Rescale(HarnessSettingsPanel.Height);
+        var finalSize = view.Size;
+        ResizeWindow(hwnd, finalSize.Right - finalSize.Left, finalSize.Bottom - finalSize.Top);
+
+        _settingsPanel = new HarnessSettingsPanel(plugin.AlwaysOnTop, onTop => SetAlwaysOnTop(hwnd, onTop));
+        _settingsPanel.AttachToParent(hwnd, finalSize.Right - finalSize.Left, _barHeightPhysical);
 
         _typedView = view as IPluGuiPluginView;
 
@@ -85,6 +117,10 @@ public sealed class Win32HarnessRunner : IHarnessRunner
         _refreshAction = null;
         _rebuildControlsAction = null;
 
+        _settingsPanel?.Destroy();
+        _settingsPanel = null;
+        _containerHwnd = nint.Zero;
+
         view.Removed();
     }
 
@@ -95,11 +131,21 @@ public sealed class Win32HarnessRunner : IHarnessRunner
         return (rect.Right - rect.Left, rect.Bottom - rect.Top);
     }
 
+    /// <summary>clientWidth/clientHeight describe the plugin's own content only - the settings bar's height is added on top.</summary>
     internal static void ResizeWindow(nint hwnd, int clientWidth, int clientHeight)
     {
-        (var w, var h) = ToWindowSize(clientWidth, clientHeight);
+        (var w, var h) = ToWindowSize(clientWidth, clientHeight + _barHeightPhysical);
         SetWindowPos(hwnd, nint.Zero, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER);
+
+        if (_containerHwnd != nint.Zero)
+            SetWindowPos(_containerHwnd, nint.Zero, 0, _barHeightPhysical, clientWidth, clientHeight, SWP_NOZORDER);
+
+        _settingsPanel?.SetBounds(0, 0, clientWidth, _barHeightPhysical);
     }
+
+    /// <summary>Toggles the top-level window's OS-level "always on top" z-order behavior at runtime.</summary>
+    private static void SetAlwaysOnTop(nint hwnd, bool onTop)
+        => SetWindowPos(hwnd, onTop ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
     private static unsafe nint GetStaticWndProcPointer()
     {
