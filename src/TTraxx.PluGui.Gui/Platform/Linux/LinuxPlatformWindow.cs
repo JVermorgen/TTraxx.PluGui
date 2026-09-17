@@ -1,6 +1,5 @@
 ﻿using SkiaSharp;
 using System.Runtime.InteropServices;
-using TTraxx.PluGui.Gui;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal.Constants;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal.Structs;
@@ -9,8 +8,6 @@ namespace TTraxx.PluGui.Gui.Platform.Linux;
 
 internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSource, ITimerPumpSource
 {
-    private const string UIEngineLibraryName = "libSkiaSharp";
-
     // Matches Win32PlatformWindow's own SetTimer rate, so a continuously
     // repainting control (e.g. the level meter) animates at the same speed
     // regardless of platform.
@@ -53,7 +50,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     private const ulong DoubleClickThresholdMs = 400; // X11 has no system setting like GetDoubleClickTime() on Win32; fixed threshold
     private const int DoubleClickMaxDistance = 4; // pixels — prevents slight jitter between two separate clicks from counting as a double-click
 
-    static LinuxPlatformWindow() => Libc.EnsureOwnDirectoryLoaded(UIEngineLibraryName);
+    static LinuxPlatformWindow() => Libc.RegisterUIEngineResolver();
 
     public IEventPumpSource EventPumpSource => this; // X11 has no native message loop of its own - the host must poll our fd
 

@@ -1,5 +1,5 @@
-﻿using SkiaSharp;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using TTraxx.PluGui.Gui.Platform.Internal;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal.Structs;
 
 namespace TTraxx.PluGui.Gui.Platform.MacOS.Internal;
@@ -34,6 +34,16 @@ internal static partial class Darwin
     /// </summary>
     internal static unsafe string GetOwnModuleDirectory()
     {
+        string? dir = Path.GetDirectoryName(GetOwnModulePath() ?? string.Empty);
+        return string.IsNullOrEmpty(dir) ? Directory.GetCurrentDirectory() : dir;
+    }
+
+    /// <summary>
+    /// Returns the full path of the current (mach-o) binary, or <c>null</c> if dladdr
+    /// cannot name one.
+    /// </summary>
+    internal static unsafe string? GetOwnModulePath()
+    {
         // Any address of code that actually lives in our own compiled
         // binary suffices — dladdr looks up which loaded image contains
         // that memory address, not based on a specific function. We use
@@ -44,14 +54,10 @@ internal static partial class Darwin
         if (dladdr(address, out var info) != 0 && info.FileName != nint.Zero)
         {
             string? path = Marshal.PtrToStringUTF8(info.FileName);
-            if (!string.IsNullOrEmpty(path))
-            {
-                string? dir = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(dir)) return dir;
-            }
+            if (!string.IsNullOrEmpty(path)) return path;
         }
 
-        return Directory.GetCurrentDirectory();
+        return null;
     }
 
     [UnmanagedCallersOnly]
@@ -61,12 +67,9 @@ internal static partial class Darwin
         // that is guaranteed to be in our own binary.
     }
 
-    public static void EnsureOwnDirectoryLoaded(string libraryFileName)
-    {
-        string ownDir = GetOwnModuleDirectory();
-        string fullPath = Path.Combine(ownDir, $"{libraryFileName}.dylib");
-
-        NativeLibrary.SetDllImportResolver(typeof(SKImageInfo).Assembly, (name, _, _) =>
-            name == libraryFileName ? NativeLibrary.Load(fullPath) : nint.Zero);
-    }
+    /// <summary>
+    /// Binds SkiaSharp to the Skia .dylib shipped inside our own bundle.
+    /// See <see cref="UIEngineLibrary"/> for why this is not left to default probing.
+    /// </summary>
+    public static void RegisterUIEngineResolver() => UIEngineLibrary.Register(GetOwnModulePath(), ".dylib");
 }

@@ -5,14 +5,11 @@ using TTraxx.PluGui.Gui.Platform.Win32.Internal;
 using TTraxx.PluGui.Gui.Platform.Win32.Internal.Constants;
 using TTraxx.PluGui.Gui.Platform.Win32.Internal.Helpers;
 using TTraxx.PluGui.Gui.Platform.Win32.Internal.Structs;
-using TTraxx.PluGui.Gui;
 
 namespace TTraxx.PluGui.Gui.Platform.Win32;
 
 internal sealed class Win32PlatformWindow : IPlatformWindow
 {
-    private const string UIEngineLibraryName = "libSkiaSharp";
-
     private const nint ContinuousRepaintTimerId = 1;
     private const uint ContinuousRepaintIntervalMs = 33; // ~30 Hz
 
@@ -32,7 +29,7 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
     private int _dibW;
     private int _dibH;
 
-    static Win32PlatformWindow() => Kernel32.EnsureOwnDirectoryLoaded(UIEngineLibraryName);
+    static Win32PlatformWindow() => Kernel32.RegisterUIEngineResolver();
 
     public IEventPumpSource? EventPumpSource => null; // Win32 has its own message loop (WndProc) — no external pump needed
 

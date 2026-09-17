@@ -1,7 +1,6 @@
 ﻿using SkiaSharp;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using TTraxx.PluGui.Gui;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal.Constants;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal.Structs;
@@ -28,7 +27,6 @@ namespace TTraxx.PluGui.Gui.Platform.MacOS;
 internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
 {
     private const string ViewClassName = "PluginView";
-    private const string UIEngineLibraryName = "libSkiaSharp";
 
     // NSTrackingAreaOptions: MouseMoved | ActiveAlways | InVisibleRect
     private const nuint TrackingAreaOptions = 0x02 | 0x80 | 0x200;
@@ -86,14 +84,9 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
         // Same reason as on Linux: as an embedded plugin in a host DAW,
         // AppContext.BaseDirectory doesn't reliably point to our own
         // .vst3 bundle, so .NET's standard .dylib probing doesn't find
-        // libSkiaSharp.dylib automatically. We look up the directory of our
-        // own binary ourselves (via dladdr, see Darwin.cs) and load from there
-        // explicitly.
-        var ownDir = Darwin.GetOwnModuleDirectory();
-        var fullPath = Path.Combine(ownDir, $"{UIEngineLibraryName}.dylib");
-
-        NativeLibrary.SetDllImportResolver(typeof(SKImageInfo).Assembly, (name, _, _) =>
-            name == "libSkiaSharp" ? NativeLibrary.Load(fullPath) : nint.Zero);
+        // libSkiaSharp.dylib automatically. We look up our own binary
+        // ourselves (via dladdr, see Darwin.cs) and load from there explicitly.
+        Darwin.RegisterUIEngineResolver();
 
         s_nsViewClass = ObjC.GetClass("NSView");
 
