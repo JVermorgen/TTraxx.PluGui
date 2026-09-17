@@ -25,15 +25,15 @@
     <ProjectReference Include="..\TTraxx.PluGui.Gui\TTraxx.PluGui.Gui.csproj" />
   </ItemGroup>
 
-  <!-- Public API baseline: RS0016 flags any public member missing from these files, so an
-       accidental breaking change to the package surface fails the build instead of shipping. -->
+  <!-- Public API baseline: RS0016 flags any public member missing from PublicAPI.*.txt, so an
+       accidental breaking change to the package surface fails the build instead of shipping.
+       The package's own .targets adds those two files as AdditionalFiles when they exist, so
+       listing them here as well makes dotnet watch report them as duplicate source files. -->
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.11.0-beta1.24508.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
-    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
 
 </Project>
