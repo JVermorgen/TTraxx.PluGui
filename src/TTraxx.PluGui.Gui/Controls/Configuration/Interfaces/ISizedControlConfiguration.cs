@@ -9,5 +9,10 @@ namespace TTraxx.PluGui.Gui;
 /// </summary>
 public interface ISizedControlConfiguration : IControlConfiguration
 {
+    /// <summary>
+    /// This control's natural layout box in unscaled design units, for its current
+    /// <see cref="IControlConfiguration.ControlSize"/>. Includes room for anything drawn as part of
+    /// the control (a label underneath, say), not just its interactive area.
+    /// </summary>
     (int Width, int Height) ResolveBounds();
 }

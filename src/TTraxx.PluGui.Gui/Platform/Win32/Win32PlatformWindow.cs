@@ -8,6 +8,24 @@ using TTraxx.PluGui.Gui.Platform.Win32.Internal.Structs;
 
 namespace TTraxx.PluGui.Gui.Platform.Win32;
 
+/// <summary>
+/// Windows backend, and the reference the other two platform layers are modelled on (see
+/// MacOsPlatformWindow and LinuxPlatformWindow): a WS_CHILD window created inside the HWND the VST3
+/// host supplies as parent, painted by blitting a reused DIB-backed Skia surface in WM_PAINT.
+///
+/// It creates a plain STATIC control and SUBCLASSES it (swapping in its own WndProc) rather than
+/// registering a window class of its own, so nothing process-wide is registered from inside a host.
+/// (The harness's own top-level window does register a class - it's a standalone app window, not one
+/// embedded in a host process.)
+///
+/// The WndProc must be a static, blittable function pointer for NativeAOT, so the owning instance is
+/// recovered inside it from a GCHandle parked in the window's user data. That GCHandle is also what
+/// keeps this object alive while native code holds a pointer to it; <see cref="Destroy"/> restores the
+/// original WndProc and frees it.
+///
+/// Neither pump source applies here: Win32 already has a message loop for events and SetTimer for the
+/// repaint clock, which is why both properties are null.
+/// </summary>
 internal sealed class Win32PlatformWindow : IPlatformWindow
 {
     private const nint ContinuousRepaintTimerId = 1;

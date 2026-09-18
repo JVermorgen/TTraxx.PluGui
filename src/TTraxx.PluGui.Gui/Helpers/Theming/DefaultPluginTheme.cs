@@ -2,6 +2,14 @@
 
 namespace TTraxx.PluGui.Gui;
 
+/// <summary>
+/// The built-in dark palette - what a plugin looks like before it supplies a theme of its own, and
+/// the reference for what each slot in <see cref="IPluginTheme"/> is meant to do. Near-monochrome
+/// by design, so it reads as neutral against any plugin's own branding rather than implying one.
+///
+/// Assign a replacement to <see cref="PluginDefaults.Theme"/> at startup, or to a single window's
+/// <see cref="RenderContext.Theme"/>.
+/// </summary>
 public sealed class DefaultPluginTheme : IPluginTheme
 {
     public SKColor Background => new(20, 20, 20);

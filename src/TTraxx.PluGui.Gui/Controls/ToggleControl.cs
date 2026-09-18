@@ -2,6 +2,11 @@
 
 namespace TTraxx.PluGui.Gui;
 
+/// <summary>
+/// On/off pill switch with a sliding knob and a label underneath. A click flips the parameter to a
+/// full 0.0 or 1.0 in one bracketed edit, and right-click offers "Reset to Default"; there's no
+/// drag behaviour, since a two-state value has nothing to drag through.
+/// </summary>
 public sealed class ToggleControl(ToggleControlConfiguration config) : PluginControl(config)
 {
     private ParameterBinding Parameter => config.Parameter;

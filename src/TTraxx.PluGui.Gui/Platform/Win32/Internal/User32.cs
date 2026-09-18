@@ -4,6 +4,13 @@ using static TTraxx.PluGui.Gui.Platform.Win32.Internal.Constants.WindowMessageCo
 
 namespace TTraxx.PluGui.Gui.Platform.Win32.Internal;
 
+/// <summary>
+/// user32.dll bindings for the plugin's child window: creation, the WndProc subclassing pair,
+/// invalidation, the repaint timer and DPI queries. Only what Win32PlatformWindow calls is declared.
+///
+/// Mostly 1:1 with the native signatures; the members that aren't - the user-data and DPI wrappers
+/// below - are documented individually.
+/// </summary>
 internal static partial class User32
 {
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -31,8 +38,14 @@ internal static partial class User32
     [LibraryImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
     private static partial nint GetWindowLongPtr(nint hWnd, int nIndex);
 
+    /// <summary>
+    /// Stores one pointer-sized value in the window's user-data slot - used to park the owning
+    /// instance's GCHandle so the static WndProc can recover it. Must be set BEFORE the WndProc is
+    /// installed, or the first message arrives with nothing to dispatch to.
+    /// </summary>
     internal static nint SetWindowUserData(nint hWnd, nint value) => SetWindowLongPtr(hWnd, GWLP_USERDATA, value);
 
+    /// <summary>Reads back the value stored by <see cref="SetWindowUserData"/>; 0 when never set.</summary>
     internal static nint GetWindowUserData(nint hWnd) => GetWindowLongPtr(hWnd, GWLP_USERDATA);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
@@ -72,6 +85,11 @@ internal static partial class User32
     [LibraryImport("user32.dll")]
     private static partial int GetDpiForSystem(); // Win10+
 
+    /// <summary>
+    /// Window DPI, falling back to 96 (the 1.0-scale baseline) if the call fails or returns 0. Guarded
+    /// because GetDpiForWindow is Win10+: on an older host the P/Invoke throws on first use, and a
+    /// plugin should open at normal scale rather than not at all.
+    /// </summary>
     internal static int SafeGetDpiForWindow(nint hWnd)
     {
         try
@@ -82,6 +100,10 @@ internal static partial class User32
         catch { return 96; }
     }
 
+    /// <summary>
+    /// System DPI, with the same 96 fallback as <see cref="SafeGetDpiForWindow"/> - used when there's no
+    /// window to ask about yet.
+    /// </summary>
     internal static int SafeGetDpiForSystem()
     {
         try

@@ -3,6 +3,11 @@ using TTraxx.PluGui.Gui.Platform.Win32.Internal.Structs;
 
 namespace TTraxx.PluGui.Gui.Platform.Win32.Internal;
 
+/// <summary>
+/// gdi32.dll bindings for the off-screen surface Win32PlatformWindow paints through: a memory DC
+/// holding a DIB section that Skia draws into directly, then blitted to the window in WM_PAINT.
+/// Only the handful of entry points that path needs are declared.
+/// </summary>
 internal static partial class Gdi32
 {
     [LibraryImport("gdi32.dll")]
@@ -26,6 +31,16 @@ internal static partial class Gdi32
     [LibraryImport("gdi32.dll", SetLastError = true)]
     private static partial nint CreateDIBSection(nint hdc, ref BitmapInfoHeader pbmi, uint usage, out nint ppvBits, nint hSection, uint offset);
 
+    /// <summary>
+    /// Creates a 32bpp uncompressed, TOP-DOWN DIB section of <paramref name="width"/> by
+    /// <paramref name="height"/> pixels compatible with <paramref name="hdc"/>, and hands back a
+    /// pointer to its raw pixels in <paramref name="bits"/> - which is what Skia is pointed at. That
+    /// buffer is owned by the returned bitmap, so it must not be freed separately.
+    ///
+    /// Wraps the raw call so the header is filled in one place - getting
+    /// <see cref="BitmapInfoHeader.biHeight"/>'s sign wrong renders the whole UI upside down.
+    /// </summary>
+    /// <returns>The bitmap handle, to be selected into a memory DC and deleted with DeleteObject.</returns>
     public static nint CreateDIBSection32(nint hdc, int width, int height, out nint bits)
     {
         BitmapInfoHeader bmi = new()

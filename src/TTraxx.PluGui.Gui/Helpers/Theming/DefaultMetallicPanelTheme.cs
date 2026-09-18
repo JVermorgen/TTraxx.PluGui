@@ -2,8 +2,17 @@
 
 namespace TTraxx.PluGui.Gui;
 
+/// <summary>
+/// Built-in brushed-metal panel colors, used for any theme that doesn't implement
+/// <see cref="IMetallicPanelTheme"/> itself. Tuned against <see cref="DefaultPluginTheme"/>'s dark
+/// background, so a markedly lighter theme will want its own.
+/// </summary>
 public sealed class DefaultMetallicPanelTheme : IMetallicPanelTheme
 {
+    /// <summary>
+    /// Shared instance. Safe as a singleton because every member is a computed constant - there's no
+    /// per-use state to collide over, so <see cref="RenderContext"/> hands the same one to every window.
+    /// </summary>
     public static readonly DefaultMetallicPanelTheme Instance = new();
 
     public SKColor PanelMetalTop => new(80, 80, 80);

@@ -1,5 +1,13 @@
 ﻿namespace TTraxx.PluGui.Gui;
 
+/// <summary>
+/// Default formatting of a plain (already de-normalized) parameter value for on-screen readout.
+/// The rules are keyed off the unit string from ParameterControlInfo.Unit, so a parameter gets a
+/// sensible readout with no per-parameter formatting code - decimals where they carry information
+/// ("0.8 s") and none where they'd be noise ("440 Hz").
+///
+/// Supply ParameterBinding.ValueFormatter to override this for one parameter.
+/// </summary>
 public static class ValueExtensions
 {
     // Auto-converts large Hz values to kHz for a shorter, more compact

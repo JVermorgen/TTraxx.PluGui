@@ -7,7 +7,7 @@ namespace TTraxx.PluGui.Harness.NPlug.Core;
 /// <summary>
 /// Fixed-height dev-tool bar shown above the plugin view in every harness
 /// window: a switch to pin the harness window above others, and a switch for
-/// TTraxx.PluGui.Gui.Helpers.Globals.ShowControlBounds (outlines every
+/// <see cref="Globals.ShowControlBounds"/> (outlines every
 /// control's bounds - see that flag's own doc comment). Built from the exact
 /// same window/control framework a plugin's own view draws with, so it
 /// automatically matches the loaded plugin's theme, and is never part of a

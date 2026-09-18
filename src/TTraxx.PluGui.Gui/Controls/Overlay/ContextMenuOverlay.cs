@@ -7,6 +7,15 @@ namespace TTraxx.PluGui.Gui.Controls.Overlay;
 /// of ControlManager's layout/hit-test list: PluginWindow owns a single
 /// instance directly so it can always sit on top and swallow the very next
 /// click regardless of what control is underneath.
+///
+/// It is IMMUTABLE once constructed apart from its hover row: size and position are measured from
+/// the items in the constructor. The window therefore creates a new one per right-click and drops it
+/// on dismissal (and on resize, whose old position would no longer be valid) rather than reusing and
+/// re-measuring one.
+///
+/// Lifecycle is entirely the window's: this type draws, hit-tests and invokes, but never decides
+/// when it disappears - see PluginWindow's IPlatformWindowHost input handlers, which close it on the
+/// next click, double-click or resize and ignore the wheel while it's open.
 /// </summary>
 internal sealed class ContextMenuOverlay
 {
@@ -19,7 +28,13 @@ internal sealed class ContextMenuOverlay
     private readonly SKRect _bounds;
     private int _hoveredIndex = -1;
 
-    /// <summary>x, y and containerW/H are already-scaled pixel coordinates, matching everything else the platform layer reports.</summary>
+    /// <summary>
+    /// Measures the menu against <paramref name="items"/> and places it at the click point, nudged back
+    /// inside the window when it would otherwise overflow the right or bottom edge.
+    ///
+    /// x, y and containerW/H are already-scaled pixel coordinates, matching everything else the
+    /// platform layer reports.
+    /// </summary>
     public ContextMenuOverlay(int x, int y, IReadOnlyList<ContextMenuItem> items, int containerW, int containerH, RenderContext context)
     {
         _items = items;
@@ -46,6 +61,10 @@ internal sealed class ContextMenuOverlay
 
     private float RowHeightPx => _bounds.Height / _items.Count;
 
+    /// <summary>
+    /// Moves the hover highlight to the row at this window-relative point, or clears it when the
+    /// pointer is outside the menu. The caller repaints.
+    /// </summary>
     public void UpdateHover(int x, int y) => _hoveredIndex = IndexAt(x, y);
 
     /// <summary>Executes the hit item if any and enabled. The caller dismisses the overlay regardless of the outcome.</summary>
@@ -65,6 +84,10 @@ internal sealed class ContextMenuOverlay
         return index >= 0 && index < _items.Count ? index : -1;
     }
 
+    /// <summary>
+    /// Draws the menu in absolute, window-relative coordinates - the canvas is NOT translated for it,
+    /// unlike a control's. Called last in the window's paint, so it covers everything else.
+    /// </summary>
     public void Draw(SKCanvas canvas)
     {
         var radius = _context.RescaleExact(4f);

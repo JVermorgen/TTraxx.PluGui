@@ -2,6 +2,18 @@
 
 namespace TTraxx.PluGui.Gui.Controls.Manager;
 
+/// <summary>
+/// Holds a window's current control set and does the work that needs to see ALL of them at once:
+/// drawing them in order, hit-testing, tracking which one is hovered, and routing pointer events
+/// to the right one. Splitting this out is what keeps <see cref="PluginWindow"/> about layout and
+/// lifecycle rather than input bookkeeping.
+///
+/// POINTER CAPTURE: a press captures the control under the pointer, and every move and the release
+/// go to it until then - even outside its bounds - so overshooting a drag doesn't drop it. Hover is
+/// suppressed for the duration, since the pointer "belongs" to the dragged control.
+///
+/// Coordinates arriving here are window-relative; controls are given local ones.
+/// </summary>
 internal sealed class ControlManager : IDisposable
 {
     // Fixed, theme-independent color: outlines must stay visible regardless

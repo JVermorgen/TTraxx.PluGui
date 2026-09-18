@@ -3,11 +3,19 @@
 namespace TTraxx.PluGui.Gui;
 
 /// <summary>
-/// A "brushed metal" panel with a title and arrow icon. Instantiate once
-/// per panel and call Draw every frame.
+/// A "brushed metal" panel: a gradient-filled rounded body with a sheen line, and a header tab
+/// carrying an arrow icon and the configuration's title.
+///
+/// The header is drawn in the ~24 design units ABOVE the configured Top, so the body rectangle you
+/// configure is not the full visual footprint - budget space overhead accordingly.
+///
+/// Construct one inside the window's BuildLayout() and hand it to PluginWindow.RegisterPanel, which
+/// draws it each frame via DrawRegisteredPanels; see the note on IPluginPanel.AddControl for why a
+/// panel shouldn't be held in a field across layout builds.
 /// </summary>
 public sealed class MetallicPluginPanel(RenderContext context, PluginPanelConfiguration config) : PluginPanel(context, config)
 {
+    /// <summary>Draws the header tab, then the body, its border and sheen, then the icon and title.</summary>
     public override void Draw(SKCanvas canvas)
     {
         canvas.FillRoundRectVerticalGradient(Left, FromTop(-24), Width, RescaleExact(34), CornerRadius, MetallicTheme.PanelMetalHeaderHighlight, MetallicTheme.PanelMetalHeaderShadow);
@@ -56,8 +64,13 @@ public sealed class MetallicPluginPanel(RenderContext context, PluginPanelConfig
     }
 
     /// <summary>
-    /// "──── LABEL ────"-style section divider within this panel. y is
-    /// logical, like the configuration dimensions, and gets rescaled here.
+    /// "──── LABEL ────"-style section divider within this panel, for grouping rows of controls under
+    /// a heading. <paramref name="relativeY"/> is logical, like the configuration dimensions, measured
+    /// down from the panel's top edge, and gets rescaled here.
+    ///
+    /// Call this from the WINDOW's DrawBackground, after DrawRegisteredPanels - it draws straight onto
+    /// the canvas rather than being part of <see cref="Draw"/>, so a window can place as many dividers
+    /// as its layout needs without the panel having to know about them.
     /// </summary>
     public void DrawSectionDivider(SKCanvas canvas, int relativeY, string text)
     {

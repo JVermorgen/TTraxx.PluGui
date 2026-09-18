@@ -2,6 +2,19 @@
 
 namespace TTraxx.PluGui.Gui;
 
+/// <summary>
+/// Built-in vector icons, chiefly the waveform glyphs a synth UI needs.
+///
+/// COORDINATE SPACE: every path is built in a normalized box from -0.5 to +0.5 on both axes,
+/// centered on the origin, with Y pointing DOWN as in Skia. That's what makes them scale-free -
+/// the caller multiplies by whatever size it needs (see <see cref="SkiaIconExtensions"/>) instead
+/// of the icon carrying a baked-in size. Draw one through those extensions rather than passing the
+/// path to Skia directly, or it renders as a sub-pixel speck at the origin.
+///
+/// Paths are built once on first use and cached. Treat them as READ-ONLY: they're shared across
+/// every window in the process, so transform a copy (or transform the canvas) rather than the path
+/// itself.
+/// </summary>
 public static class Icons
 {
     private static volatile SKPath? _arrowRight;
@@ -10,10 +23,19 @@ public static class Icons
     private static volatile SKPath? _pulse;
     private static volatile SKPath? _triangle;
 
+    /// <summary>Right-pointing triangle with a notched back edge - a play/next marker. Filled.</summary>
     public static SKPath ArrowRight => _arrowRight ??= BuildArrowRight();
+
+    /// <summary>One full sine cycle, polyline-approximated. Meant to be STROKED, not filled.</summary>
     public static SKPath Sine => _sine ??= BuildSine();
+
+    /// <summary>Two sawtooth ramps. Meant to be STROKED.</summary>
     public static SKPath Saw => _saw ??= BuildSaw();
+
+    /// <summary>A square/pulse edge profile. Meant to be STROKED.</summary>
     public static SKPath Pulse => _pulse ??= BuildPulse();
+
+    /// <summary>A triangle wave profile. Meant to be STROKED.</summary>
     public static SKPath Triangle => _triangle ??= BuildTriangle();
 
     internal static void InvalidateCache()
