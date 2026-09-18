@@ -1,5 +1,4 @@
 ﻿using System.Reflection.Metadata;
-using TTraxx.PluGui.Gui;
 using TTraxx.PluGui.Gui.Helpers.HotReload;
 
 [assembly: MetadataUpdateHandler(typeof(GuiCacheUpdateHandler))]

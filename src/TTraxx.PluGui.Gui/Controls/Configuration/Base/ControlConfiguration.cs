@@ -1,6 +1,4 @@
-﻿using TTraxx.PluGui.Gui;
-
-namespace TTraxx.PluGui.Gui;
+﻿namespace TTraxx.PluGui.Gui;
 
 public abstract class ControlConfiguration : IControlConfiguration
 {

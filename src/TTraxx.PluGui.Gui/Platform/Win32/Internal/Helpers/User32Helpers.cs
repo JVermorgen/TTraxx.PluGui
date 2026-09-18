@@ -1,5 +1,4 @@
-﻿using TTraxx.PluGui.Gui;
-using TTraxx.PluGui.Gui.Platform.Win32.Internal.Constants;
+﻿using TTraxx.PluGui.Gui.Platform.Win32.Internal.Constants;
 
 namespace TTraxx.PluGui.Gui.Platform.Win32.Internal.Helpers;
 

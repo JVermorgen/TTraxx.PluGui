@@ -1,6 +1,4 @@
-﻿using TTraxx.PluGui.Gui;
-
-namespace TTraxx.PluGui.Gui;
+﻿namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// Everything a control needs to read and write one host parameter.
