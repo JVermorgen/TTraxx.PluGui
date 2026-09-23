@@ -232,10 +232,13 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
             }
             else
             {
+                // Through FormatValue like every other readout, so a ValueFormatter shapes the range
+                // ends too - otherwise a knob with one reads its ends in one format and its value in
+                // another. Without a formatter this is the same MinValue/MaxValue unit formatting.
                 fontPaint.Color = enabled ? Theme.TextDim : Theme.TextDisabled;
-                canvas.DrawTextTopAligned(Parameter.MinValue.Format(Parameter.Info.Unit),
+                canvas.DrawTextTopAligned(FormatValue(0.0),
                     Rescale(5), rangeY, SKTextAlign.Left, smallFont, fontPaint);
-                canvas.DrawTextTopAligned(Parameter.MaxValue.Format(Parameter.Info.Unit),
+                canvas.DrawTextTopAligned(FormatValue(1.0),
                     _w - Rescale(5), rangeY, SKTextAlign.Right, smallFont, fontPaint);
             }
         }
