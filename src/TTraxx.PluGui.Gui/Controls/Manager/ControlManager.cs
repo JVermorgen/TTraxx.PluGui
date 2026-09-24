@@ -56,6 +56,8 @@ internal sealed class ControlManager : IDisposable
     {
         foreach (var control in _controls)
         {
+            if (!control.IsVisible) continue;
+
             canvas.Save();
             canvas.Translate(control.X, control.Y);
             control.Draw(canvas);
@@ -91,13 +93,17 @@ internal sealed class ControlManager : IDisposable
         return false;
     }
 
-    /// <summary>Back-to-front (reversed drawing order), so when overlapping the topmost (last drawn) control gets a hit first.</summary>
+    /// <summary>
+    /// Back-to-front (reversed drawing order), so when overlapping the topmost (last drawn) control gets
+    /// a hit first. Hidden controls are skipped: controls on the inactive page of a paged panel share
+    /// their space with the visible ones, and must not intercept the pointer from underneath them.
+    /// </summary>
     private PluginControl? HitTestControls(int x, int y)
     {
         for (var i = _controls.Count - 1; i >= 0; i--)
         {
             var control = _controls[i];
-            if (control.HitTest(x - control.X, y - control.Y)) return control;
+            if (control.IsVisible && control.HitTest(x - control.X, y - control.Y)) return control;
         }
         return null;
     }

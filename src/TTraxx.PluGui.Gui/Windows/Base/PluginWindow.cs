@@ -252,6 +252,10 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
     /// TConfig's own ISizedControlConfiguration default (if it implements it); extraWidth/extraHeight
     /// are then added on top regardless (e.g. for a panel whose labels need more room than the
     /// control's own natural size).
+    ///
+    /// <paramref name="visibleWhen"/> shows the control only while it returns true - the building
+    /// block for paged panels, where several controls share one area and a tab decides which set is
+    /// on screen. Evaluated on every draw and hit-test; null (the default) means always visible.
     /// </summary>
     protected ControlPlacement Place<TConfig, TControl>(
         TConfig config,
@@ -261,11 +265,13 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
         int? height = null,
         int extraWidth = 0,
         int extraHeight = 0,
-        IPluginPanel? panel = null)
+        IPluginPanel? panel = null,
+        Func<bool>? visibleWhen = null)
         where TConfig : IControlConfiguration
         where TControl : PluginControl
     {
         var control = Create(config, factory);
+        control.SetVisibleWhen(visibleWhen);
         var (w, h) = ResolveBounds(config, width, height);
         w += extraWidth;
         h += extraHeight;
@@ -290,7 +296,8 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
         int rowPitch, int columnPitch,
         int? width = null, int? height = null,
         int extraWidth = 0, int extraHeight = 0,
-        IPluginPanel? panel = null)
+        IPluginPanel? panel = null,
+        Func<bool>? visibleWhen = null)
         where TConfig : IControlConfiguration
         where TControl : PluginControl
     {
@@ -298,7 +305,7 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
         {
             var x = originX + (column * columnPitch);
             var y = originY + (row * rowPitch);
-            yield return Place(config, factory, x, y, width, height, extraWidth, extraHeight, panel);
+            yield return Place(config, factory, x, y, width, height, extraWidth, extraHeight, panel, visibleWhen);
         }
     }
 
@@ -401,6 +408,7 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
         foreach (var (control, x, y, w, h) in _layout)
         {
             control.BindInvalidate(PlatformWindow.Invalidate);
+            control.BindShowMenu(OpenMenu);
             control.SetContainerBackgroundReference(_windowWidth, _windowHeight);
             control.SetBounds(x, y, w, h, Context);
         }
@@ -465,9 +473,13 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
     }
 
     void IPlatformWindowHost.OnContextMenu(int x, int y)
+        => OpenMenu(x, y, _controlManager.FindControlAt(x, y)?.GetContextMenuItems() ?? []);
+
+    // The one way a menu opens, whether from a right-click or from a control asking for one
+    // (PluginControl.ShowMenu - a dropdown, say). An empty list closes any open menu instead.
+    private void OpenMenu(int x, int y, IReadOnlyList<ContextMenuItem> items)
     {
-        var items = _controlManager.FindControlAt(x, y)?.GetContextMenuItems();
-        _contextMenu = items is { Count: > 0 } ? new ContextMenuOverlay(x, y, items, _windowWidth, _windowHeight, Context) : null;
+        _contextMenu = items.Count > 0 ? new ContextMenuOverlay(x, y, items, _windowWidth, _windowHeight, Context) : null;
         PlatformWindow.Invalidate();
     }
 

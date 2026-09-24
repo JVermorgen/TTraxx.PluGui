@@ -125,6 +125,14 @@ internal sealed class ContextMenuOverlay
                 IsAntialias = true
             };
             canvas.DrawTextTopAligned(item.Label, textX, rowTop + ((rowH - textHeight) / 2f), SKTextAlign.Left, font, textPaint);
+
+            // The current choice: a dot in the left padding, drawn rather than a glyph so it doesn't
+            // depend on the font having a check-mark character.
+            if (item.IsChecked)
+            {
+                using SKPaint markPaint = new() { Color = _context.Theme.Accent, IsAntialias = true, Style = SKPaintStyle.Fill };
+                canvas.DrawCircle(_bounds.Left + (_context.Rescale(HorizontalPadding) / 2f), rowTop + (rowH / 2f), _context.RescaleExact(2.5f), markPaint);
+            }
         }
     }
 }

@@ -11,6 +11,9 @@ public static class ControlFactory
         ToggleControlConfiguration toggleConfig => new ToggleControl(toggleConfig),
         XYPadControlConfiguration xyPadConfig => new XYPadControl(xyPadConfig),
         MeterControlConfiguration meterConfig => new MeterControl(meterConfig),
+        DropdownControlConfiguration dropdownConfig => new DropdownControl(dropdownConfig),
+        SliderControlConfiguration sliderConfig => new SliderControl(sliderConfig),
+        TabStripControlConfiguration tabStripConfig => new TabStripControl(tabStripConfig),
         _ => throw new ArgumentException("Unsupported control configuration type", nameof(config)),
     };
 }

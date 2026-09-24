@@ -44,6 +44,8 @@ public abstract class PluginControl(IControlConfiguration config) : IDisposable
     protected int _containerH = 1;
 
     private Action? _invalidateRequest;
+    private Action<int, int, IReadOnlyList<ContextMenuItem>>? _showMenuRequest;
+    private Func<bool>? _visibleWhen;
 
     // Replaced by the owning window's context in SetBounds(). The stand-in keeps an unplaced
     // control drawable at scale 1 with the default theme, rather than throwing mid-paint.
@@ -110,16 +112,43 @@ public abstract class PluginControl(IControlConfiguration config) : IDisposable
     protected bool IsEnabled => Config.IsEnabled();
 
     /// <summary>
+    /// Whether this control is currently shown. A hidden control is neither drawn nor hit-tested, so
+    /// it takes no input and can't be found under the pointer by the host either. Decided by the
+    /// window at placement time (see PluginWindow.Place's visibleWhen) rather than by the control's
+    /// configuration: WHERE a control sits - which page of a paged panel, say - is layout, not binding.
+    /// Re-evaluated on every draw and hit-test, like <see cref="IsEnabled"/>.
+    /// </summary>
+    public bool IsVisible => _visibleWhen?.Invoke() ?? true;
+
+    /// <summary>Set by the window on every layout build; null means always visible.</summary>
+    public void SetVisibleWhen(Func<bool>? visibleWhen) => _visibleWhen = visibleWhen;
+
+    /// <summary>
     /// Bound by the window when the control is added, so a control can ask
     /// for a redraw without knowing anything about Win32/Cocoa/X11.
     /// </summary>
     public void BindInvalidate(Action invalidateRequest) => _invalidateRequest = invalidateRequest;
 
     /// <summary>
+    /// Bound by the window alongside <see cref="BindInvalidate"/>: how <see cref="ShowMenu"/> reaches
+    /// the window's menu overlay. Takes window-relative coordinates.
+    /// </summary>
+    public void BindShowMenu(Action<int, int, IReadOnlyList<ContextMenuItem>> showMenuRequest) => _showMenuRequest = showMenuRequest;
+
+    /// <summary>
     /// Requests a repaint of the window this control belongs to. Call it after changing anything the
     /// control draws from; it's a no-op before the control has been laid out.
     /// </summary>
     public void Refresh() => _invalidateRequest?.Invoke();
+
+    /// <summary>
+    /// Opens the window's popup menu with <paramref name="items"/>, its top-left corner at a point
+    /// in this control's LOCAL coordinates - for a control that pops a menu on an ordinary click (a
+    /// dropdown) rather than on right-click. The window owns the menu from there on exactly as it
+    /// does a right-click menu: the next click picks a row or dismisses it.
+    /// </summary>
+    protected void ShowMenu(int localX, int localY, IReadOnlyList<ContextMenuItem> items)
+        => _showMenuRequest?.Invoke(_x + localX, _y + localY, items);
 
     /// <summary>
     /// Bounds are given in unscaled design units and rescaled here. <paramref name="context"/> is the

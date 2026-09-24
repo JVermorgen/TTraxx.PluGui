@@ -6,6 +6,14 @@ override TTraxx.PluGui.Gui.ContextMenuItem.Equals(object? obj) -> bool
 override TTraxx.PluGui.Gui.ContextMenuItem.GetHashCode() -> int
 override TTraxx.PluGui.Gui.ContextMenuItem.ToString() -> string!
 override TTraxx.PluGui.Gui.ControlPlacement.GetHashCode() -> int
+override TTraxx.PluGui.Gui.DropdownControl.Draw(SkiaSharp.SKCanvas! canvas) -> void
+override TTraxx.PluGui.Gui.DropdownControl.GetContextMenuItems() -> System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.ContextMenuItem!>!
+override TTraxx.PluGui.Gui.DropdownControl.GetParameterInfo(int localX, int localY) -> TTraxx.PluGui.Gui.IParameterControlInfo?
+override TTraxx.PluGui.Gui.DropdownControl.OnPointerDown(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.DropdownControl.OnWheel(TTraxx.PluGui.Gui.WheelEventArgs e) -> void
+override TTraxx.PluGui.Gui.DropdownStyle.Equals(object? obj) -> bool
+override TTraxx.PluGui.Gui.DropdownStyle.GetHashCode() -> int
+override TTraxx.PluGui.Gui.DropdownStyle.ToString() -> string!
 override TTraxx.PluGui.Gui.KnobControl.Draw(SkiaSharp.SKCanvas! canvas) -> void
 override TTraxx.PluGui.Gui.KnobControl.GetContextMenuItems() -> System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.ContextMenuItem!>!
 override TTraxx.PluGui.Gui.KnobControl.GetParameterInfo(int localX, int localY) -> TTraxx.PluGui.Gui.IParameterControlInfo!
@@ -24,6 +32,24 @@ override TTraxx.PluGui.Gui.MeterStyle.Equals(object? obj) -> bool
 override TTraxx.PluGui.Gui.MeterStyle.GetHashCode() -> int
 override TTraxx.PluGui.Gui.MeterStyle.ToString() -> string!
 override TTraxx.PluGui.Gui.PointerEventArgs.GetHashCode() -> int
+override TTraxx.PluGui.Gui.SliderControl.Draw(SkiaSharp.SKCanvas! canvas) -> void
+override TTraxx.PluGui.Gui.SliderControl.GetContextMenuItems() -> System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.ContextMenuItem!>!
+override TTraxx.PluGui.Gui.SliderControl.GetParameterInfo(int localX, int localY) -> TTraxx.PluGui.Gui.IParameterControlInfo?
+override TTraxx.PluGui.Gui.SliderControl.OnDoubleClick(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.SliderControl.OnPointerDown(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.SliderControl.OnPointerMove(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.SliderControl.OnPointerUp(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.SliderControl.OnWheel(TTraxx.PluGui.Gui.WheelEventArgs e) -> void
+override TTraxx.PluGui.Gui.SliderStyle.Equals(object? obj) -> bool
+override TTraxx.PluGui.Gui.SliderStyle.GetHashCode() -> int
+override TTraxx.PluGui.Gui.SliderStyle.ToString() -> string!
+override TTraxx.PluGui.Gui.TabStripControl.Draw(SkiaSharp.SKCanvas! canvas) -> void
+override TTraxx.PluGui.Gui.TabStripControl.OnPointerDown(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.TabStripControl.OnPointerLeave() -> void
+override TTraxx.PluGui.Gui.TabStripControl.OnPointerMove(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.TabStripStyle.Equals(object? obj) -> bool
+override TTraxx.PluGui.Gui.TabStripStyle.GetHashCode() -> int
+override TTraxx.PluGui.Gui.TabStripStyle.ToString() -> string!
 override TTraxx.PluGui.Gui.ToggleControl.Draw(SkiaSharp.SKCanvas! canvas) -> void
 override TTraxx.PluGui.Gui.ToggleControl.GetContextMenuItems() -> System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.ContextMenuItem!>!
 override TTraxx.PluGui.Gui.ToggleControl.GetParameterInfo(int localX, int localY) -> TTraxx.PluGui.Gui.IParameterControlInfo?
@@ -52,6 +78,9 @@ static TTraxx.PluGui.Gui.ControlPlacement.implicit operator TTraxx.PluGui.Gui.Co
 static TTraxx.PluGui.Gui.ControlPlacement.operator !=(TTraxx.PluGui.Gui.ControlPlacement left, TTraxx.PluGui.Gui.ControlPlacement right) -> bool
 static TTraxx.PluGui.Gui.ControlPlacement.operator ==(TTraxx.PluGui.Gui.ControlPlacement left, TTraxx.PluGui.Gui.ControlPlacement right) -> bool
 static TTraxx.PluGui.Gui.Controls.Factories.ControlFactory.Create(TTraxx.PluGui.Gui.IControlConfiguration! config) -> TTraxx.PluGui.Gui.PluginControl!
+static TTraxx.PluGui.Gui.DropdownStyle.Default.get -> TTraxx.PluGui.Gui.DropdownStyle!
+static TTraxx.PluGui.Gui.DropdownStyle.operator !=(TTraxx.PluGui.Gui.DropdownStyle? left, TTraxx.PluGui.Gui.DropdownStyle? right) -> bool
+static TTraxx.PluGui.Gui.DropdownStyle.operator ==(TTraxx.PluGui.Gui.DropdownStyle? left, TTraxx.PluGui.Gui.DropdownStyle? right) -> bool
 static TTraxx.PluGui.Gui.Globals.ShowControlBounds.get -> bool
 static TTraxx.PluGui.Gui.Globals.ShowControlBounds.set -> void
 static TTraxx.PluGui.Gui.Helpers.HotReload.GuiHotReload.Reloaded -> System.Action?
@@ -79,6 +108,12 @@ static TTraxx.PluGui.Gui.SkiaGradientExtensions.FillVerticalGradient(this SkiaSh
 static TTraxx.PluGui.Gui.SkiaIconExtensions.DrawIconFill(this SkiaSharp.SKCanvas! canvas, SkiaSharp.SKPath! icon, float x, float y, float size, SkiaSharp.SKColor color) -> void
 static TTraxx.PluGui.Gui.SkiaIconExtensions.DrawIconStroke(this SkiaSharp.SKCanvas! canvas, SkiaSharp.SKPath! icon, float centerX, float centerY, float width, float height, float strokeWidth, SkiaSharp.SKColor color) -> void
 static TTraxx.PluGui.Gui.SkiaTextExtensions.DrawTextTopAligned(this SkiaSharp.SKCanvas! canvas, string! text, float x, float topY, SkiaSharp.SKTextAlign textAlign, SkiaSharp.SKFont! font, SkiaSharp.SKPaint! paint) -> void
+static TTraxx.PluGui.Gui.SliderStyle.Default.get -> TTraxx.PluGui.Gui.SliderStyle!
+static TTraxx.PluGui.Gui.SliderStyle.operator !=(TTraxx.PluGui.Gui.SliderStyle? left, TTraxx.PluGui.Gui.SliderStyle? right) -> bool
+static TTraxx.PluGui.Gui.SliderStyle.operator ==(TTraxx.PluGui.Gui.SliderStyle? left, TTraxx.PluGui.Gui.SliderStyle? right) -> bool
+static TTraxx.PluGui.Gui.TabStripStyle.Default.get -> TTraxx.PluGui.Gui.TabStripStyle!
+static TTraxx.PluGui.Gui.TabStripStyle.operator !=(TTraxx.PluGui.Gui.TabStripStyle? left, TTraxx.PluGui.Gui.TabStripStyle? right) -> bool
+static TTraxx.PluGui.Gui.TabStripStyle.operator ==(TTraxx.PluGui.Gui.TabStripStyle? left, TTraxx.PluGui.Gui.TabStripStyle? right) -> bool
 static TTraxx.PluGui.Gui.ToggleStyle.Default.get -> TTraxx.PluGui.Gui.ToggleStyle!
 static TTraxx.PluGui.Gui.ToggleStyle.operator !=(TTraxx.PluGui.Gui.ToggleStyle? left, TTraxx.PluGui.Gui.ToggleStyle? right) -> bool
 static TTraxx.PluGui.Gui.ToggleStyle.operator ==(TTraxx.PluGui.Gui.ToggleStyle? left, TTraxx.PluGui.Gui.ToggleStyle? right) -> bool
@@ -91,11 +126,13 @@ static TTraxx.PluGui.Gui.XYPadStyle.operator !=(TTraxx.PluGui.Gui.XYPadStyle? le
 static TTraxx.PluGui.Gui.XYPadStyle.operator ==(TTraxx.PluGui.Gui.XYPadStyle? left, TTraxx.PluGui.Gui.XYPadStyle? right) -> bool
 TTraxx.PluGui.Gui.ContextMenuItem
 TTraxx.PluGui.Gui.ContextMenuItem.<Clone>$() -> TTraxx.PluGui.Gui.ContextMenuItem!
-TTraxx.PluGui.Gui.ContextMenuItem.ContextMenuItem(string! Label, System.Action! Execute, bool IsEnabled = true) -> void
-TTraxx.PluGui.Gui.ContextMenuItem.Deconstruct(out string! Label, out System.Action! Execute, out bool IsEnabled) -> void
+TTraxx.PluGui.Gui.ContextMenuItem.ContextMenuItem(string! Label, System.Action! Execute, bool IsEnabled = true, bool IsChecked = false) -> void
+TTraxx.PluGui.Gui.ContextMenuItem.Deconstruct(out string! Label, out System.Action! Execute, out bool IsEnabled, out bool IsChecked) -> void
 TTraxx.PluGui.Gui.ContextMenuItem.Equals(TTraxx.PluGui.Gui.ContextMenuItem? other) -> bool
 TTraxx.PluGui.Gui.ContextMenuItem.Execute.get -> System.Action!
 TTraxx.PluGui.Gui.ContextMenuItem.Execute.init -> void
+TTraxx.PluGui.Gui.ContextMenuItem.IsChecked.get -> bool
+TTraxx.PluGui.Gui.ContextMenuItem.IsChecked.init -> void
 TTraxx.PluGui.Gui.ContextMenuItem.IsEnabled.get -> bool
 TTraxx.PluGui.Gui.ContextMenuItem.IsEnabled.init -> void
 TTraxx.PluGui.Gui.ContextMenuItem.Label.get -> string!
@@ -163,6 +200,31 @@ TTraxx.PluGui.Gui.DefaultPluginTheme.TrackBackground.get -> SkiaSharp.SKColor
 TTraxx.PluGui.Gui.DefaultPluginTheme.XYPanelBackgroundHighlight.get -> SkiaSharp.SKColor
 TTraxx.PluGui.Gui.DefaultPluginTheme.XYPanelBackgroundShadow.get -> SkiaSharp.SKColor
 TTraxx.PluGui.Gui.DefaultPluginTheme.XYPanelBorder.get -> SkiaSharp.SKColor
+TTraxx.PluGui.Gui.DropdownControl
+TTraxx.PluGui.Gui.DropdownControl.DropdownControl(TTraxx.PluGui.Gui.DropdownControlConfiguration! config) -> void
+TTraxx.PluGui.Gui.DropdownControlConfiguration
+TTraxx.PluGui.Gui.DropdownControlConfiguration.DropdownControlConfiguration() -> void
+TTraxx.PluGui.Gui.DropdownControlConfiguration.Items.get -> System.Collections.Generic.IReadOnlyList<string!>!
+TTraxx.PluGui.Gui.DropdownControlConfiguration.Items.init -> void
+TTraxx.PluGui.Gui.DropdownControlConfiguration.Parameter.get -> TTraxx.PluGui.Gui.ParameterBinding!
+TTraxx.PluGui.Gui.DropdownControlConfiguration.Parameter.init -> void
+TTraxx.PluGui.Gui.DropdownControlConfiguration.ResolveBounds() -> (int Width, int Height)
+TTraxx.PluGui.Gui.DropdownControlConfiguration.Style.get -> System.Func<TTraxx.PluGui.Gui.DropdownStyle!>?
+TTraxx.PluGui.Gui.DropdownControlConfiguration.Style.init -> void
+TTraxx.PluGui.Gui.DropdownStyle
+TTraxx.PluGui.Gui.DropdownStyle.<Clone>$() -> TTraxx.PluGui.Gui.DropdownStyle!
+TTraxx.PluGui.Gui.DropdownStyle.Bounds.get -> System.Collections.Generic.IReadOnlyDictionary<TTraxx.PluGui.Gui.ControlSizes, (int Width, int Height)>!
+TTraxx.PluGui.Gui.DropdownStyle.Bounds.init -> void
+TTraxx.PluGui.Gui.DropdownStyle.ChevronWidth.get -> float
+TTraxx.PluGui.Gui.DropdownStyle.ChevronWidth.init -> void
+TTraxx.PluGui.Gui.DropdownStyle.CornerRadius.get -> float
+TTraxx.PluGui.Gui.DropdownStyle.CornerRadius.init -> void
+TTraxx.PluGui.Gui.DropdownStyle.DropdownStyle() -> void
+TTraxx.PluGui.Gui.DropdownStyle.Equals(TTraxx.PluGui.Gui.DropdownStyle? other) -> bool
+TTraxx.PluGui.Gui.DropdownStyle.FontSize.get -> float
+TTraxx.PluGui.Gui.DropdownStyle.FontSize.init -> void
+TTraxx.PluGui.Gui.DropdownStyle.Padding.get -> int
+TTraxx.PluGui.Gui.DropdownStyle.Padding.init -> void
 TTraxx.PluGui.Gui.Globals
 TTraxx.PluGui.Gui.Helpers.HotReload.GuiHotReload
 TTraxx.PluGui.Gui.Icons
@@ -358,6 +420,7 @@ TTraxx.PluGui.Gui.ParameterControlInfo.Unit.get -> string!
 TTraxx.PluGui.Gui.ParameterControlInfo.Unit.init -> void
 TTraxx.PluGui.Gui.PluginControl
 TTraxx.PluGui.Gui.PluginControl.BindInvalidate(System.Action! invalidateRequest) -> void
+TTraxx.PluGui.Gui.PluginControl.BindShowMenu(System.Action<int, int, System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.ContextMenuItem!>!>! showMenuRequest) -> void
 TTraxx.PluGui.Gui.PluginControl.Bounds.get -> SkiaSharp.SKRect
 TTraxx.PluGui.Gui.PluginControl.Config.get -> TTraxx.PluGui.Gui.IControlConfiguration!
 TTraxx.PluGui.Gui.PluginControl.Context.get -> TTraxx.PluGui.Gui.RenderContext!
@@ -366,6 +429,7 @@ TTraxx.PluGui.Gui.PluginControl.Height.get -> int
 TTraxx.PluGui.Gui.PluginControl.Id.get -> System.Guid
 TTraxx.PluGui.Gui.PluginControl.IsEnabled.get -> bool
 TTraxx.PluGui.Gui.PluginControl.IsHovered.get -> bool
+TTraxx.PluGui.Gui.PluginControl.IsVisible.get -> bool
 TTraxx.PluGui.Gui.PluginControl.MetallicTheme.get -> TTraxx.PluGui.Gui.IMetallicPanelTheme!
 TTraxx.PluGui.Gui.PluginControl.PluginControl(TTraxx.PluGui.Gui.IControlConfiguration! config) -> void
 TTraxx.PluGui.Gui.PluginControl.Refresh() -> void
@@ -373,6 +437,8 @@ TTraxx.PluGui.Gui.PluginControl.Rescale(float designUnits) -> int
 TTraxx.PluGui.Gui.PluginControl.RescaleExact(float designUnits) -> float
 TTraxx.PluGui.Gui.PluginControl.SetBounds(int x, int y, int w, int h, TTraxx.PluGui.Gui.RenderContext! context) -> void
 TTraxx.PluGui.Gui.PluginControl.SetContainerBackgroundReference(int containerW, int containerH) -> void
+TTraxx.PluGui.Gui.PluginControl.SetVisibleWhen(System.Func<bool>? visibleWhen) -> void
+TTraxx.PluGui.Gui.PluginControl.ShowMenu(int localX, int localY, System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.ContextMenuItem!>! items) -> void
 TTraxx.PluGui.Gui.PluginControl.Theme.get -> TTraxx.PluGui.Gui.IPluginTheme!
 TTraxx.PluGui.Gui.PluginControl.Width.get -> int
 TTraxx.PluGui.Gui.PluginControl.X.get -> int
@@ -429,8 +495,8 @@ TTraxx.PluGui.Gui.PluginWindow.GetInitialScaleFactor(nint parentHandle) -> float
 TTraxx.PluGui.Gui.PluginWindow.GetOrCreate<TControl>(System.Guid configId, System.Func<TControl!>! factory) -> TControl!
 TTraxx.PluGui.Gui.PluginWindow.IsLive.get -> bool
 TTraxx.PluGui.Gui.PluginWindow.MetallicTheme.get -> TTraxx.PluGui.Gui.IMetallicPanelTheme!
-TTraxx.PluGui.Gui.PluginWindow.Place<TConfig, TControl>(TConfig config, System.Func<TConfig, TControl!>! factory, int x, int y, int? width = null, int? height = null, int extraWidth = 0, int extraHeight = 0, TTraxx.PluGui.Gui.IPluginPanel? panel = null) -> TTraxx.PluGui.Gui.ControlPlacement
-TTraxx.PluGui.Gui.PluginWindow.PlaceGrid<TConfig, TControl>(System.Collections.Generic.IEnumerable<(TConfig Config, int Row, int Column)>! cells, System.Func<TConfig, TControl!>! factory, int originX, int originY, int rowPitch, int columnPitch, int? width = null, int? height = null, int extraWidth = 0, int extraHeight = 0, TTraxx.PluGui.Gui.IPluginPanel? panel = null) -> System.Collections.Generic.IEnumerable<TTraxx.PluGui.Gui.ControlPlacement>!
+TTraxx.PluGui.Gui.PluginWindow.Place<TConfig, TControl>(TConfig config, System.Func<TConfig, TControl!>! factory, int x, int y, int? width = null, int? height = null, int extraWidth = 0, int extraHeight = 0, TTraxx.PluGui.Gui.IPluginPanel? panel = null, System.Func<bool>? visibleWhen = null) -> TTraxx.PluGui.Gui.ControlPlacement
+TTraxx.PluGui.Gui.PluginWindow.PlaceGrid<TConfig, TControl>(System.Collections.Generic.IEnumerable<(TConfig Config, int Row, int Column)>! cells, System.Func<TConfig, TControl!>! factory, int originX, int originY, int rowPitch, int columnPitch, int? width = null, int? height = null, int extraWidth = 0, int extraHeight = 0, TTraxx.PluGui.Gui.IPluginPanel? panel = null, System.Func<bool>? visibleWhen = null) -> System.Collections.Generic.IEnumerable<TTraxx.PluGui.Gui.ControlPlacement>!
 TTraxx.PluGui.Gui.PluginWindow.PluginWindow() -> void
 TTraxx.PluGui.Gui.PluginWindow.RefreshUI() -> void
 TTraxx.PluGui.Gui.PluginWindow.RegisterPanel<TPanel>(TPanel panel) -> TPanel
@@ -466,6 +532,56 @@ TTraxx.PluGui.Gui.RenderContext.Theme.set -> void
 TTraxx.PluGui.Gui.SkiaGradientExtensions
 TTraxx.PluGui.Gui.SkiaIconExtensions
 TTraxx.PluGui.Gui.SkiaTextExtensions
+TTraxx.PluGui.Gui.SliderControl
+TTraxx.PluGui.Gui.SliderControl.SliderControl(TTraxx.PluGui.Gui.SliderControlConfiguration! config) -> void
+TTraxx.PluGui.Gui.SliderControlConfiguration
+TTraxx.PluGui.Gui.SliderControlConfiguration.IsBipolar.get -> bool
+TTraxx.PluGui.Gui.SliderControlConfiguration.IsBipolar.init -> void
+TTraxx.PluGui.Gui.SliderControlConfiguration.Parameter.get -> TTraxx.PluGui.Gui.ParameterBinding!
+TTraxx.PluGui.Gui.SliderControlConfiguration.Parameter.init -> void
+TTraxx.PluGui.Gui.SliderControlConfiguration.ResolveBounds() -> (int Width, int Height)
+TTraxx.PluGui.Gui.SliderControlConfiguration.SliderControlConfiguration() -> void
+TTraxx.PluGui.Gui.SliderControlConfiguration.Style.get -> System.Func<TTraxx.PluGui.Gui.SliderStyle!>?
+TTraxx.PluGui.Gui.SliderControlConfiguration.Style.init -> void
+TTraxx.PluGui.Gui.SliderStyle
+TTraxx.PluGui.Gui.SliderStyle.<Clone>$() -> TTraxx.PluGui.Gui.SliderStyle!
+TTraxx.PluGui.Gui.SliderStyle.Bounds.get -> System.Collections.Generic.IReadOnlyDictionary<TTraxx.PluGui.Gui.ControlSizes, (int Width, int Height)>!
+TTraxx.PluGui.Gui.SliderStyle.Bounds.init -> void
+TTraxx.PluGui.Gui.SliderStyle.CornerRadius.get -> float
+TTraxx.PluGui.Gui.SliderStyle.CornerRadius.init -> void
+TTraxx.PluGui.Gui.SliderStyle.DragPixelsForFullSweep.get -> double
+TTraxx.PluGui.Gui.SliderStyle.DragPixelsForFullSweep.init -> void
+TTraxx.PluGui.Gui.SliderStyle.Equals(TTraxx.PluGui.Gui.SliderStyle? other) -> bool
+TTraxx.PluGui.Gui.SliderStyle.FineTuneDivisor.get -> double
+TTraxx.PluGui.Gui.SliderStyle.FineTuneDivisor.init -> void
+TTraxx.PluGui.Gui.SliderStyle.FontSize.get -> float
+TTraxx.PluGui.Gui.SliderStyle.FontSize.init -> void
+TTraxx.PluGui.Gui.SliderStyle.SliderStyle() -> void
+TTraxx.PluGui.Gui.SliderStyle.WheelSteps.get -> int
+TTraxx.PluGui.Gui.SliderStyle.WheelSteps.init -> void
+TTraxx.PluGui.Gui.TabStripControl
+TTraxx.PluGui.Gui.TabStripControl.TabStripControl(TTraxx.PluGui.Gui.TabStripControlConfiguration! config) -> void
+TTraxx.PluGui.Gui.TabStripControlConfiguration
+TTraxx.PluGui.Gui.TabStripControlConfiguration.GetSelectedIndex.get -> System.Func<int>!
+TTraxx.PluGui.Gui.TabStripControlConfiguration.GetSelectedIndex.init -> void
+TTraxx.PluGui.Gui.TabStripControlConfiguration.ResolveBounds() -> (int Width, int Height)
+TTraxx.PluGui.Gui.TabStripControlConfiguration.SetSelectedIndex.get -> System.Action<int>!
+TTraxx.PluGui.Gui.TabStripControlConfiguration.SetSelectedIndex.init -> void
+TTraxx.PluGui.Gui.TabStripControlConfiguration.Style.get -> System.Func<TTraxx.PluGui.Gui.TabStripStyle!>?
+TTraxx.PluGui.Gui.TabStripControlConfiguration.Style.init -> void
+TTraxx.PluGui.Gui.TabStripControlConfiguration.Tabs.get -> System.Collections.Generic.IReadOnlyList<string!>!
+TTraxx.PluGui.Gui.TabStripControlConfiguration.Tabs.init -> void
+TTraxx.PluGui.Gui.TabStripControlConfiguration.TabStripControlConfiguration() -> void
+TTraxx.PluGui.Gui.TabStripStyle
+TTraxx.PluGui.Gui.TabStripStyle.<Clone>$() -> TTraxx.PluGui.Gui.TabStripStyle!
+TTraxx.PluGui.Gui.TabStripStyle.Bounds.get -> System.Collections.Generic.IReadOnlyDictionary<TTraxx.PluGui.Gui.ControlSizes, (int Width, int Height)>!
+TTraxx.PluGui.Gui.TabStripStyle.Bounds.init -> void
+TTraxx.PluGui.Gui.TabStripStyle.CornerRadius.get -> float
+TTraxx.PluGui.Gui.TabStripStyle.CornerRadius.init -> void
+TTraxx.PluGui.Gui.TabStripStyle.Equals(TTraxx.PluGui.Gui.TabStripStyle? other) -> bool
+TTraxx.PluGui.Gui.TabStripStyle.FontSize.get -> float
+TTraxx.PluGui.Gui.TabStripStyle.FontSize.init -> void
+TTraxx.PluGui.Gui.TabStripStyle.TabStripStyle() -> void
 TTraxx.PluGui.Gui.ToggleControl
 TTraxx.PluGui.Gui.ToggleControl.ToggleControl(TTraxx.PluGui.Gui.ToggleControlConfiguration! config) -> void
 TTraxx.PluGui.Gui.ToggleControlConfiguration
