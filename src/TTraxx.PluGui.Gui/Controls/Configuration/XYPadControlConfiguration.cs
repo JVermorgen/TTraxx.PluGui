@@ -4,7 +4,7 @@
 /// Declares a two-dimensional pad that drives one parameter per axis from a single dragged dot -
 /// for values a user thinks of as one gesture (a morph position) rather than two numbers.
 /// </summary>
-public class XYPadControlConfiguration() : ParameterControlConfiguration, ISizedControlConfiguration
+public class XYPadControlConfiguration() : ParameterControlConfiguration, IStyledControlConfiguration<XYPadStyle>
 {
     /// <summary>Parameter driven by the dot's horizontal position (0 = left edge).</summary>
     public required ParameterBinding XParameter { get; init; }
@@ -30,9 +30,6 @@ public class XYPadControlConfiguration() : ParameterControlConfiguration, ISized
     /// instance so the style is resolved on each use - see <see cref="KnobControlConfiguration.Style"/>.
     /// </summary>
     public Func<XYPadStyle>? Style { get; init; }
-
-    /// <inheritdoc/>
-    public (int Width, int Height) ResolveBounds() => (Style?.Invoke() ?? XYPadStyle.Default).Bounds[ControlSize];
 }
 
 /// <summary>

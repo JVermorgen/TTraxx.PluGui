@@ -5,19 +5,16 @@ namespace TTraxx.PluGui.Gui;
 /// init-only members, so a variation is a <c>with</c> expression off <see cref="Default"/>.
 /// Lengths are unscaled design units.
 /// </summary>
-public sealed record DropdownStyle
+public sealed record DropdownStyle : IControlStyle<DropdownStyle>
 {
     /// <summary>The built-in style. A fresh instance per call, so mutating a copy can't affect anything else.</summary>
     public static DropdownStyle Default => new();
 
-    private static IReadOnlyDictionary<ControlSizes, (int Width, int Height)> DefaultBounds
-        => new Dictionary<ControlSizes, (int Width, int Height)>
-        {
-            { ControlSizes.S, (110, 22) }
-        };
-
     /// <summary>Layout box per size tier. Usually overridden per placement with an explicit width, since a dropdown sizes to its column.</summary>
-    public IReadOnlyDictionary<ControlSizes, (int Width, int Height)> Bounds { get; init; } = DefaultBounds;
+    public SizeTable<(int Width, int Height)> Sizes { get; init; } = SizeTable<(int Width, int Height)>.Uniform((110, 22));
+
+    /// <inheritdoc/>
+    public (int Width, int Height) BoundsFor(ControlSizes size) => Sizes[size];
 
     /// <summary>Corner rounding of the box.</summary>
     public float CornerRadius { get; init; } = 3f;

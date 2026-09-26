@@ -5,7 +5,7 @@ namespace TTraxx.PluGui.Gui;
 /// the bar. Takes far less room than a knob, which is what a row of matrix routes or any other
 /// dense list of amounts needs.
 /// </summary>
-public class SliderControlConfiguration() : ParameterControlConfiguration, ISizedControlConfiguration
+public class SliderControlConfiguration() : ParameterControlConfiguration, IStyledControlConfiguration<SliderStyle>
 {
     /// <summary>The parameter this slider reads and drives.</summary>
     public required ParameterBinding Parameter { get; init; }
@@ -21,7 +21,4 @@ public class SliderControlConfiguration() : ParameterControlConfiguration, ISize
     /// instance so the style is resolved on each use - see <see cref="KnobControlConfiguration.Style"/>.
     /// </summary>
     public Func<SliderStyle>? Style { get; init; }
-
-    /// <inheritdoc/>
-    public (int Width, int Height) ResolveBounds() => (Style?.Invoke() ?? SliderStyle.Default).Bounds[ControlSize];
 }

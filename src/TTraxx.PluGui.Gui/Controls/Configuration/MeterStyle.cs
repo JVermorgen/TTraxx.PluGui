@@ -2,7 +2,7 @@ using SkiaSharp;
 
 namespace TTraxx.PluGui.Gui;
 
-public sealed record MeterStyle
+public sealed record MeterStyle : IControlStyle<MeterStyle>
 {
     public static MeterStyle Default => new();
 
@@ -34,14 +34,15 @@ public sealed record MeterStyle
     public SKColor WarningColor { get; init; } = new(240, 200, 60);
     public SKColor ClipColor { get; init; } = new(230, 70, 70);
 
-    private static IReadOnlyDictionary<ControlSizes, (int Width, int Height)> DefaultBounds
-        => new Dictionary<ControlSizes, (int Width, int Height)>
-        {
-                { ControlSizes.S, (24, 94) },
-                { ControlSizes.M, (28, 100) },
-                { ControlSizes.L, (30, 105) },
-                { ControlSizes.XL, (30, 116) }
-        };
+    /// <summary>Layout box per size tier - as tall as a knob of the same tier, so a meter lines up in a row of knobs.</summary>
+    public SizeTable<(int Width, int Height)> Sizes { get; init; } = new()
+    {
+        S = (24, 94),
+        M = (28, 100),
+        L = (30, 105),
+        XL = (30, 116)
+    };
 
-    public IReadOnlyDictionary<ControlSizes, (int Width, int Height)> Bounds { get; init; } = DefaultBounds;
+    /// <inheritdoc/>
+    public (int Width, int Height) BoundsFor(ControlSizes size) => Sizes[size];
 }

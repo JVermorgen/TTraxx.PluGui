@@ -6,7 +6,7 @@ namespace TTraxx.PluGui.Gui;
 /// click. Better than a stepped knob once there are more than a handful of positions, or when the
 /// names matter more than their order.
 /// </summary>
-public class DropdownControlConfiguration() : ParameterControlConfiguration, ISizedControlConfiguration
+public class DropdownControlConfiguration() : ParameterControlConfiguration, IStyledControlConfiguration<DropdownStyle>
 {
     /// <summary>
     /// The parameter this dropdown reads and drives. Its <see cref="ParameterControlInfo.StepCount"/>
@@ -27,7 +27,4 @@ public class DropdownControlConfiguration() : ParameterControlConfiguration, ISi
     /// instance so the style is resolved on each use - see <see cref="KnobControlConfiguration.Style"/>.
     /// </summary>
     public Func<DropdownStyle>? Style { get; init; }
-
-    /// <inheritdoc/>
-    public (int Width, int Height) ResolveBounds() => (Style?.Invoke() ?? DropdownStyle.Default).Bounds[ControlSize];
 }

@@ -5,19 +5,16 @@ namespace TTraxx.PluGui.Gui;
 /// only; colors come from the window's theme. A record with init-only members, so a variation is a
 /// <c>with</c> expression off <see cref="Default"/>. Lengths are unscaled design units.
 /// </summary>
-public sealed record SliderStyle
+public sealed record SliderStyle : IControlStyle<SliderStyle>
 {
     /// <summary>The built-in style. A fresh instance per call, so mutating a copy can't affect anything else.</summary>
     public static SliderStyle Default => new();
 
-    private static IReadOnlyDictionary<ControlSizes, (int Width, int Height)> DefaultBounds
-        => new Dictionary<ControlSizes, (int Width, int Height)>
-        {
-            { ControlSizes.S, (100, 22) }
-        };
-
     /// <summary>Layout box per size tier. Usually overridden per placement with an explicit width.</summary>
-    public IReadOnlyDictionary<ControlSizes, (int Width, int Height)> Bounds { get; init; } = DefaultBounds;
+    public SizeTable<(int Width, int Height)> Sizes { get; init; } = SizeTable<(int Width, int Height)>.Uniform((100, 22));
+
+    /// <inheritdoc/>
+    public (int Width, int Height) BoundsFor(ControlSizes size) => Sizes[size];
 
     /// <summary>Corner rounding of the bar.</summary>
     public float CornerRadius { get; init; } = 3f;

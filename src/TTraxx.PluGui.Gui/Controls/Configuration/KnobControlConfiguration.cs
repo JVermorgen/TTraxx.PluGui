@@ -4,7 +4,7 @@ namespace TTraxx.PluGui.Gui;
 /// Declares a rotary knob bound to one host parameter - the workhorse control for continuous and
 /// stepped values alike (a stepped parameter snaps via <see cref="ParameterBinding.Quantize"/>).
 /// </summary>
-public class KnobControlConfiguration() : ParameterControlConfiguration, ISizedControlConfiguration
+public class KnobControlConfiguration() : ParameterControlConfiguration, IStyledControlConfiguration<KnobStyle>
 {
     /// <summary>The parameter this knob reads and drives.</summary>
     public required ParameterBinding Parameter { get; init; }
@@ -15,7 +15,4 @@ public class KnobControlConfiguration() : ParameterControlConfiguration, ISizedC
     /// style be derived from the current theme.
     /// </summary>
     public Func<KnobStyle>? Style { get; init; }
-
-    /// <inheritdoc/>
-    public (int Width, int Height) ResolveBounds() => (Style?.Invoke() ?? KnobStyle.Default).Bounds[ControlSize];
 }

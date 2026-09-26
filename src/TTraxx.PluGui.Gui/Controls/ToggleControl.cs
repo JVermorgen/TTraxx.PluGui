@@ -10,6 +10,7 @@ namespace TTraxx.PluGui.Gui;
 public sealed class ToggleControl(ToggleControlConfiguration config) : PluginControl(config)
 {
     private ParameterBinding Parameter => config.Parameter;
+    private ToggleStyle Style => config.ResolveStyle();
 
     private bool IsOn => Parameter.Normalized >= 0.5;
 
@@ -35,11 +36,12 @@ public sealed class ToggleControl(ToggleControlConfiguration config) : PluginCon
     {
         var isOn = IsOn;
         var enabled = IsEnabled;
+        var metrics = Style.Sizes[config.ControlSize];
 
-        var pillH = Math.Min(_h - Rescale(12), Rescale(14));
+        var pillH = Math.Min(_h - Rescale(12), RescaleExact(metrics.PillHeight));
         var pillW = pillH * 2;
         var pillX = (_w - pillW) / 2;
-        var pillY = Rescale(44) - (pillH / 2);
+        var pillY = RescaleExact(metrics.PillCenterY) - (pillH / 2);
 
         var pillColor = !enabled
                             ? Theme.TrackBackground.WithAlpha(120)

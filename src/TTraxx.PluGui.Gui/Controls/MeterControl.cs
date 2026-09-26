@@ -14,7 +14,7 @@ public sealed class MeterControl(MeterControlConfiguration config) : PluginContr
     private double _peakHoldRemainingSeconds;
     private long _lastDrawTicks = Environment.TickCount64;
 
-    private MeterStyle Style => config.Style?.Invoke() ?? MeterStyle.Default;
+    private MeterStyle Style => config.ResolveStyle();
 
     /// <summary>Meters animate independently of user interaction, so the window needs to keep repainting on its own.</summary>
     public override bool NeedsContinuousRepaint => true;

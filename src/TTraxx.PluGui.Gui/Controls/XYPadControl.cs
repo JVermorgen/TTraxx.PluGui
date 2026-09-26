@@ -13,7 +13,7 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
     private double _yValue = config.YParameter.Normalized;
     private bool _isDragging;
 
-    private XYPadStyle Style => config.Style?.Invoke() ?? XYPadStyle.Default;
+    private XYPadStyle Style => config.ResolveStyle();
 
     public override void OnPointerDown(PointerEventArgs e)
     {

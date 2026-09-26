@@ -10,7 +10,7 @@ public sealed class TabStripControl(TabStripControlConfiguration config) : Plugi
 {
     private int _hoveredIndex = -1;
 
-    private TabStripStyle Style => config.Style?.Invoke() ?? TabStripStyle.Default;
+    private TabStripStyle Style => config.ResolveStyle();
 
     private int Count => config.Tabs.Count;
 

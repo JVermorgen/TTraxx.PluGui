@@ -314,7 +314,7 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
     /// natural (Width, Height) from its ControlSize - so Place() can auto-size a TConfig control
     /// whenever it isn't given explicit width/height. This is only needed to override a
     /// TConfig's own default: any TConfig that implements ISizedControlConfiguration (every
-    /// built-in sized config does, via its Style's Bounds table) already auto-sizes with no
+    /// built-in config does, via its Style's Sizes table) already auto-sizes with no
     /// registration at all. Call from ConfigureSizing().
     /// </summary>
     protected void RegisterSizing<TConfig>(Func<ControlSizes, (int Width, int Height)> sizing)

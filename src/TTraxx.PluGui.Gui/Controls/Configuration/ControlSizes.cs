@@ -2,10 +2,10 @@ namespace TTraxx.PluGui.Gui;
 
 /// <summary>
 /// Size buckets a control can render at. Deliberately a small set of named steps rather than
-/// free pixel sizes: each style maps these to hand-tuned bounds (see <see cref="KnobStyle"/>'s
-/// size tables), so controls across a plugin stay visually consistent instead of drifting a few
-/// pixels apart. Pass explicit width/height to PluginWindow.Place() for the rare one-off that
-/// genuinely needs its own size.
+/// free pixel sizes: each style maps every one of these to hand-tuned bounds in a
+/// <see cref="SizeTable{T}"/> (see <see cref="KnobStyle.Sizes"/>), so controls across a plugin
+/// stay visually consistent instead of drifting a few pixels apart. Pass explicit width/height to
+/// PluginWindow.Place() for the rare one-off that genuinely needs its own size.
 /// </summary>
 public enum ControlSizes
 {

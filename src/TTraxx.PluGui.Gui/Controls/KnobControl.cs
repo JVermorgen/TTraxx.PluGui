@@ -16,14 +16,13 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
     private int _lastPointerY;
 
     private ParameterBinding Parameter => config.Parameter;
-    private KnobStyle Style => config.Style?.Invoke() ?? KnobStyle.Default;
+    private KnobStyle Style => config.ResolveStyle();
 
-    private int RadiusFor(ControlSizes size)
-        => Style.Radii.TryGetValue(size, out var r) ? r : KnobStyle.Default.Radii[size];
+    private KnobMetrics Metrics => Style.Sizes[config.ControlSize];
 
-    private float Radius => Math.Max(2, (Rescale(RadiusFor(config.ControlSize)) / 2f) - Rescale(2));
     private float CenterX => _w / 2f;
-    private float CenterY => (Rescale(RadiusFor(config.ControlSize)) / 2f) + Rescale(21);
+    private float CenterY(KnobMetrics metrics) => (RescaleExact(metrics.Diameter) / 2f) + RescaleExact(21);
+    private float Radius(KnobMetrics metrics) => Math.Max(2, (RescaleExact(metrics.Diameter) / 2f) - Rescale(2));
 
     public override void OnPointerDown(PointerEventArgs e)
     {
@@ -106,9 +105,11 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
 
     public override bool HitTest(int localX, int localY)
     {
+        var metrics = Metrics;
+        var radius = Radius(metrics);
         var dx = localX - CenterX;
-        var dy = localY - CenterY;
-        return (dx * dx) + (dy * dy) <= Radius * Radius;
+        var dy = localY - CenterY(metrics);
+        return (dx * dx) + (dy * dy) <= radius * radius;
     }
 
     public override IParameterControlInfo GetParameterInfo(int localX, int localY) => Parameter.Info;
@@ -120,13 +121,16 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
 
     public override void Draw(SKCanvas canvas)
     {
+        // Resolved once per paint: Style re-runs the configuration's style factory on every read.
+        var style = Style;
+        var metrics = style.Sizes[config.ControlSize];
         var value = Parameter.Normalized;
         var enabled = IsEnabled;
 
         var cx = CenterX;
-        var cy = CenterY;
-        var drawRadius = Radius;
-        var filledSweep = Style.SweepDeg * value;
+        var cy = CenterY(metrics);
+        var drawRadius = Radius(metrics);
+        var filledSweep = style.SweepDeg * value;
 
         var trackColor = enabled
                             ? Theme.AccentDim
@@ -140,8 +144,8 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
 
         if (Parameter.Info.PositionCount is int positionCount && positionCount > 1)
         {
-            var tickInnerR = drawRadius * Style.TickInnerRadiusFactor;
-            var tickOuterR = drawRadius * Style.TickOuterRadiusFactor;
+            var tickInnerR = drawRadius * style.TickInnerRadiusFactor;
+            var tickOuterR = drawRadius * style.TickOuterRadiusFactor;
 
             using SKPaint tickPaint = new()
             {
@@ -154,7 +158,7 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
             for (var s = 0; s < positionCount; s++)
             {
                 var stepNorm = (double)s / (positionCount - 1);
-                var tickAngle = (Style.StartAngleDeg - (Style.SweepDeg * stepNorm)).DegToRad();
+                var tickAngle = (style.StartAngleDeg - (style.SweepDeg * stepNorm)).DegToRad();
 
                 canvas.DrawLine(
                     cx + (float)(Math.Cos(tickAngle) * tickInnerR), cy - (float)(Math.Sin(tickAngle) * tickInnerR),
@@ -163,9 +167,8 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
             }
         }
 
-        var isXL = config.ControlSize == ControlSizes.XL;
-        var trackWidth = RescaleExact(isXL ? Style.TrackStrokeWidthXL : Style.TrackStrokeWidth);
-        var valueWidth = RescaleExact(isXL ? Style.ValueStrokeWidthXL : Style.ValueStrokeWidth);
+        var trackWidth = RescaleExact(metrics.TrackStrokeWidth);
+        var valueWidth = RescaleExact(metrics.ValueStrokeWidth);
 
         SKRect arcRect = new(cx - drawRadius, cy - drawRadius, cx + drawRadius, cy + drawRadius);
 
@@ -178,7 +181,7 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
             StrokeCap = SKStrokeCap.Butt
         })
         {
-            canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + filledSweep), (float)(Style.SweepDeg - filledSweep), false, trackPaint);
+            canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + filledSweep), (float)(style.SweepDeg - filledSweep), false, trackPaint);
         }
 
         using (SKPaint valuePaint = new()
@@ -193,7 +196,7 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
             canvas.DrawArc(arcRect, (float)SkiaArcStartAngleDeg, (float)filledSweep, false, valuePaint);
         }
 
-        var pointerAngle = (Style.StartAngleDeg - (Style.SweepDeg * value)).DegToRad();
+        var pointerAngle = (style.StartAngleDeg - (style.SweepDeg * value)).DegToRad();
         var innerR = drawRadius * 0.25;
         var outerR = drawRadius * 0.85;
         using (SKPaint pointerPaint = new()

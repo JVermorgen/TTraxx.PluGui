@@ -5,7 +5,7 @@ namespace TTraxx.PluGui.Gui;
 /// normalized 0.5 and above, and a click writes a full 0.0 or 1.0 - so it suits a genuinely
 /// two-state parameter rather than a stepped one with several positions.
 /// </summary>
-public class ToggleControlConfiguration() : ParameterControlConfiguration, ISizedControlConfiguration
+public class ToggleControlConfiguration() : ParameterControlConfiguration, IStyledControlConfiguration<ToggleStyle>
 {
     /// <summary>The parameter this toggle reads and drives.</summary>
     public required ParameterBinding Parameter { get; init; }
@@ -15,7 +15,4 @@ public class ToggleControlConfiguration() : ParameterControlConfiguration, ISize
     /// instance so the style is resolved on each use - see <see cref="KnobControlConfiguration.Style"/>.
     /// </summary>
     public Func<ToggleStyle>? Style { get; init; }
-
-    /// <inheritdoc/>
-    public (int Width, int Height) ResolveBounds() => (Style?.Invoke() ?? ToggleStyle.Default).Bounds[ControlSize];
 }

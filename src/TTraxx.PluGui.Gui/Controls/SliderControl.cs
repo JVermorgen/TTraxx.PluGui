@@ -15,7 +15,7 @@ public sealed class SliderControl(SliderControlConfiguration config) : PluginCon
     private int _lastPointerX;
 
     private ParameterBinding Parameter => config.Parameter;
-    private SliderStyle Style => config.Style?.Invoke() ?? SliderStyle.Default;
+    private SliderStyle Style => config.ResolveStyle();
 
     public override void OnPointerDown(PointerEventArgs e)
     {

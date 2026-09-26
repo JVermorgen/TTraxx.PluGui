@@ -121,8 +121,8 @@ Width and height resolve in this order:
 1. explicit `width`/`height` arguments;
 2. a window-specific override registered with `RegisterSizing<TConfig>(...)` from `ConfigureSizing()`;
 3. the configuration's own `ISizedControlConfiguration.ResolveBounds()` — every built-in
-   configuration implements this via its style's `Bounds` table, so the common case needs no setup at
-   all.
+   configuration gets this from `IStyledControlConfiguration<TStyle>`, which reads the style's
+   `Sizes` table, so the common case needs no setup at all.
 
 `extraWidth`/`extraHeight` are added on top regardless — handy when a long label needs more room than
 the control's natural box. If none of the three applies, `Place` throws with an explanatory message
@@ -205,11 +205,34 @@ Style = () => KnobStyle.Default with
 }
 ```
 
-`KnobStyle` covers arc geometry (`StartAngleDeg`, `SweepDeg`), stroke widths, tick radii, the
-per-size `Radii` and `Bounds` tables, and the interaction constants (`DragPixelsForFullSweep`,
-`FineTuneDivisor`, `WheelSteps`). `MeterStyle` adds segment count/gap, warning and clip thresholds with
-their colours, and the peak-hold timing. `XYPadStyle` adds corner radius, glow radii, the indicator
-ring and optional `CornerIcons`. `ToggleStyle` currently only carries its `Bounds` table.
+#### Size tables
+
+Everything that changes with `ControlSize` lives in one `SizeTable<T>` per style, `Sizes` — one
+entry per tier. Every tier is `required`, so a table can't leave a size out and no lookup can miss
+at runtime. A control whose look doesn't follow the tier uses `SizeTable<T>.Uniform(value)`.
+
+What an entry holds depends on the control: most styles just store the layout box,
+`SizeTable<(int Width, int Height)>`; `KnobStyle` stores a `KnobMetrics` (layout box, knob diameter,
+track and value stroke widths), so a tier's box and its drawing geometry can't come from different
+tables. The rule of thumb when adding a style value: if it varies with the size tier it goes in the
+entry type, otherwise it is a plain property on the style.
+
+Overriding one tier is a nested `with`:
+
+```csharp
+Style = () => KnobStyle.Default with
+{
+    Sizes = KnobStyle.Default.Sizes with { XL = new(80, 124, 70, 3.0f, 4.6f) }
+}
+```
+
+#### Built-in styles
+
+`KnobStyle` covers arc geometry (`StartAngleDeg`, `SweepDeg`), tick radii, the per-size `Sizes`
+table, and the interaction constants (`DragPixelsForFullSweep`, `FineTuneDivisor`, `WheelSteps`).
+`MeterStyle` adds segment count/gap, warning and clip thresholds with their colours, and the
+peak-hold timing. `XYPadStyle` adds corner radius, glow radii, the indicator ring and optional
+`CornerIcons`. `ToggleStyle` currently only carries its `Sizes` table of `ToggleMetrics` (layout box and pill height).
 
 **Colours are not in styles** (`MeterStyle`'s explicit level colours aside) — they come from the
 window's theme, so one style works against any theme.
@@ -406,8 +429,12 @@ Points to keep in mind:
   samples the window background to blend against it.
 
 For a matching configuration type, derive from `ParameterControlConfiguration` (parameter-driven) or
-`ControlConfiguration` (display-only), and implement `ISizedControlConfiguration.ResolveBounds()` so
-`Place` can auto-size it.
+`ControlConfiguration` (display-only). To make it auto-size in `Place`, give it a style record that
+implements `IControlStyle<TStyle>` (a static `Default` and `BoundsFor(size)`, usually read from a
+`SizeTable<T>`) and implement `IStyledControlConfiguration<TStyle>` by declaring
+`Func<TStyle>? Style { get; init; }` — `ResolveBounds()` then comes for free. In the control, read
+the style with `config.ResolveStyle()`. A configuration without a style can implement
+`ISizedControlConfiguration.ResolveBounds()` directly instead.
 
 ## Icons and Skia helpers
 

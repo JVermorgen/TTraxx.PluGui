@@ -2,7 +2,7 @@
 
 namespace TTraxx.PluGui.Gui;
 
-public sealed record XYPadStyle
+public sealed record XYPadStyle : IControlStyle<XYPadStyle>
 {
     public static XYPadStyle Default => new();
 
@@ -23,12 +23,9 @@ public sealed record XYPadStyle
     public IReadOnlyList<SKPath>? CornerIcons { get; init; } =
         [Icons.Sine, Icons.Saw, Icons.Pulse, Icons.Triangle];
 
-    /// <summary>An XY pad's full layout box per ControlSizes tier. Only S is defined so far - no control uses another tier yet.</summary>
-    private static IReadOnlyDictionary<ControlSizes, (int Width, int Height)> DefaultBounds
-        => new Dictionary<ControlSizes, (int Width, int Height)>
-        {
-            { ControlSizes.S, (220, 220) }
-        };
+    /// <summary>Layout box per size tier. The same at every tier until a plugin needs a second pad size.</summary>
+    public SizeTable<(int Width, int Height)> Sizes { get; init; } = SizeTable<(int Width, int Height)>.Uniform((220, 220));
 
-    public IReadOnlyDictionary<ControlSizes, (int Width, int Height)> Bounds { get; init; } = DefaultBounds;
+    /// <inheritdoc/>
+    public (int Width, int Height) BoundsFor(ControlSizes size) => Sizes[size];
 }

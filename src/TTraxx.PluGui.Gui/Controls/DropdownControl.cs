@@ -16,7 +16,7 @@ namespace TTraxx.PluGui.Gui;
 public sealed class DropdownControl(DropdownControlConfiguration config) : PluginControl(config)
 {
     private ParameterBinding Parameter => config.Parameter;
-    private DropdownStyle Style => config.Style?.Invoke() ?? DropdownStyle.Default;
+    private DropdownStyle Style => config.ResolveStyle();
 
     /// <summary>Choices on offer - the named ones. Can be fewer than <see cref="Positions"/>.</summary>
     private int Count => Math.Min(config.Items.Count, Positions);
