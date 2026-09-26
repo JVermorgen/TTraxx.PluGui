@@ -776,3 +776,33 @@ override TTraxx.PluGui.Gui.ButtonStyle.ToString() -> string!
 static TTraxx.PluGui.Gui.ButtonStyle.Default.get -> TTraxx.PluGui.Gui.ButtonStyle!
 static TTraxx.PluGui.Gui.ButtonStyle.operator !=(TTraxx.PluGui.Gui.ButtonStyle? left, TTraxx.PluGui.Gui.ButtonStyle? right) -> bool
 static TTraxx.PluGui.Gui.ButtonStyle.operator ==(TTraxx.PluGui.Gui.ButtonStyle? left, TTraxx.PluGui.Gui.ButtonStyle? right) -> bool
+TTraxx.PluGui.Gui.XYPadControlConfiguration.Footer.get -> TTraxx.PluGui.Gui.XYPadFooter?
+TTraxx.PluGui.Gui.XYPadControlConfiguration.Footer.init -> void
+TTraxx.PluGui.Gui.XYPadControlConfiguration.ResolveBounds() -> (int Width, int Height)
+TTraxx.PluGui.Gui.XYPadControlConfiguration.SnapPoints.get -> System.Func<System.Collections.Generic.IReadOnlyList<(double X, double Y)>!>?
+TTraxx.PluGui.Gui.XYPadControlConfiguration.SnapPoints.init -> void
+TTraxx.PluGui.Gui.XYPadFooter
+TTraxx.PluGui.Gui.XYPadFooter.<Clone>$() -> TTraxx.PluGui.Gui.XYPadFooter!
+TTraxx.PluGui.Gui.XYPadFooter.Deconstruct(out System.Collections.Generic.IReadOnlyList<string!>! Items, out System.Func<int>! GetSelectedIndex, out System.Action<int>! SetSelectedIndex) -> void
+TTraxx.PluGui.Gui.XYPadFooter.Equals(TTraxx.PluGui.Gui.XYPadFooter? other) -> bool
+TTraxx.PluGui.Gui.XYPadFooter.GetSelectedIndex.get -> System.Func<int>!
+TTraxx.PluGui.Gui.XYPadFooter.GetSelectedIndex.init -> void
+TTraxx.PluGui.Gui.XYPadFooter.Items.get -> System.Collections.Generic.IReadOnlyList<string!>!
+TTraxx.PluGui.Gui.XYPadFooter.Items.init -> void
+TTraxx.PluGui.Gui.XYPadFooter.SetSelectedIndex.get -> System.Action<int>!
+TTraxx.PluGui.Gui.XYPadFooter.SetSelectedIndex.init -> void
+TTraxx.PluGui.Gui.XYPadFooter.XYPadFooter(System.Collections.Generic.IReadOnlyList<string!>! Items, System.Func<int>! GetSelectedIndex, System.Action<int>! SetSelectedIndex) -> void
+TTraxx.PluGui.Gui.XYPadStyle.FooterFontSize.get -> float
+TTraxx.PluGui.Gui.XYPadStyle.FooterFontSize.init -> void
+TTraxx.PluGui.Gui.XYPadStyle.FooterHeight.get -> int
+TTraxx.PluGui.Gui.XYPadStyle.FooterHeight.init -> void
+TTraxx.PluGui.Gui.XYPadStyle.SnapMarkerRadius.get -> float
+TTraxx.PluGui.Gui.XYPadStyle.SnapMarkerRadius.init -> void
+TTraxx.PluGui.Gui.XYPadStyle.SnapTickLength.get -> float
+TTraxx.PluGui.Gui.XYPadStyle.SnapTickLength.init -> void
+override TTraxx.PluGui.Gui.XYPadControl.OnPointerLeave() -> void
+override TTraxx.PluGui.Gui.XYPadFooter.Equals(object? obj) -> bool
+override TTraxx.PluGui.Gui.XYPadFooter.GetHashCode() -> int
+override TTraxx.PluGui.Gui.XYPadFooter.ToString() -> string!
+static TTraxx.PluGui.Gui.XYPadFooter.operator !=(TTraxx.PluGui.Gui.XYPadFooter? left, TTraxx.PluGui.Gui.XYPadFooter? right) -> bool
+static TTraxx.PluGui.Gui.XYPadFooter.operator ==(TTraxx.PluGui.Gui.XYPadFooter? left, TTraxx.PluGui.Gui.XYPadFooter? right) -> bool

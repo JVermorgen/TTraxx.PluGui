@@ -23,7 +23,17 @@ public sealed record XYPadStyle : IControlStyle<XYPadStyle>
     public IReadOnlyList<SKPath>? CornerIcons { get; init; } =
         [Icons.Sine, Icons.Saw, Icons.Pulse, Icons.Triangle];
 
-    /// <summary>Layout box per size tier. The same at every tier until a plugin needs a second pad size.</summary>
+    /// <summary>Height of the footer band, when the pad has one (see <see cref="XYPadControlConfiguration.Footer"/>).</summary>
+    public int FooterHeight { get; init; } = 18;
+
+    /// <summary>Text size of the footer's labels.</summary>
+    public float FooterFontSize { get; init; } = 10f;
+
+    /// <summary>Radius of a snap-point dot, and length of a snap-point tick in from the frame.</summary>
+    public float SnapMarkerRadius { get; init; } = 2f;
+    public float SnapTickLength { get; init; } = 6f;
+
+    /// <summary>Layout box per size tier - the pad area alone, without a footer. The same at every tier until a plugin needs a second pad size.</summary>
     public SizeTable<(int Width, int Height)> Sizes { get; init; } = SizeTable<(int Width, int Height)>.Uniform((220, 220));
 
     /// <inheritdoc/>

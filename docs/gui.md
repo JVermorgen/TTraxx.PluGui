@@ -176,7 +176,7 @@ explicit `IHotReloadTarget` implementation — a production host never calls it.
 | --- | --- | --- |
 | `KnobControl` | `KnobControlConfiguration` | Vertical drag (Shift = fine-tune), mouse wheel, double-click resets to default, right-click → "Reset to Default". Stepped parameters snap to their positions and draw tick marks. |
 | `ToggleControl` | `ToggleControlConfiguration` | Click toggles. Reads *on* at normalized ≥ 0.5 and writes a full 0.0/1.0, so it suits a genuinely two-state parameter. |
-| `XYPadControl` | `XYPadControlConfiguration` | One dragged dot drives one parameter per axis (`XParameter`, `YParameter`). Optional `ModulationIndicator` draws a read-only second dot; optional `Snap` quantizes dragged positions before they are written. |
+| `XYPadControl` | `XYPadControlConfiguration` | One dragged dot drives one parameter per axis (`XParameter`, `YParameter`). Optional `ModulationIndicator` draws a read-only second dot; optional `Snap` quantizes dragged positions before they are written, and `SnapPoints` marks where it can land. Optional `Footer` adds a segmented selector inside the pad's own frame, below the pad area (`XYPadStyle.FooterHeight` taller). |
 | `MeterControl` | `MeterControlConfiguration` | Display-only. Polls `GetLevel()` while the window repaints continuously; no parameter, nothing to automate. |
 | `ButtonControl` | `ButtonControlConfiguration` | Click runs `OnClick` — on release over the button, so a press can be abandoned by dragging off. No parameter: for one-shot commands, which change the plugin through its own parameters. |
 

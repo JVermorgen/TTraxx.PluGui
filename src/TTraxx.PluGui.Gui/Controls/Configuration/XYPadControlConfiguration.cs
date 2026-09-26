@@ -31,6 +31,20 @@ public class XYPadControlConfiguration() : ParameterControlConfiguration, IStyle
     /// </summary>
     public Func<double, double, (double X, double Y)>? Snap { get; init; }
 
+    /// <summary>
+    /// Optional markers for where <see cref="Snap"/> can land, in normalized (X, Y) - read on every
+    /// repaint, so they can follow a snap mode. A point inside the pad draws as a small dot, one on
+    /// an edge as a tick in from the frame, and one on a corner lights that corner's icon.
+    /// </summary>
+    public Func<IReadOnlyList<(double X, double Y)>>? SnapPoints { get; init; }
+
+    /// <summary>
+    /// Optional segmented selector drawn inside the pad's own frame, below the pad area - for a
+    /// setting that belongs to the pad (its snap mode, say). Adds <see cref="XYPadStyle.FooterHeight"/>
+    /// to the control's height; the pad area itself keeps its size.
+    /// </summary>
+    public XYPadFooter? Footer { get; init; }
+
     /// <summary>Optional read-only modulation overlay - see <see cref="XYPadModulationIndicator"/>.</summary>
     public XYPadModulationIndicator? ModulationIndicator { get; init; }
 
@@ -39,7 +53,27 @@ public class XYPadControlConfiguration() : ParameterControlConfiguration, IStyle
     /// instance so the style is resolved on each use - see <see cref="KnobControlConfiguration.Style"/>.
     /// </summary>
     public Func<XYPadStyle>? Style { get; init; }
+
+    /// <summary>The pad's layout box: the style's, plus the footer's band when there is one.</summary>
+    public (int Width, int Height) ResolveBounds()
+    {
+        var style = this.ResolveStyle();
+        var (width, height) = style.BoundsFor(ControlSize);
+        return Footer is null ? (width, height) : (width, height + style.FooterHeight);
+    }
+
+    (int Width, int Height) ISizedControlConfiguration.ResolveBounds() => ResolveBounds();
 }
+
+/// <summary>
+/// A row of choices in an XY pad's footer - see <see cref="XYPadControlConfiguration.Footer"/>. Like a
+/// tab strip, not bound to a host parameter by itself: <paramref name="SetSelectedIndex"/> decides
+/// what a choice does.
+/// </summary>
+/// <param name="Items">One label per choice, left to right.</param>
+/// <param name="GetSelectedIndex">Reads the current choice.</param>
+/// <param name="SetSelectedIndex">Makes a choice. The pad repaints the window itself afterwards.</param>
+public sealed record XYPadFooter(IReadOnlyList<string> Items, Func<int> GetSelectedIndex, Action<int> SetSelectedIndex);
 
 /// <summary>
 /// Optional, read-only visualization of where a modulation source would
