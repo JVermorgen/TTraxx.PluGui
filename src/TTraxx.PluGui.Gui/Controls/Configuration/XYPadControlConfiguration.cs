@@ -22,6 +22,15 @@ public class XYPadControlConfiguration() : ParameterControlConfiguration, IStyle
     /// <summary>Closes the group opened by <see cref="BeginGroupEdit"/>.</summary>
     public Action? EndGroupEdit { get; init; }
 
+    /// <summary>
+    /// Optional quantizer for dragged positions: takes the normalized (X, Y) under the pointer and
+    /// returns the position to store instead - to snap the dot to a grid, say. Applied before the
+    /// parameters are written, so the dot always shows the value the plugin actually has. Also
+    /// applied to "Reset to Default". Read on every use, so it can follow a mode parameter; null
+    /// leaves the pad continuous.
+    /// </summary>
+    public Func<double, double, (double X, double Y)>? Snap { get; init; }
+
     /// <summary>Optional read-only modulation overlay - see <see cref="XYPadModulationIndicator"/>.</summary>
     public XYPadModulationIndicator? ModulationIndicator { get; init; }
 

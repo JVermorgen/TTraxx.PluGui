@@ -49,9 +49,10 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
     [
         new("Reset to Default", () =>
         {
+            var (x, y) = Snapped(config.XParameter.Info.DefaultNormalizedValue, config.YParameter.Info.DefaultNormalizedValue);
             config.BeginGroupEdit?.Invoke();
-            config.XParameter.Edit(config.XParameter.Quantize(config.XParameter.Info.DefaultNormalizedValue));
-            config.YParameter.Edit(config.YParameter.Quantize(config.YParameter.Info.DefaultNormalizedValue));
+            config.XParameter.Edit(config.XParameter.Quantize(x));
+            config.YParameter.Edit(config.YParameter.Quantize(y));
             config.EndGroupEdit?.Invoke();
             Refresh();
         }, IsEnabled)
@@ -59,8 +60,7 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
 
     private void ApplyFromPointer(int localX, int localY)
     {
-        var newX = Math.Clamp(localX / (double)_w, 0.0, 1.0);
-        var newY = Math.Clamp(localY / (double)_h, 0.0, 1.0);
+        var (newX, newY) = Snapped(Math.Clamp(localX / (double)_w, 0.0, 1.0), Math.Clamp(localY / (double)_h, 0.0, 1.0));
 
         if (Math.Abs(newX - _xValue) <= 1e-6 && Math.Abs(newY - _yValue) <= 1e-6) return;
 
@@ -68,6 +68,15 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
         _yValue = newY;
         config.XParameter.Edit(_xValue);
         config.YParameter.Edit(_yValue);
+    }
+
+    /// <summary>The configured snap applied to a normalized position, kept inside 0..1 whatever it returns.</summary>
+    private (double X, double Y) Snapped(double x, double y)
+    {
+        if (config.Snap is not { } snap) return (x, y);
+
+        var (snappedX, snappedY) = snap(x, y);
+        return (Math.Clamp(snappedX, 0.0, 1.0), Math.Clamp(snappedY, 0.0, 1.0));
     }
 
     public override void Draw(SKCanvas canvas)

@@ -673,6 +673,8 @@ TTraxx.PluGui.Gui.XYPadControlConfiguration.EndGroupEdit.get -> System.Action?
 TTraxx.PluGui.Gui.XYPadControlConfiguration.EndGroupEdit.init -> void
 TTraxx.PluGui.Gui.XYPadControlConfiguration.ModulationIndicator.get -> TTraxx.PluGui.Gui.XYPadModulationIndicator?
 TTraxx.PluGui.Gui.XYPadControlConfiguration.ModulationIndicator.init -> void
+TTraxx.PluGui.Gui.XYPadControlConfiguration.Snap.get -> System.Func<double, double, (double X, double Y)>?
+TTraxx.PluGui.Gui.XYPadControlConfiguration.Snap.init -> void
 TTraxx.PluGui.Gui.XYPadControlConfiguration.Style.get -> System.Func<TTraxx.PluGui.Gui.XYPadStyle!>?
 TTraxx.PluGui.Gui.XYPadControlConfiguration.Style.init -> void
 TTraxx.PluGui.Gui.XYPadControlConfiguration.XParameter.get -> TTraxx.PluGui.Gui.ParameterBinding!

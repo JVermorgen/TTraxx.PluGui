@@ -176,7 +176,7 @@ explicit `IHotReloadTarget` implementation — a production host never calls it.
 | --- | --- | --- |
 | `KnobControl` | `KnobControlConfiguration` | Vertical drag (Shift = fine-tune), mouse wheel, double-click resets to default, right-click → "Reset to Default". Stepped parameters snap to their positions and draw tick marks. |
 | `ToggleControl` | `ToggleControlConfiguration` | Click toggles. Reads *on* at normalized ≥ 0.5 and writes a full 0.0/1.0, so it suits a genuinely two-state parameter. |
-| `XYPadControl` | `XYPadControlConfiguration` | One dragged dot drives one parameter per axis (`XParameter`, `YParameter`). Optional `ModulationIndicator` draws a read-only second dot. |
+| `XYPadControl` | `XYPadControlConfiguration` | One dragged dot drives one parameter per axis (`XParameter`, `YParameter`). Optional `ModulationIndicator` draws a read-only second dot; optional `Snap` quantizes dragged positions before they are written. |
 | `MeterControl` | `MeterControlConfiguration` | Display-only. Polls `GetLevel()` while the window repaints continuously; no parameter, nothing to automate. |
 
 Shared on every configuration (from `ControlConfiguration`):
