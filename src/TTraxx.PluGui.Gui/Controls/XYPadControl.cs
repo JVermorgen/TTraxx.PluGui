@@ -18,18 +18,33 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
     private double _yValue = config.YParameter.Normalized;
     private bool _isDragging;
     private int _hoveredFooterIndex = -1;
+    private bool _isToggleHovered;
+
+    // The recent path of every live point, by its id: (x, y) in normalized pad space, with the
+    // Stopwatch timestamp it was seen at. Pruned to XYPadStyle.LiveTrailSeconds on every repaint.
+    private readonly Dictionary<long, List<(double X, double Y, long Time)>> _trails = [];
+    private readonly List<long> _staleTrails = [];
 
     private XYPadStyle Style => config.ResolveStyle();
+
+    /// <summary>Live points change by themselves, so the pad has to keep repainting to show them.</summary>
+    public override bool NeedsContinuousRepaint => config.LivePoints is not null;
 
     /// <summary>Height of the pad area, in pixels: the whole control, less the footer band if there is one.</summary>
     private int PadHeight => config.Footer is null ? _h : _h - Rescale(Style.FooterHeight);
 
     private bool IsInFooter(int localY) => config.Footer is not null && localY >= PadHeight;
 
+    /// <summary>Where the footer's choices end and its toggle, if any, begins - in pixels.</summary>
+    private int FooterChoicesRight => config.Footer?.Toggle is null ? _w : _w - Rescale(Style.FooterToggleWidth);
+
+    private bool IsOnFooterToggle(int localX) => config.Footer?.Toggle is not null && localX >= FooterChoicesRight;
+
     private int FooterIndexAt(int localX)
     {
         var count = config.Footer?.Items.Count ?? 0;
-        return count == 0 ? -1 : Math.Clamp(localX * count / Math.Max(1, _w), 0, count - 1);
+        if (count == 0 || IsOnFooterToggle(localX)) return -1;
+        return Math.Clamp(localX * count / Math.Max(1, FooterChoicesRight), 0, count - 1);
     }
 
     public override void OnPointerDown(PointerEventArgs e)
@@ -38,7 +53,11 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
 
         if (IsInFooter(e.Y))
         {
-            if (config.Footer is { } footer && FooterIndexAt(e.X) is var index and >= 0) footer.SetSelectedIndex(index);
+            if (config.Footer is { } footer)
+            {
+                if (IsOnFooterToggle(e.X) && footer.Toggle is { } toggle) toggle.SetOn(!toggle.IsOn());
+                else if (FooterIndexAt(e.X) is var index and >= 0) footer.SetSelectedIndex(index);
+            }
             Refresh();
             return;
         }
@@ -58,9 +77,12 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
             return;
         }
 
-        var hovered = HitTest(e.X, e.Y) && IsInFooter(e.Y) ? FooterIndexAt(e.X) : -1;
-        if (hovered == _hoveredFooterIndex) return;
+        var inFooter = HitTest(e.X, e.Y) && IsInFooter(e.Y);
+        var hovered = inFooter ? FooterIndexAt(e.X) : -1;
+        var toggleHovered = inFooter && IsOnFooterToggle(e.X);
+        if (hovered == _hoveredFooterIndex && toggleHovered == _isToggleHovered) return;
         _hoveredFooterIndex = hovered;
+        _isToggleHovered = toggleHovered;
         Refresh();
     }
 
@@ -74,6 +96,7 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
     public override void OnPointerLeave()
     {
         _hoveredFooterIndex = -1;
+        _isToggleHovered = false;
         base.OnPointerLeave();
     }
 
@@ -177,6 +200,60 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
         canvas.DrawCircle(dotX, dotY, Rescale(style.GlowCoreRadius), glowCore);
 
         DrawModulationIndicator(canvas, dotX, dotY, padHeight, style);
+
+        // Over the dot, not under it: where the sound actually is matters more than where it was
+        // put, and with nothing modulating it a live point sits right in the dot's glow.
+        DrawLivePoints(canvas, padHeight, style);
+    }
+
+    /// <summary>
+    /// Each live point as a small solid dot faded by its weight, with a trail of where it has been
+    /// over the last <see cref="XYPadStyle.LiveTrailSeconds"/> - fading out and thinning with age.
+    /// </summary>
+    private void DrawLivePoints(SKCanvas canvas, int padHeight, XYPadStyle style)
+    {
+        if (config.LivePoints is not { } getPoints) return;
+
+        var points = getPoints();
+        var now = System.Diagnostics.Stopwatch.GetTimestamp();
+        var maxAge = (long)(style.LiveTrailSeconds * System.Diagnostics.Stopwatch.Frequency);
+
+        // Trails of points that have gone - a note that ended - go with them.
+        _staleTrails.Clear();
+        foreach (var id in _trails.Keys)
+        {
+            var present = false;
+            foreach (var point in points) present |= point.Id == id;
+            if (!present) _staleTrails.Add(id);
+        }
+        foreach (var id in _staleTrails) _trails.Remove(id);
+
+        var color = Theme.XYLivePoint;
+        using SKPaint trailPaint = new() { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Round };
+        using SKPaint dotPaint = new() { IsAntialias = true, Style = SKPaintStyle.Fill };
+        var radius = RescaleExact(style.LivePointRadius);
+
+        foreach (var point in points)
+        {
+            var weight = (float)Math.Clamp(point.Weight, 0.0, 1.0);
+            if (!_trails.TryGetValue(point.Id, out var trail)) _trails[point.Id] = trail = [];
+
+            if (trail.Count == 0 || trail[^1].X != point.X || trail[^1].Y != point.Y) trail.Add((point.X, point.Y, now));
+            trail.RemoveAll(entry => now - entry.Time > maxAge);
+
+            for (var i = 1; i < trail.Count; i++)
+            {
+                var freshness = 1f - ((now - trail[i].Time) / (float)maxAge); // 1 = just now, 0 = about to drop off
+                trailPaint.Color = color.WithAlpha((byte)(170 * freshness * weight));
+                trailPaint.StrokeWidth = radius * (0.4f + (0.8f * freshness));
+                canvas.DrawLine((float)(trail[i - 1].X * _w), (float)(trail[i - 1].Y * padHeight),
+                    (float)(trail[i].X * _w), (float)(trail[i].Y * padHeight), trailPaint);
+            }
+
+            // Never quite invisible while the point exists: a note in its release still reads as a note.
+            dotPaint.Color = color.WithAlpha((byte)(60 + (195 * weight)));
+            canvas.DrawCircle((float)(point.X * _w), (float)(point.Y * padHeight), radius, dotPaint);
+        }
     }
 
     /// <summary>
@@ -197,21 +274,25 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
         using (SKPaint hairline = new() { Color = Theme.XYPanelBorder, IsAntialias = false, StrokeWidth = 1 })
             canvas.DrawLine(1, padHeight + 0.5f, _w - 1, padHeight + 0.5f, hairline);
 
+        using SKFont font = new() { Size = RescaleExact(style.FooterFontSize), Typeface = Fonts.Bold };
+        var textTop = band.Top + ((band.Height - (font.Metrics.Descent - font.Metrics.Ascent)) / 2f);
+        var inset = RescaleExact(3f);
+        var pillRadius = RescaleExact(3f);
+
+        if (footer.Toggle is { } toggle) DrawFooterToggle(canvas, toggle, band, font, textTop, inset, enabled);
+
         var count = footer.Items.Count;
         if (count == 0) return;
 
         var selected = Math.Clamp(footer.GetSelectedIndex(), 0, count - 1);
-        var inset = RescaleExact(3f);
-        var segmentWidth = (band.Width - (2 * inset)) / count;
-        var pillRadius = RescaleExact(3f);
+        var choicesRight = Math.Min(band.Right, FooterChoicesRight);
+        var segmentWidth = (choicesRight - band.Left - (2 * inset)) / count;
 
         var pill = new SKRect(band.Left + inset + (selected * segmentWidth), band.Top + inset,
             band.Left + inset + ((selected + 1) * segmentWidth), band.Bottom - inset);
         using (SKPaint highlight = new() { Color = Theme.Accent.WithAlpha(enabled ? (byte)150 : (byte)50), IsAntialias = true, Style = SKPaintStyle.Fill })
             canvas.DrawRoundRect(pill, pillRadius, pillRadius, highlight);
 
-        using SKFont font = new() { Size = RescaleExact(style.FooterFontSize), Typeface = Fonts.Bold };
-        var textTop = band.Top + ((band.Height - (font.Metrics.Descent - font.Metrics.Ascent)) / 2f);
         for (var i = 0; i < count; i++)
         {
             var color = !enabled ? Theme.TextDisabled
@@ -220,6 +301,36 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
             using SKPaint text = new() { Color = color, IsAntialias = true };
             canvas.DrawTextTopAligned(footer.Items[i], band.Left + inset + ((i + 0.5f) * segmentWidth), textTop, SKTextAlign.Center, font, text);
         }
+    }
+
+    /// <summary>
+    /// The footer's toggle, at its right end behind a hairline: a small dot in the live-point colour
+    /// (lit when on, hollow when off) and its label - so it reads as the switch for those points.
+    /// </summary>
+    private void DrawFooterToggle(SKCanvas canvas, XYPadFooterToggle toggle, SKRect band, SKFont font, float textTop, float inset, bool enabled)
+    {
+        var left = (float)FooterChoicesRight;
+        var isOn = toggle.IsOn();
+
+        using (SKPaint separator = new() { Color = Theme.XYPanelBorder, IsAntialias = false, StrokeWidth = 1 })
+            canvas.DrawLine(left + 0.5f, band.Top + inset, left + 0.5f, band.Bottom - inset, separator);
+
+        var dotRadius = RescaleExact(3f);
+        var dotX = left + RescaleExact(10f);
+        var dotY = band.MidY;
+        var dotColor = !enabled ? Theme.TextDisabled : isOn ? Theme.XYLivePoint : Theme.TextDim;
+        using (SKPaint dot = new()
+        {
+            Color = dotColor,
+            IsAntialias = true,
+            Style = isOn ? SKPaintStyle.Fill : SKPaintStyle.Stroke,
+            StrokeWidth = RescaleExact(1.2f)
+        })
+            canvas.DrawCircle(dotX, dotY, dotRadius, dot);
+
+        var textColor = !enabled ? Theme.TextDisabled : isOn || _isToggleHovered ? Theme.TextPrimary : Theme.TextDim;
+        using SKPaint text = new() { Color = textColor, IsAntialias = true };
+        canvas.DrawTextTopAligned(toggle.Label, dotX + dotRadius + RescaleExact(5f), textTop, SKTextAlign.Left, font, text);
     }
 
     /// <summary>

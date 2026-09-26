@@ -29,6 +29,13 @@ public sealed record XYPadStyle : IControlStyle<XYPadStyle>
     /// <summary>Text size of the footer's labels.</summary>
     public float FooterFontSize { get; init; } = 10f;
 
+    /// <summary>Width of the footer's toggle, when it has one - the choices share what is left.</summary>
+    public int FooterToggleWidth { get; init; } = 52;
+
+    /// <summary>Radius of a live point, and how many seconds of its path its trail shows.</summary>
+    public float LivePointRadius { get; init; } = 3.5f;
+    public float LiveTrailSeconds { get; init; } = 0.35f;
+
     /// <summary>Radius of a snap-point dot, and length of a snap-point tick in from the frame.</summary>
     public float SnapMarkerRadius { get; init; } = 2f;
     public float SnapTickLength { get; init; } = 6f;

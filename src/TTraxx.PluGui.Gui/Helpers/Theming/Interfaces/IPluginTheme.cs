@@ -57,6 +57,13 @@ public interface IPluginTheme
     /// <summary>Darker end of an XY pad field's gradient.</summary>
     SKColor XYPanelBackgroundShadow { get; }
 
+    /// <summary>
+    /// An XY pad's live points (see XYPadControlConfiguration.LivePoints) - where the values actually
+    /// are, as opposed to the dot the user drags. Meant to be distinct from both the dot's glow and
+    /// <see cref="Accent2"/>, which marks the modulation indicator. Defaults to <see cref="Accent"/>.
+    /// </summary>
+    SKColor XYLivePoint => Accent;
+
     /// <summary>Center of a glow - the brightest, most opaque stop. Used for an XY pad's dot.</summary>
     SKColor GlowCore { get; }
 

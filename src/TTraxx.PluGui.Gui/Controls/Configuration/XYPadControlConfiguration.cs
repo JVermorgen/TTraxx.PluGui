@@ -49,6 +49,15 @@ public class XYPadControlConfiguration() : ParameterControlConfiguration, IStyle
     public XYPadModulationIndicator? ModulationIndicator { get; init; }
 
     /// <summary>
+    /// Optional read-only points showing where the values actually are right now - for a plugin
+    /// whose engine moves them away from the dragged position (per-voice modulation, say). Read on
+    /// every repaint; while it is set the pad repaints continuously. Each point leaves a short
+    /// fading trail (<see cref="XYPadStyle.LiveTrailSeconds"/>), kept per <see cref="XYPadLivePoint.Id"/>.
+    /// Return an empty list to show none.
+    /// </summary>
+    public Func<IReadOnlyList<XYPadLivePoint>>? LivePoints { get; init; }
+
+    /// <summary>
     /// Look and feel override, or null for <see cref="XYPadStyle.Default"/>. A factory rather than an
     /// instance so the style is resolved on each use - see <see cref="KnobControlConfiguration.Style"/>.
     /// </summary>
@@ -73,7 +82,29 @@ public class XYPadControlConfiguration() : ParameterControlConfiguration, IStyle
 /// <param name="Items">One label per choice, left to right.</param>
 /// <param name="GetSelectedIndex">Reads the current choice.</param>
 /// <param name="SetSelectedIndex">Makes a choice. The pad repaints the window itself afterwards.</param>
-public sealed record XYPadFooter(IReadOnlyList<string> Items, Func<int> GetSelectedIndex, Action<int> SetSelectedIndex);
+public sealed record XYPadFooter(IReadOnlyList<string> Items, Func<int> GetSelectedIndex, Action<int> SetSelectedIndex)
+{
+    /// <summary>Optional on/off switch at the footer's right end, beside the choices.</summary>
+    public XYPadFooterToggle? Toggle { get; init; }
+}
+
+/// <summary>An on/off switch in an XY pad's footer - see <see cref="XYPadFooter.Toggle"/>.</summary>
+/// <param name="Label">Its text.</param>
+/// <param name="IsOn">Reads its state.</param>
+/// <param name="SetOn">Changes its state. The pad repaints the window itself afterwards.</param>
+public sealed record XYPadFooterToggle(string Label, Func<bool> IsOn, Action<bool> SetOn);
+
+/// <summary>
+/// One live point on an XY pad - see <see cref="XYPadControlConfiguration.LivePoints"/>.
+/// </summary>
+/// <param name="Id">
+/// Identifies the point from one repaint to the next, so its trail follows it. A new id starts a
+/// new trail - give a point a new one when it stands for something new (a new note, say).
+/// </param>
+/// <param name="X">Normalized horizontal position, 0..1.</param>
+/// <param name="Y">Normalized vertical position, 0..1.</param>
+/// <param name="Weight">How strongly to draw it, 0..1 - an envelope level, for instance, so it fades out with the sound.</param>
+public readonly record struct XYPadLivePoint(long Id, double X, double Y, double Weight);
 
 /// <summary>
 /// Optional, read-only visualization of where a modulation source would

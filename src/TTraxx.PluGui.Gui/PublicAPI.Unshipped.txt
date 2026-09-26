@@ -806,3 +806,49 @@ override TTraxx.PluGui.Gui.XYPadFooter.GetHashCode() -> int
 override TTraxx.PluGui.Gui.XYPadFooter.ToString() -> string!
 static TTraxx.PluGui.Gui.XYPadFooter.operator !=(TTraxx.PluGui.Gui.XYPadFooter? left, TTraxx.PluGui.Gui.XYPadFooter? right) -> bool
 static TTraxx.PluGui.Gui.XYPadFooter.operator ==(TTraxx.PluGui.Gui.XYPadFooter? left, TTraxx.PluGui.Gui.XYPadFooter? right) -> bool
+TTraxx.PluGui.Gui.IPluginTheme.XYLivePoint.get -> SkiaSharp.SKColor
+TTraxx.PluGui.Gui.XYPadControlConfiguration.LivePoints.get -> System.Func<System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.XYPadLivePoint>!>?
+TTraxx.PluGui.Gui.XYPadControlConfiguration.LivePoints.init -> void
+TTraxx.PluGui.Gui.XYPadFooter.Toggle.get -> TTraxx.PluGui.Gui.XYPadFooterToggle?
+TTraxx.PluGui.Gui.XYPadFooter.Toggle.init -> void
+TTraxx.PluGui.Gui.XYPadFooterToggle
+TTraxx.PluGui.Gui.XYPadFooterToggle.<Clone>$() -> TTraxx.PluGui.Gui.XYPadFooterToggle!
+TTraxx.PluGui.Gui.XYPadFooterToggle.Deconstruct(out string! Label, out System.Func<bool>! IsOn, out System.Action<bool>! SetOn) -> void
+TTraxx.PluGui.Gui.XYPadFooterToggle.Equals(TTraxx.PluGui.Gui.XYPadFooterToggle? other) -> bool
+TTraxx.PluGui.Gui.XYPadFooterToggle.IsOn.get -> System.Func<bool>!
+TTraxx.PluGui.Gui.XYPadFooterToggle.IsOn.init -> void
+TTraxx.PluGui.Gui.XYPadFooterToggle.Label.get -> string!
+TTraxx.PluGui.Gui.XYPadFooterToggle.Label.init -> void
+TTraxx.PluGui.Gui.XYPadFooterToggle.SetOn.get -> System.Action<bool>!
+TTraxx.PluGui.Gui.XYPadFooterToggle.SetOn.init -> void
+TTraxx.PluGui.Gui.XYPadFooterToggle.XYPadFooterToggle(string! Label, System.Func<bool>! IsOn, System.Action<bool>! SetOn) -> void
+TTraxx.PluGui.Gui.XYPadLivePoint
+TTraxx.PluGui.Gui.XYPadLivePoint.Deconstruct(out long Id, out double X, out double Y, out double Weight) -> void
+TTraxx.PluGui.Gui.XYPadLivePoint.Equals(TTraxx.PluGui.Gui.XYPadLivePoint other) -> bool
+TTraxx.PluGui.Gui.XYPadLivePoint.Id.get -> long
+TTraxx.PluGui.Gui.XYPadLivePoint.Id.init -> void
+TTraxx.PluGui.Gui.XYPadLivePoint.Weight.get -> double
+TTraxx.PluGui.Gui.XYPadLivePoint.Weight.init -> void
+TTraxx.PluGui.Gui.XYPadLivePoint.X.get -> double
+TTraxx.PluGui.Gui.XYPadLivePoint.X.init -> void
+TTraxx.PluGui.Gui.XYPadLivePoint.XYPadLivePoint() -> void
+TTraxx.PluGui.Gui.XYPadLivePoint.XYPadLivePoint(long Id, double X, double Y, double Weight) -> void
+TTraxx.PluGui.Gui.XYPadLivePoint.Y.get -> double
+TTraxx.PluGui.Gui.XYPadLivePoint.Y.init -> void
+TTraxx.PluGui.Gui.XYPadStyle.FooterToggleWidth.get -> int
+TTraxx.PluGui.Gui.XYPadStyle.FooterToggleWidth.init -> void
+TTraxx.PluGui.Gui.XYPadStyle.LivePointRadius.get -> float
+TTraxx.PluGui.Gui.XYPadStyle.LivePointRadius.init -> void
+TTraxx.PluGui.Gui.XYPadStyle.LiveTrailSeconds.get -> float
+TTraxx.PluGui.Gui.XYPadStyle.LiveTrailSeconds.init -> void
+override TTraxx.PluGui.Gui.XYPadControl.NeedsContinuousRepaint.get -> bool
+override TTraxx.PluGui.Gui.XYPadFooterToggle.Equals(object? obj) -> bool
+override TTraxx.PluGui.Gui.XYPadFooterToggle.GetHashCode() -> int
+override TTraxx.PluGui.Gui.XYPadFooterToggle.ToString() -> string!
+override TTraxx.PluGui.Gui.XYPadLivePoint.GetHashCode() -> int
+static TTraxx.PluGui.Gui.XYPadFooterToggle.operator !=(TTraxx.PluGui.Gui.XYPadFooterToggle? left, TTraxx.PluGui.Gui.XYPadFooterToggle? right) -> bool
+static TTraxx.PluGui.Gui.XYPadFooterToggle.operator ==(TTraxx.PluGui.Gui.XYPadFooterToggle? left, TTraxx.PluGui.Gui.XYPadFooterToggle? right) -> bool
+static TTraxx.PluGui.Gui.XYPadLivePoint.operator !=(TTraxx.PluGui.Gui.XYPadLivePoint left, TTraxx.PluGui.Gui.XYPadLivePoint right) -> bool
+static TTraxx.PluGui.Gui.XYPadLivePoint.operator ==(TTraxx.PluGui.Gui.XYPadLivePoint left, TTraxx.PluGui.Gui.XYPadLivePoint right) -> bool
+~override TTraxx.PluGui.Gui.XYPadLivePoint.Equals(object obj) -> bool
+~override TTraxx.PluGui.Gui.XYPadLivePoint.ToString() -> string
