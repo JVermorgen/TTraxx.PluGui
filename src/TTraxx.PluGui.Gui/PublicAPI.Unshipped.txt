@@ -744,3 +744,35 @@ virtual TTraxx.PluGui.Gui.PluginWindow.ParticipatesInDebugBoundsOverlay.get -> b
 ~override TTraxx.PluGui.Gui.ToggleMetrics.ToString() -> string
 ~override TTraxx.PluGui.Gui.WheelEventArgs.Equals(object obj) -> bool
 ~override TTraxx.PluGui.Gui.WheelEventArgs.ToString() -> string
+TTraxx.PluGui.Gui.ButtonControl
+TTraxx.PluGui.Gui.ButtonControl.ButtonControl(TTraxx.PluGui.Gui.ButtonControlConfiguration! config) -> void
+TTraxx.PluGui.Gui.ButtonControlConfiguration
+TTraxx.PluGui.Gui.ButtonControlConfiguration.ButtonControlConfiguration() -> void
+TTraxx.PluGui.Gui.ButtonControlConfiguration.Label.get -> string!
+TTraxx.PluGui.Gui.ButtonControlConfiguration.Label.init -> void
+TTraxx.PluGui.Gui.ButtonControlConfiguration.OnClick.get -> System.Action!
+TTraxx.PluGui.Gui.ButtonControlConfiguration.OnClick.init -> void
+TTraxx.PluGui.Gui.ButtonControlConfiguration.Style.get -> System.Func<TTraxx.PluGui.Gui.ButtonStyle!>?
+TTraxx.PluGui.Gui.ButtonControlConfiguration.Style.init -> void
+TTraxx.PluGui.Gui.ButtonStyle
+TTraxx.PluGui.Gui.ButtonStyle.<Clone>$() -> TTraxx.PluGui.Gui.ButtonStyle!
+TTraxx.PluGui.Gui.ButtonStyle.BoundsFor(TTraxx.PluGui.Gui.ControlSizes size) -> (int Width, int Height)
+TTraxx.PluGui.Gui.ButtonStyle.ButtonStyle() -> void
+TTraxx.PluGui.Gui.ButtonStyle.CornerRadius.get -> float
+TTraxx.PluGui.Gui.ButtonStyle.CornerRadius.init -> void
+TTraxx.PluGui.Gui.ButtonStyle.Equals(TTraxx.PluGui.Gui.ButtonStyle? other) -> bool
+TTraxx.PluGui.Gui.ButtonStyle.FontSize.get -> float
+TTraxx.PluGui.Gui.ButtonStyle.FontSize.init -> void
+TTraxx.PluGui.Gui.ButtonStyle.Sizes.get -> TTraxx.PluGui.Gui.SizeTable<(int Width, int Height)>!
+TTraxx.PluGui.Gui.ButtonStyle.Sizes.init -> void
+override TTraxx.PluGui.Gui.ButtonControl.Draw(SkiaSharp.SKCanvas! canvas) -> void
+override TTraxx.PluGui.Gui.ButtonControl.OnPointerDown(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.ButtonControl.OnPointerLeave() -> void
+override TTraxx.PluGui.Gui.ButtonControl.OnPointerMove(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.ButtonControl.OnPointerUp(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.ButtonStyle.Equals(object? obj) -> bool
+override TTraxx.PluGui.Gui.ButtonStyle.GetHashCode() -> int
+override TTraxx.PluGui.Gui.ButtonStyle.ToString() -> string!
+static TTraxx.PluGui.Gui.ButtonStyle.Default.get -> TTraxx.PluGui.Gui.ButtonStyle!
+static TTraxx.PluGui.Gui.ButtonStyle.operator !=(TTraxx.PluGui.Gui.ButtonStyle? left, TTraxx.PluGui.Gui.ButtonStyle? right) -> bool
+static TTraxx.PluGui.Gui.ButtonStyle.operator ==(TTraxx.PluGui.Gui.ButtonStyle? left, TTraxx.PluGui.Gui.ButtonStyle? right) -> bool

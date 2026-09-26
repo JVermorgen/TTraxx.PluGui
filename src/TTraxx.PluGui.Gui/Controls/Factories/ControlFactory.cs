@@ -14,6 +14,7 @@ public static class ControlFactory
         DropdownControlConfiguration dropdownConfig => new DropdownControl(dropdownConfig),
         SliderControlConfiguration sliderConfig => new SliderControl(sliderConfig),
         TabStripControlConfiguration tabStripConfig => new TabStripControl(tabStripConfig),
+        ButtonControlConfiguration buttonConfig => new ButtonControl(buttonConfig),
         _ => throw new ArgumentException("Unsupported control configuration type", nameof(config)),
     };
 }

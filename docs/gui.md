@@ -178,6 +178,7 @@ explicit `IHotReloadTarget` implementation — a production host never calls it.
 | `ToggleControl` | `ToggleControlConfiguration` | Click toggles. Reads *on* at normalized ≥ 0.5 and writes a full 0.0/1.0, so it suits a genuinely two-state parameter. |
 | `XYPadControl` | `XYPadControlConfiguration` | One dragged dot drives one parameter per axis (`XParameter`, `YParameter`). Optional `ModulationIndicator` draws a read-only second dot; optional `Snap` quantizes dragged positions before they are written. |
 | `MeterControl` | `MeterControlConfiguration` | Display-only. Polls `GetLevel()` while the window repaints continuously; no parameter, nothing to automate. |
+| `ButtonControl` | `ButtonControlConfiguration` | Click runs `OnClick` — on release over the button, so a press can be abandoned by dragging off. No parameter: for one-shot commands, which change the plugin through its own parameters. |
 
 Shared on every configuration (from `ControlConfiguration`):
 
