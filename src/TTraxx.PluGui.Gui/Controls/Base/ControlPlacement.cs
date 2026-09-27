@@ -13,10 +13,10 @@ namespace TTraxx.PluGui.Gui;
 /// tuple-shaped layout code keeps compiling.
 /// </summary>
 /// <param name="Control">The control to place.</param>
-/// <param name="X">Absolute, window-relative left edge.</param>
-/// <param name="Y">Absolute, window-relative top edge.</param>
-/// <param name="W">Width in the same (already scaled) units as X/Y.</param>
-/// <param name="H">Height in the same (already scaled) units as X/Y.</param>
+/// <param name="X">Absolute, window-relative left edge, in unscaled design units.</param>
+/// <param name="Y">Absolute, window-relative top edge, in unscaled design units.</param>
+/// <param name="W">Width, in the same unscaled design units as X/Y - the control rescales all four when the layout is applied.</param>
+/// <param name="H">Height, in the same unscaled design units as X/Y.</param>
 public readonly record struct ControlPlacement(PluginControl Control, int X, int Y, int W, int H)
 {
     /// <summary>Lets a layout still be written as a plain <c>(control, x, y, w, h)</c> tuple.</summary>

@@ -9,7 +9,7 @@ public class XYPadControlConfiguration() : ParameterControlConfiguration, IStyle
     /// <summary>Parameter driven by the dot's horizontal position (0 = left edge).</summary>
     public required ParameterBinding XParameter { get; init; }
 
-    /// <summary>Parameter driven by the dot's vertical position (0 = bottom edge).</summary>
+    /// <summary>Parameter driven by the dot's vertical position (0 = top edge, 1 = bottom edge).</summary>
     public required ParameterBinding YParameter { get; init; }
 
     /// <summary>

@@ -17,7 +17,7 @@ public sealed record XYPadStyle : IControlStyle<XYPadStyle>
     public float IconStrokeWidth { get; init; } = 1.5f;
 
     /// <summary>
-    /// Corner glyphs, clockwise from top-left. Defaults to the waveform set;
+    /// Corner glyphs, in the order top-left, top-right, bottom-left, bottom-right. Defaults to the waveform set;
     /// pass null to draw none (e.g. a cutoff/resonance pad).
     /// </summary>
     public IReadOnlyList<SKPath>? CornerIcons { get; init; } =

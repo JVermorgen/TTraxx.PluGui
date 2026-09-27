@@ -12,7 +12,9 @@ namespace TTraxx.PluGui.NPlug;
 /// A derived view implements one member - <see cref="CreateWindow"/> - and passes its editor's
 /// base (unscaled) size to the constructor. Everything else has a working default and is virtual:
 /// <list type="bullet">
-/// <item><see cref="SupportedPlatforms"/> - HWND and X11 by default; narrow it for a single-platform build.</item>
+/// <item><see cref="SupportedPlatforms"/> - HWND and X11 by default; narrow it for a single-platform build.
+/// NSView (macOS) is deliberately left out while the macOS backend is untested: a view that wants
+/// it anyway adds it here, at its own risk.</item>
 /// <item><see cref="UserUiScale"/>, <see cref="MinScale"/>, <see cref="MaxScale"/> - the extra UI scale
 /// multiplier applied on top of the host's DPI/content scale, and the clamp for it.</item>
 /// <item><see cref="OnEditorClosed"/> - called after the window is destroyed, for a controller that
@@ -69,7 +71,11 @@ public abstract class PluginView<TWindow> : IPluGuiPluginView
     /// <summary>The host frame, once it has handed us one. Null before <see cref="SetFrame"/>.</summary>
     protected IAudioPluginFrame? Frame => _frame;
 
-    /// <summary>Platform handle types this view can be embedded in. HWND and X11 by default.</summary>
+    /// <summary>
+    /// Platform handle types this view can be embedded in. HWND and X11 by default. NSView is not
+    /// included until the macOS backend has been verified on real hardware; add it in an override to
+    /// opt in to the untested backend.
+    /// </summary>
     protected virtual AudioPluginViewPlatform[] SupportedPlatforms { get; } =
     [
         AudioPluginViewPlatform.Hwnd,

@@ -14,7 +14,9 @@ editor outside a DAW so the GUI can be iterated on without a host.
 - Windows (HWND)
 - Linux (X11)
 - macOS (NSView) — implemented, but not yet verified on real hardware. The GUI harness has no macOS
-  runner yet, so a macOS editor can currently only be exercised from a real host.
+  runner yet, so a macOS editor can currently only be exercised from a real host. Because it is
+  untested, the NPlug view does not accept NSView by default; opting in is at your own risk (see the
+  [platform notes](https://github.com/JVermorgen/TTraxx.PluGui/blob/main/docs/gui.md#platform-notes)).
 
 ## Packages
 
@@ -29,15 +31,22 @@ every push to `main` as a `-preview.N` prerelease.
 | `TTraxx.PluGui.Harness.NPlug.Runners.Win32` | Windows-only harness runner, pulled in by the package above. |
 | `TTraxx.PluGui.Harness.NPlug.Runners.Linux` | Linux/X11-only harness runner, pulled in by the package above. |
 
+The runners also pull in `TTraxx.PluGui.Harness.NPlug.Core`, the shared harness code. It is published
+unlisted because you never reference it directly.
+
 ```
 dotnet add package TTraxx.PluGui.Gui
 dotnet add package TTraxx.PluGui.NPlug
 dotnet add package TTraxx.PluGui.Harness.NPlug.Runners   # dev-time harness project only
 ```
 
-The only runtime dependency of the GUI package is SkiaSharp (plus `SkiaSharp.NativeAssets.Linux` for
-X11 builds). `TTraxx.PluGui.Gui` is marked `IsAotCompatible` and stays reflection-free on the drawing
-path, so a plugin built on it can be published NativeAOT.
+The only runtime dependency of the GUI package is SkiaSharp (plus `SkiaSharp.NativeAssets.Linux`, so
+the Linux native binary is always available). `TTraxx.PluGui.Gui` is marked `IsAotCompatible` and stays
+reflection-free on the drawing path, so a plugin built on it can be published NativeAOT.
+
+SkiaSharp's native library (`libSkiaSharp.dll`/`.so`/`.dylib`) is not compiled into your plugin: it has
+to be copied next to the plugin binary inside the `.vst3` bundle — see
+[Shipping the plugin](https://github.com/JVermorgen/TTraxx.PluGui/blob/main/docs/gui.md#shipping-the-plugin).
 
 ## GUI library
 
@@ -47,12 +56,13 @@ placed controls and a `DrawBackground()` that paints everything else — and bin
 host parameter through a `ParameterBinding` of get/set/begin-edit/end-edit delegates. Layout is
 written in unscaled design units and rescaled per window, so one layout serves every DPI.
 
-Built in: knobs, toggles, XY pads and level meters, metallic panels, a theme/font abstraction,
-right-click context menus, and a `PluginControl` base class for controls of your own.
+Built in: knobs, sliders, toggles, dropdowns, buttons, tab strips (with paged panels), XY pads and
+level meters; metallic and transparent panels; a theme/font abstraction; right-click context menus;
+and a `PluginControl` base class for controls of your own.
 
 → **[Read the GUI guide](https://github.com/JVermorgen/TTraxx.PluGui/blob/main/docs/gui.md)** — mental
-model, quick start, every control and configuration, parameter binding, theming, scaling, custom
-controls, and the `PluginView<TWindow>` VST 3 bridge.
+model, an end-to-end NPlug quick start, every control and configuration, parameter binding, theming,
+scaling, custom controls, the `PluginView<TWindow>` VST 3 bridge, shipping, and platform notes.
 
 ## GUI harness
 
