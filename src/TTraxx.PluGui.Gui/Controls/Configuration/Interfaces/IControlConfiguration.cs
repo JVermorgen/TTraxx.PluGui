@@ -34,4 +34,11 @@ public interface IControlConfiguration
     /// measurement itself.
     /// </summary>
     ControlSizes ControlSize { get; init; }
+
+    /// <summary>
+    /// A theme for this control alone, or null for its window's. For a group of controls that should
+    /// read as a different kind of thing from the rest - a tool rather than a sound control, say - in
+    /// a different accent. A factory, like a style, so it is resolved on each use.
+    /// </summary>
+    Func<IPluginTheme>? Theme => null;
 }

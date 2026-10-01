@@ -70,8 +70,11 @@ public abstract class PluginControl(IControlConfiguration config) : IDisposable
     /// <summary>Scales a design-unit length without rounding, at this control's window scale.</summary>
     protected float RescaleExact(float designUnits) => _context.RescaleExact(designUnits);
 
-    /// <summary>This control's window theme.</summary>
-    protected IPluginTheme Theme => _context.Theme;
+    /// <summary>
+    /// This control's theme: its configuration's own (see <see cref="IControlConfiguration.Theme"/>)
+    /// when it sets one, otherwise its window's.
+    /// </summary>
+    protected IPluginTheme Theme => Config.Theme?.Invoke() ?? _context.Theme;
 
     /// <summary>The metallic-panel colors of this control's window theme.</summary>
     protected IMetallicPanelTheme MetallicTheme => _context.MetallicTheme;

@@ -243,7 +243,7 @@ surface as an explicit `IHotReloadTarget` implementation — a production host n
 | `DropdownControl` | `DropdownControlConfiguration` | `Parameter` (stepped) + `Items` | Click opens the list with the current choice checked; the wheel steps through the choices without opening it. |
 | `XYPadControl` | `XYPadControlConfiguration` | `XParameter` + `YParameter` | Drag places the dot under the pointer, driving one parameter per axis. See [XY pad](#xy-pad). |
 | `TabStripControl` | `TabStripControlConfiguration` | Delegates, no parameter | Click selects a tab. See [Tab strips and paged panels](#tab-strips-and-paged-panels). |
-| `ButtonControl` | `ButtonControlConfiguration` | `OnClick`, no parameter | Runs `OnClick` on release over the button, so a press can be abandoned by dragging off. For one-shot commands, which change the plugin through its own parameters. |
+| `ButtonControl` | `ButtonControlConfiguration` | `OnClick`, no parameter | Runs `OnClick` on release over the button, so a press can be abandoned by dragging off. For one-shot commands, which change the plugin through its own parameters. `OnPress`/`OnRelease` make it momentary instead: they run on pointer down and on the matching pointer up (wherever it lands), for an action that lasts as long as the button is held — auditioning something, say. |
 | `MeterControl` | `MeterControlConfiguration` | `GetLevel`, no parameter | Display-only. Polls `GetLevel()` while the window repaints continuously; nothing to automate. |
 
 Every parameter-bound control (knob, slider, toggle, dropdown, XY pad) also offers a right-click
@@ -258,6 +258,9 @@ Shared on every configuration (from `ControlConfiguration`):
   hand-tuned bounds.
 - **`IsEnabled`** — a `Func<bool>`, evaluated live. A disabled control is drawn dimmed and ignores
   input, which makes conditional UI (an arp rate knob that only applies while sync is off) a one-liner.
+- **`Theme`** — a `Func<IPluginTheme>?` for this control alone; `null` (the default) uses its
+  window's. For a group of controls that should read as a different kind of thing from the rest — a
+  tool rather than a sound control, say — in a different accent. See [Theming and fonts](#theming-and-fonts).
 
 Knob, toggle and meter boxes include room for their label, and share their heights per tier, so they
 line up in a row. Slider, dropdown, tab strip and button are compact bars (22 or 17 units high) whose
@@ -393,10 +396,10 @@ Style = () => KnobStyle.Default with
 | --- | --- |
 | `KnobStyle` | Arc geometry (`StartAngleDeg`, `SweepDeg`), step-tick radii, and the interaction constants (`DragPixelsForFullSweep`, `FineTuneDivisor`, `WheelSteps`). |
 | `SliderStyle` | `CornerRadius`, `FontSize`, and the same three interaction constants as the knob. |
-| `ToggleStyle` | Nothing else: its `Sizes` table of `ToggleMetrics` is the whole style. |
+| `ToggleStyle` | `Appearance`: `Pill` (default) or `Chip` — a labelled box that fills its placement and lights up while on, for rows of related switches; give it an explicit width and height. A chip also takes `ChipCornerRadius`, `ChipFontSize` and `ChipOffIcon` (a glyph before the label while off — `Icons.Padlock` for "locked", say). |
 | `DropdownStyle` | `CornerRadius`, `Padding`, `ChevronWidth`, `FontSize`. |
 | `TabStripStyle` | `CornerRadius`, `FontSize`. |
-| `ButtonStyle` | `CornerRadius`, `FontSize`. |
+| `ButtonStyle` | `CornerRadius`, `FontSize`, an optional `Icon` before the label (sized by `IconScale`, a multiple of `FontSize`), and `IsPrimary` — tinted and outlined with the accent at rest, for an area's main action. |
 | `MeterStyle` | Segment count and gap, warning/clip thresholds with their colours, a silence floor, and the peak-hold timing. |
 | `XYPadStyle` | Corner radius, glow and indicator radii, `CornerIcons` and their size, the footer's height/font/toggle width, live-point radius and trail length, snap-marker sizes. |
 
@@ -569,7 +572,9 @@ public static class GuiBootstrapper
 `PluginDefaults` holds *defaults*, not the values controls read while drawing: a control always goes
 through its window's `RenderContext`, which may carry a theme of its own
 (`window.Context.Theme = …`). That indirection is what makes a per-window theme — a host-driven
-light/dark switch, say — possible at all.
+light/dark switch, say — possible at all. A single control can go one step further with its
+configuration's `Theme`, which wins over the window's: a set of controls in a second accent is a
+theme that differs only in its accent slots, handed to each of them.
 
 `IPluginFonts` is just `Regular` and `Bold` `SKTypeface`s; controls choose their own sizes. Leave
 `PluginDefaults.Fonts` alone to use `DefaultPluginFonts`, which resolves a system font per platform.
@@ -675,7 +680,7 @@ throws for configuration types of your own.
 ## Icons and Skia helpers
 
 `Icons` exposes built-in vector glyphs — `Sine`, `Saw`, `Pulse`, `Triangle` (meant to be stroked) and
-`ArrowRight` (meant to be filled). Every path is built in a normalized box from −0.5 to +0.5 on both
+`ArrowRight` and `Padlock` (meant to be filled). Every path is built in a normalized box from −0.5 to +0.5 on both
 axes, centred on the origin, Y pointing down as in Skia. Draw them through `SkiaIconExtensions`
 (`DrawIconFill`, `DrawIconStroke`), which apply the size and position — `x`/`y` there are the icon's
 **centre**, in pixels. Passing a path straight to Skia renders a sub-pixel speck at the origin. Paths

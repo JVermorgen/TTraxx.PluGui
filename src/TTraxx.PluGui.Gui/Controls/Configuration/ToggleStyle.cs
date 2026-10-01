@@ -1,7 +1,9 @@
+using SkiaSharp;
+
 namespace TTraxx.PluGui.Gui;
 
 /// <summary>
-/// Look of an on/off toggle - currently only its per-size layout box; colors come from the
+/// Look of an on/off toggle - its appearance and per-size layout box; colors come from the
 /// window's theme. A record with init-only members, so a variation is a <c>with</c> expression off
 /// <see cref="Default"/>. Lengths are unscaled design units.
 /// </summary>
@@ -25,4 +27,34 @@ public sealed record ToggleStyle : IControlStyle<ToggleStyle>
 
     /// <inheritdoc/>
     public (int Width, int Height) BoundsFor(ControlSizes size) => (Sizes[size].Width, Sizes[size].Height);
+
+    /// <summary>
+    /// A pill with the label underneath (the default), or a <see cref="ToggleAppearance.Chip"/>: a
+    /// labelled box that lights up while on. A chip fills whatever box it is placed in - give it an
+    /// explicit width and height rather than relying on <see cref="Sizes"/>, which are pill-shaped.
+    /// </summary>
+    public ToggleAppearance Appearance { get; init; } = ToggleAppearance.Pill;
+
+    /// <summary>Corner rounding of a chip.</summary>
+    public float ChipCornerRadius { get; init; } = 3f;
+
+    /// <summary>Text size of a chip's label.</summary>
+    public float ChipFontSize { get; init; } = 10f;
+
+    /// <summary>
+    /// A filled glyph drawn before a chip's label while it is OFF - a padlock (<see cref="Icons.Padlock"/>)
+    /// for a toggle whose off means "locked", say. Null for none. In the normalized space described on
+    /// <see cref="Icons"/>.
+    /// </summary>
+    public SKPath? ChipOffIcon { get; init; }
+}
+
+/// <summary>How a <see cref="ToggleControl"/> draws itself - see <see cref="ToggleStyle.Appearance"/>.</summary>
+public enum ToggleAppearance
+{
+    /// <summary>A sliding pill switch with the label underneath, sized to line up with a row of knobs.</summary>
+    Pill,
+
+    /// <summary>A labelled box filling its placement, lit with the accent while on - for rows of related switches.</summary>
+    Chip
 }

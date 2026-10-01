@@ -1,3 +1,5 @@
+using SkiaSharp;
+
 namespace TTraxx.PluGui.Gui;
 
 /// <summary>
@@ -24,4 +26,19 @@ public sealed record ButtonStyle : IControlStyle<ButtonStyle>
 
     /// <summary>Text size of the label.</summary>
     public float FontSize { get; init; } = 10f;
+
+    /// <summary>
+    /// A filled glyph drawn before the label, the two centred as one group - in the normalized space
+    /// described on <see cref="Icons"/>. Null for a label alone.
+    /// </summary>
+    public SKPath? Icon { get; init; }
+
+    /// <summary>Size of <see cref="Icon"/>, as a multiple of <see cref="FontSize"/>.</summary>
+    public float IconScale { get; init; } = 1.4f;
+
+    /// <summary>
+    /// Draws the button as its area's main action: tinted and outlined with the accent even at rest,
+    /// its label in the accent, rather than a plain groove that only lights up under the pointer.
+    /// </summary>
+    public bool IsPrimary { get; init; }
 }

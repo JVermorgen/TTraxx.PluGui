@@ -852,3 +852,28 @@ static TTraxx.PluGui.Gui.XYPadLivePoint.operator !=(TTraxx.PluGui.Gui.XYPadLiveP
 static TTraxx.PluGui.Gui.XYPadLivePoint.operator ==(TTraxx.PluGui.Gui.XYPadLivePoint left, TTraxx.PluGui.Gui.XYPadLivePoint right) -> bool
 ~override TTraxx.PluGui.Gui.XYPadLivePoint.Equals(object obj) -> bool
 ~override TTraxx.PluGui.Gui.XYPadLivePoint.ToString() -> string
+TTraxx.PluGui.Gui.ButtonStyle.Icon.get -> SkiaSharp.SKPath?
+TTraxx.PluGui.Gui.ButtonStyle.Icon.init -> void
+TTraxx.PluGui.Gui.ButtonStyle.IconScale.get -> float
+TTraxx.PluGui.Gui.ButtonStyle.IconScale.init -> void
+TTraxx.PluGui.Gui.ButtonStyle.IsPrimary.get -> bool
+TTraxx.PluGui.Gui.ButtonStyle.IsPrimary.init -> void
+TTraxx.PluGui.Gui.ControlConfiguration.Theme.get -> System.Func<TTraxx.PluGui.Gui.IPluginTheme!>?
+TTraxx.PluGui.Gui.ControlConfiguration.Theme.init -> void
+TTraxx.PluGui.Gui.IControlConfiguration.Theme.get -> System.Func<TTraxx.PluGui.Gui.IPluginTheme!>?
+TTraxx.PluGui.Gui.ToggleAppearance
+TTraxx.PluGui.Gui.ToggleAppearance.Chip = 1 -> TTraxx.PluGui.Gui.ToggleAppearance
+TTraxx.PluGui.Gui.ToggleAppearance.Pill = 0 -> TTraxx.PluGui.Gui.ToggleAppearance
+TTraxx.PluGui.Gui.ToggleStyle.Appearance.get -> TTraxx.PluGui.Gui.ToggleAppearance
+TTraxx.PluGui.Gui.ToggleStyle.Appearance.init -> void
+TTraxx.PluGui.Gui.ToggleStyle.ChipCornerRadius.get -> float
+TTraxx.PluGui.Gui.ToggleStyle.ChipCornerRadius.init -> void
+TTraxx.PluGui.Gui.ToggleStyle.ChipFontSize.get -> float
+TTraxx.PluGui.Gui.ToggleStyle.ChipFontSize.init -> void
+TTraxx.PluGui.Gui.ToggleStyle.ChipOffIcon.get -> SkiaSharp.SKPath?
+TTraxx.PluGui.Gui.ToggleStyle.ChipOffIcon.init -> void
+static TTraxx.PluGui.Gui.Icons.Padlock.get -> SkiaSharp.SKPath!
+TTraxx.PluGui.Gui.ButtonControlConfiguration.OnPress.get -> System.Action?
+TTraxx.PluGui.Gui.ButtonControlConfiguration.OnPress.init -> void
+TTraxx.PluGui.Gui.ButtonControlConfiguration.OnRelease.get -> System.Action?
+TTraxx.PluGui.Gui.ButtonControlConfiguration.OnRelease.init -> void

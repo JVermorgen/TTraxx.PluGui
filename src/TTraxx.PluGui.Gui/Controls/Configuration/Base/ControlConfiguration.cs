@@ -20,4 +20,7 @@ public abstract class ControlConfiguration : IControlConfiguration
 
     /// <inheritdoc/>
     public ControlSizes ControlSize { get; init; } = ControlSizes.S;
+
+    /// <inheritdoc/>
+    public Func<IPluginTheme>? Theme { get; init; }
 }

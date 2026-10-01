@@ -34,9 +34,16 @@ public sealed class ToggleControl(ToggleControlConfiguration config) : PluginCon
 
     public override void Draw(SKCanvas canvas)
     {
+        var style = Style;
+        if (style.Appearance == ToggleAppearance.Chip)
+        {
+            DrawChip(canvas, style);
+            return;
+        }
+
         var isOn = IsOn;
         var enabled = IsEnabled;
-        var metrics = Style.Sizes[config.ControlSize];
+        var metrics = style.Sizes[config.ControlSize];
 
         var pillH = Math.Min(_h - Rescale(12), RescaleExact(metrics.PillHeight));
         var pillW = pillH * 2;
@@ -80,5 +87,49 @@ public sealed class ToggleControl(ToggleControlConfiguration config) : PluginCon
             };
             canvas.DrawTextTopAligned(Parameter.Info.Label, _w / 2f, labelY, SKTextAlign.Center, font, paint);
         }
+    }
+
+    /// <summary>
+    /// <see cref="ToggleAppearance.Chip"/>: the whole box, tinted and outlined in the accent while on;
+    /// while off a plain groove, outlined only on hover like a button, with the style's off icon (if
+    /// any) in front of the label.
+    /// </summary>
+    private void DrawChip(SKCanvas canvas, ToggleStyle style)
+    {
+        var isOn = IsOn;
+        var enabled = IsEnabled;
+        var radius = RescaleExact(style.ChipCornerRadius);
+        var box = new SKRect(0.5f, 0.5f, _w - 0.5f, _h - 0.5f);
+
+        var fill = isOn
+            ? Theme.Accent.WithAlpha(enabled ? (byte)36 : (byte)18)
+            : Theme.TrackBackground.WithAlpha(enabled ? (byte)200 : (byte)100);
+        using (SKPaint background = new() { Color = fill, IsAntialias = true, Style = SKPaintStyle.Fill })
+            canvas.DrawRoundRect(box, radius, radius, background);
+
+        if (enabled && (isOn || IsHovered))
+        {
+            var outlineAlpha = !isOn ? (byte)150 : IsHovered ? (byte)200 : (byte)90;
+            using SKPaint outline = new() { Color = Theme.Accent.WithAlpha(outlineAlpha), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = RescaleExact(1f) };
+            canvas.DrawRoundRect(box, radius, radius, outline);
+        }
+
+        var textColor = !enabled ? Theme.TextDisabled : isOn ? Theme.TextPrimary : Theme.TextDim;
+        using SKFont font = new() { Size = RescaleExact(style.ChipFontSize), Typeface = Fonts.Bold };
+        using SKPaint textPaint = new() { Color = textColor, IsAntialias = true };
+        var metrics = font.Metrics;
+        var textTop = (_h - (metrics.Descent - metrics.Ascent)) / 2f;
+        var label = Parameter.Info.Label;
+
+        // The icon and the label are centred as one group, so the label shifts over to make room.
+        var icon = isOn ? null : style.ChipOffIcon;
+        var iconSize = icon is null ? 0f : RescaleExact(style.ChipFontSize);
+        var gap = icon is null ? 0f : RescaleExact(4f);
+        var groupLeft = (_w - (iconSize + gap + font.MeasureText(label))) / 2f;
+
+        if (icon is not null)
+            canvas.DrawIconFill(icon, groupLeft + (iconSize / 2f), _h / 2f, iconSize, textColor);
+
+        canvas.DrawTextTopAligned(label, groupLeft + iconSize + gap, textTop, SKTextAlign.Left, font, textPaint);
     }
 }

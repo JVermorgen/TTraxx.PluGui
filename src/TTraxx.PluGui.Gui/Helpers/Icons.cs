@@ -22,6 +22,7 @@ public static class Icons
     private static volatile SKPath? _saw;
     private static volatile SKPath? _pulse;
     private static volatile SKPath? _triangle;
+    private static volatile SKPath? _padlock;
 
     /// <summary>Right-pointing triangle with a notched back edge - a play/next marker. Filled.</summary>
     public static SKPath ArrowRight => _arrowRight ??= BuildArrowRight();
@@ -38,6 +39,9 @@ public static class Icons
     /// <summary>A triangle wave profile. Meant to be STROKED.</summary>
     public static SKPath Triangle => _triangle ??= BuildTriangle();
 
+    /// <summary>A closed padlock with a keyhole - "locked", "left alone". Filled.</summary>
+    public static SKPath Padlock => _padlock ??= BuildPadlock();
+
     internal static void InvalidateCache()
     {
         // Deliberately not disposing: a draw on the UI thread may still
@@ -47,6 +51,7 @@ public static class Icons
         _saw = null;
         _pulse = null;
         _triangle = null;
+        _padlock = null;
     }
 
     #region Private Methods
@@ -105,6 +110,19 @@ public static class Icons
         builder.LineTo(-0.25f, -0.5f);
         builder.LineTo(0.25f, 0.5f);
         builder.LineTo(0.5f, -0.5f);
+        return builder.Detach();
+    }
+
+    private static SKPath BuildPadlock()
+    {
+        // The shackle is a ring - outline clockwise, hole counter-clockwise - whose legs run down into
+        // the body. The body goes on clockwise over them, so where the two overlap the fill is solid;
+        // the keyhole is counter-clockwise inside the body alone, so it comes out as a hole.
+        using SKPathBuilder builder = new();
+        builder.AddRoundRect(new SKRoundRect(new SKRect(-0.3f, -0.5f, 0.3f, 0.05f), 0.3f), SKPathDirection.Clockwise);
+        builder.AddRoundRect(new SKRoundRect(new SKRect(-0.17f, -0.37f, 0.17f, 0.05f), 0.17f), SKPathDirection.CounterClockwise);
+        builder.AddRoundRect(new SKRoundRect(new SKRect(-0.42f, -0.06f, 0.42f, 0.5f), 0.08f), SKPathDirection.Clockwise);
+        builder.AddCircle(0f, 0.19f, 0.08f, SKPathDirection.CounterClockwise);
         return builder.Detach();
     }
     #endregion
