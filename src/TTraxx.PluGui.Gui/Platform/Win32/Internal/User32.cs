@@ -32,6 +32,12 @@ internal static partial class User32
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static partial bool DestroyWindow(nint hWnd);
 
+    /// <summary>GA_ROOT: the top-level window a child sits in - the host's, which owns our modal dialogs.</summary>
+    internal const uint GA_ROOT = 2;
+
+    [LibraryImport("user32.dll")]
+    internal static partial nint GetAncestor(nint hWnd, uint flags);
+
     [LibraryImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
     internal static partial nint SetWindowLongPtr(nint hWnd, int nIndex, nint dwNewLong);
 

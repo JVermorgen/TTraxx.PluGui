@@ -409,6 +409,7 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
         {
             control.BindInvalidate(PlatformWindow.Invalidate);
             control.BindShowMenu(OpenMenu);
+            control.BindOpenFileDialog(PlatformWindow.ShowOpenFileDialog);
             control.SetContainerBackgroundReference(_windowWidth, _windowHeight);
             control.SetBounds(x, y, w, h, Context);
         }
@@ -434,8 +435,9 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
     {
         if (_contextMenu is { } menu)
         {
-            menu.HandleClick(x, y);
+            // Closed before the row runs, so a row can open a menu of its own (a "More..." row).
             _contextMenu = null;
+            menu.HandleClick(x, y);
             PlatformWindow.Invalidate();
             return;
         }
@@ -474,6 +476,15 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
 
     void IPlatformWindowHost.OnContextMenu(int x, int y)
         => OpenMenu(x, y, _controlManager.FindControlAt(x, y)?.GetContextMenuItems() ?? []);
+
+    void IPlatformWindowHost.OnFilesDropped(int x, int y, IReadOnlyList<string> paths)
+    {
+        _contextMenu = null;
+        if (_controlManager.FindControlAt(x, y) is { } control && control.OnFilesDropped(new PointerEventArgs(x - control.X, y - control.Y), paths))
+        {
+            PlatformWindow.Invalidate();
+        }
+    }
 
     // The one way a menu opens, whether from a right-click or from a control asking for one
     // (PluginControl.ShowMenu - a dropdown, say). An empty list closes any open menu instead.

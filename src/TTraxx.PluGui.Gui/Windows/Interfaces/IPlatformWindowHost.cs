@@ -15,4 +15,7 @@ internal interface IPlatformWindowHost
 
     /// <summary>Right-click: show a context menu for whatever control is at (x, y), if it offers one.</summary>
     void OnContextMenu(int x, int y);
+
+    /// <summary>Files dropped onto the window from the OS (Explorer, Finder) at (x, y): offered to the control there.</summary>
+    void OnFilesDropped(int x, int y, IReadOnlyList<string> paths);
 }

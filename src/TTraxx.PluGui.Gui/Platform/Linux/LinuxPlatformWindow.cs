@@ -157,6 +157,48 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     /// </summary>
     public void SetContinuousRepaint(bool enabled) => _continuousRepaintEnabled = enabled;
 
+    /// <summary>
+    /// X11 has no dialog of its own: this runs the desktop's - zenity (GNOME and most others), else
+    /// kdialog (KDE) - and reads the chosen path from its output. Null if neither is installed or the
+    /// user cancels. (Files dropped from a file manager aren't received: that needs the XDND
+    /// protocol - not done yet.)
+    /// </summary>
+    public string? ShowOpenFileDialog(string title, IReadOnlyList<FileDialogFilter> filters)
+    {
+        var patterns = filters.Select(filter => (filter.Name, Patterns: string.Join(' ', filter.Extensions.Select(extension => "*." + extension)))).ToList();
+
+        var zenity = new List<string> { "--file-selection", "--title", title };
+        foreach (var (name, filterPatterns) in patterns) zenity.AddRange(["--file-filter", $"{name} | {filterPatterns}"]);
+        if (RunDialog("zenity", zenity, out var path)) return path;
+
+        var kdialogFilter = string.Join('\n', patterns.Select(pattern => $"{pattern.Patterns}|{pattern.Name}"));
+        return RunDialog("kdialog", ["--title", title, "--getopenfilename", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), kdialogFilter], out path)
+            ? path
+            : null;
+    }
+
+    /// <summary>Runs a dialog program; false if it couldn't be started. The path is null when it was cancelled.</summary>
+    private static bool RunDialog(string program, IEnumerable<string> arguments, out string? path)
+    {
+        path = null;
+        try
+        {
+            var start = new System.Diagnostics.ProcessStartInfo(program) { RedirectStandardOutput = true, UseShellExecute = false };
+            foreach (var argument in arguments) start.ArgumentList.Add(argument);
+            using var process = System.Diagnostics.Process.Start(start);
+            if (process is null) return false;
+
+            var output = process.StandardOutput.ReadToEnd().Trim();
+            process.WaitForExit();
+            if (process.ExitCode == 0 && output.Length > 0) path = output;
+            return true;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return false; // not installed
+        }
+    }
+
     int ITimerPumpSource.PreferredIntervalMilliseconds => ContinuousRepaintIntervalMs;
 
     void ITimerPumpSource.OnTimerTick() => Invalidate();

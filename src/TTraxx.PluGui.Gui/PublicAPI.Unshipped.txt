@@ -877,3 +877,20 @@ TTraxx.PluGui.Gui.ButtonControlConfiguration.OnPress.get -> System.Action?
 TTraxx.PluGui.Gui.ButtonControlConfiguration.OnPress.init -> void
 TTraxx.PluGui.Gui.ButtonControlConfiguration.OnRelease.get -> System.Action?
 TTraxx.PluGui.Gui.ButtonControlConfiguration.OnRelease.init -> void
+TTraxx.PluGui.Gui.FileDialogFilter
+TTraxx.PluGui.Gui.FileDialogFilter.Deconstruct(out string! Name, out System.Collections.Generic.IReadOnlyList<string!>! Extensions) -> void
+TTraxx.PluGui.Gui.FileDialogFilter.Equals(TTraxx.PluGui.Gui.FileDialogFilter? other) -> bool
+TTraxx.PluGui.Gui.FileDialogFilter.Extensions.get -> System.Collections.Generic.IReadOnlyList<string!>!
+TTraxx.PluGui.Gui.FileDialogFilter.Extensions.init -> void
+TTraxx.PluGui.Gui.FileDialogFilter.FileDialogFilter(string! Name, System.Collections.Generic.IReadOnlyList<string!>! Extensions) -> void
+TTraxx.PluGui.Gui.FileDialogFilter.Name.get -> string!
+TTraxx.PluGui.Gui.FileDialogFilter.Name.init -> void
+TTraxx.PluGui.Gui.FileDialogFilter.<Clone>$() -> TTraxx.PluGui.Gui.FileDialogFilter!
+override TTraxx.PluGui.Gui.FileDialogFilter.Equals(object? obj) -> bool
+override TTraxx.PluGui.Gui.FileDialogFilter.GetHashCode() -> int
+override TTraxx.PluGui.Gui.FileDialogFilter.ToString() -> string!
+static TTraxx.PluGui.Gui.FileDialogFilter.operator !=(TTraxx.PluGui.Gui.FileDialogFilter? left, TTraxx.PluGui.Gui.FileDialogFilter? right) -> bool
+static TTraxx.PluGui.Gui.FileDialogFilter.operator ==(TTraxx.PluGui.Gui.FileDialogFilter? left, TTraxx.PluGui.Gui.FileDialogFilter? right) -> bool
+TTraxx.PluGui.Gui.PluginControl.BindOpenFileDialog(System.Func<string!, System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.FileDialogFilter!>!, string?>! openFileDialogRequest) -> void
+TTraxx.PluGui.Gui.PluginControl.ShowOpenFileDialog(string! title, System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.FileDialogFilter!>! filters) -> string?
+virtual TTraxx.PluGui.Gui.PluginControl.OnFilesDropped(TTraxx.PluGui.Gui.PointerEventArgs e, System.Collections.Generic.IReadOnlyList<string!>! paths) -> bool

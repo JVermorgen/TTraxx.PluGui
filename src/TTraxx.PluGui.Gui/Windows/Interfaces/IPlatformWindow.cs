@@ -33,4 +33,11 @@ internal interface IPlatformWindow
     /// whenever no continuously-repainting control is present.
     /// </summary>
     ITimerPumpSource? TimerPumpSource { get; }
+
+    /// <summary>
+    /// Shows the platform's modal open-file dialog, owned by the host's window, and returns the chosen
+    /// file's full path, or null if the user cancelled (or the platform has no dialog to show). Blocks
+    /// the UI thread while the dialog is open, as a modal dialog does.
+    /// </summary>
+    string? ShowOpenFileDialog(string title, IReadOnlyList<FileDialogFilter> filters);
 }

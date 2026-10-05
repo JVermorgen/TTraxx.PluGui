@@ -69,7 +69,18 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
         _selfHandle = GCHandle.Alloc(this);
         User32.SetWindowUserData(_hwnd, GCHandle.ToIntPtr(_selfHandle));
         _origWndProc = User32.SetWindowLongPtr(_hwnd, WindowMessageConstants.GWL_WNDPROC, GetStaticWndProcPointer());
+
+        // Files dragged from Explorer arrive as WM_DROPFILES.
+        Shell32.DragAcceptFiles(_hwnd, true);
         return true;
+    }
+
+    public string? ShowOpenFileDialog(string title, IReadOnlyList<FileDialogFilter> filters)
+    {
+        if (_hwnd == nint.Zero) return null;
+
+        var owner = User32.GetAncestor(_hwnd, User32.GA_ROOT);
+        return Comdlg32.ShowOpen(owner != nint.Zero ? owner : _hwnd, title, filters);
     }
 
     public void SetBounds(int x, int y, int width, int height)
@@ -170,6 +181,10 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
                 return nint.Zero;
             case WindowMessageConstants.WM_TIMER:
                 if (wParam == ContinuousRepaintTimerId) Invalidate();
+                return nint.Zero;
+            case WindowMessageConstants.WM_DROPFILES:
+                var (paths, point) = Shell32.TakeDrop(wParam);
+                if (paths.Count > 0) _host?.OnFilesDropped(point.X, point.Y, paths);
                 return nint.Zero;
         }
 

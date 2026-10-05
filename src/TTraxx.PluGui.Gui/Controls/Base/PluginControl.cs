@@ -153,6 +153,27 @@ public abstract class PluginControl(IControlConfiguration config) : IDisposable
     protected void ShowMenu(int localX, int localY, IReadOnlyList<ContextMenuItem> items)
         => _showMenuRequest?.Invoke(_x + localX, _y + localY, items);
 
+    private Func<string, IReadOnlyList<FileDialogFilter>, string?>? _openFileDialogRequest;
+
+    /// <summary>Wired by the owning window so <see cref="ShowOpenFileDialog"/> can reach the platform's dialog.</summary>
+    public void BindOpenFileDialog(Func<string, IReadOnlyList<FileDialogFilter>, string?> openFileDialogRequest)
+        => _openFileDialogRequest = openFileDialogRequest;
+
+    /// <summary>
+    /// Shows the platform's modal open-file dialog and returns the chosen path, or null when the user
+    /// cancels (or before the control has been laid out). Blocks until the dialog closes - call it from
+    /// a pointer handler or a menu item, never from Draw.
+    /// </summary>
+    protected string? ShowOpenFileDialog(string title, IReadOnlyList<FileDialogFilter> filters)
+        => _openFileDialogRequest?.Invoke(title, filters);
+
+    /// <summary>
+    /// Files dragged in from the OS and dropped on this control, at a point in its LOCAL coordinates.
+    /// Return true to take them; the default declines. Supported on Windows; on macOS and X11 the
+    /// window doesn't receive drops yet, so a control should offer another way in (a file dialog).
+    /// </summary>
+    public virtual bool OnFilesDropped(PointerEventArgs e, IReadOnlyList<string> paths) => false;
+
     /// <summary>
     /// Bounds are given in unscaled design units and rescaled here. <paramref name="context"/> is the
     /// owning window's - it's adopted by this control and used for every later scale/theme/font

@@ -204,6 +204,52 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
     /// </summary>
     public void SetContinuousRepaint(bool enabled) { }
 
+    /// <summary>
+    /// NSOpenPanel, run modally: one file, of the filters' extensions. Not verified on a Mac yet. (Files
+    /// dropped from Finder aren't received: that needs the view to register for dragged types and
+    /// implement the NSDraggingDestination methods - not done yet.)
+    /// </summary>
+    public string? ShowOpenFileDialog(string title, IReadOnlyList<FileDialogFilter> filters)
+    {
+        static nint NSString(string text)
+        {
+            var utf8 = Marshal.StringToCoTaskMemUTF8(text);
+            try { return ObjC.MsgSendIdWithIntPtr(ObjC.GetClass("NSString"), ObjC.Sel("stringWithUTF8String:"), utf8); }
+            finally { Marshal.FreeCoTaskMem(utf8); }
+        }
+
+        var panel = ObjC.MsgSend(ObjC.GetClass("NSOpenPanel"), ObjC.Sel("openPanel"));
+        if (panel == nint.Zero) return null;
+
+        ObjC.MsgSendVoidWithBool(panel, ObjC.Sel("setCanChooseFiles:"), true);
+        ObjC.MsgSendVoidWithBool(panel, ObjC.Sel("setCanChooseDirectories:"), false);
+        ObjC.MsgSendVoidWithBool(panel, ObjC.Sel("setAllowsMultipleSelection:"), false);
+        ObjC.MsgSendVoidWithIntPtr(panel, ObjC.Sel("setMessage:"), NSString(title));
+
+        var extensions = filters.SelectMany(filter => filter.Extensions).Distinct().Select(NSString).ToArray();
+        if (extensions.Length > 0)
+        {
+            var handle = GCHandle.Alloc(extensions, GCHandleType.Pinned);
+            try
+            {
+                var array = ObjC.MsgSendIdWithIntPtrNUInt(ObjC.GetClass("NSArray"), ObjC.Sel("arrayWithObjects:count:"),
+                    handle.AddrOfPinnedObject(), (nuint)extensions.Length);
+                ObjC.MsgSendVoidWithIntPtr(panel, ObjC.Sel("setAllowedFileTypes:"), array);
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+
+        const nint modalResponseOk = 1;
+        if (ObjC.MsgSendNInt(panel, ObjC.Sel("runModal")) != modalResponseOk) return null;
+
+        var url = ObjC.MsgSend(panel, ObjC.Sel("URL"));
+        var path = url == nint.Zero ? nint.Zero : ObjC.MsgSend(url, ObjC.Sel("path"));
+        return path == nint.Zero ? null : Marshal.PtrToStringUTF8(ObjC.MsgSend(path, ObjC.Sel("UTF8String")));
+    }
+
     public void Destroy()
     {
         if (_isDestroyed) return;

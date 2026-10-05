@@ -90,6 +90,12 @@ internal static partial class ObjC
     internal static partial void MsgSendVoidWithBool(nint receiver, nint selector, [MarshalAs(UnmanagedType.U1)] bool arg); // setNeedsDisplay:, setWantsLayer:
 
     [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]
+    internal static partial nint MsgSendIdWithIntPtr(nint receiver, nint selector, nint arg); // stringWithUTF8String:
+
+    [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]
+    internal static partial nint MsgSendIdWithIntPtrNUInt(nint receiver, nint selector, nint arg, nuint count); // arrayWithObjects:count:
+
+    [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]
     internal static partial CGPoint MsgSendCGPoint(nint receiver, nint selector); // locationInWindow (16 bytes - geen stret-probleem op geen van beide arch's)
 
     [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]
