@@ -36,6 +36,7 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
     private nint _origWndProc = nint.Zero;
     private GCHandle _selfHandle;
     private IPlatformWindowHost? _host;
+    private nint _dropTarget;
 
     // DIB-backed surface, Skia (controls).
     // Reused between paints, only rebuilt on resize.
@@ -70,14 +71,17 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
         User32.SetWindowUserData(_hwnd, GCHandle.ToIntPtr(_selfHandle));
         _origWndProc = User32.SetWindowLongPtr(_hwnd, WindowMessageConstants.GWL_WNDPROC, GetStaticWndProcPointer());
 
-        // Files dragged from Explorer arrive as WM_DROPFILES. When the host runs elevated, Windows
-        // blocks that message (and the two that carry the file list) coming from Explorer, which
-        // isn't: let all three through, or a drop does nothing.
-        Shell32.DragAcceptFiles(_hwnd, true);
-        foreach (var message in (ReadOnlySpan<uint>)[WindowMessageConstants.WM_DROPFILES, WindowMessageConstants.WM_COPYDATA, WindowMessageConstants.WM_COPYGLOBALDATA])
-        {
-            User32.ChangeWindowMessageFilterEx(_hwnd, message, User32.MSGFLT_ALLOW, nint.Zero);
-        }
+        // Files dragged from Explorer: through OLE, the way Explorer drags (see OleDropTarget - a
+        // host with a drop target of its own would otherwise take the drag). Only if OLE won't have
+        // one does the window fall back to WM_DROPFILES: that route's style (WS_EX_ACCEPTFILES)
+        // makes OLE accept files anywhere in the window, ahead of our own target, so the cursor
+        // couldn't say where a drop lands. Into a host run as administrator Windows refuses a drag
+        // from Explorer either way.
+        _dropTarget = OleDropTarget.Register(new OleDropTarget.Callbacks(
+            (x, y) => _host?.CanDropFilesAt(x, y) ?? false,
+            (x, y, paths) => _host?.OnFilesDropped(x, y, paths),
+            _hwnd));
+        if (_dropTarget == nint.Zero) Shell32.DragAcceptFiles(_hwnd, true);
         return true;
     }
 
@@ -111,6 +115,9 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
 
     public void Destroy()
     {
+        OleDropTarget.Revoke(_dropTarget);
+        _dropTarget = nint.Zero;
+
         if (_hwnd != nint.Zero)
         {
             if (_origWndProc != nint.Zero) User32.SetWindowLongPtr(_hwnd, WindowMessageConstants.GWL_WNDPROC, _origWndProc);

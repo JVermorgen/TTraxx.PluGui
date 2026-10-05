@@ -477,6 +477,9 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
     void IPlatformWindowHost.OnContextMenu(int x, int y)
         => OpenMenu(x, y, _controlManager.FindControlAt(x, y)?.GetContextMenuItems() ?? []);
 
+    bool IPlatformWindowHost.CanDropFilesAt(int x, int y)
+        => _controlManager.FindControlAt(x, y) is { } control && control.AcceptsFiles(new PointerEventArgs(x - control.X, y - control.Y));
+
     void IPlatformWindowHost.OnFilesDropped(int x, int y, IReadOnlyList<string> paths)
     {
         _contextMenu = null;

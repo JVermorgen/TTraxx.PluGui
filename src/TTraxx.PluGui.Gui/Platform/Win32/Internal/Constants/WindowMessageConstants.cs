@@ -44,8 +44,6 @@ internal static class WindowMessageConstants
     /// <summary>Right button pressed - raised as a context-menu request.</summary>
     public const int WM_RBUTTONDOWN = 0x0204;
     public const int WM_DROPFILES = 0x0233;
-    public const int WM_COPYDATA = 0x004A;
-    public const int WM_COPYGLOBALDATA = 0x0049; // undocumented: carries a drop's file list across processes
 
     /// <summary>
     /// Wheel units in one notch. WM_MOUSEWHEEL reports accumulated distance, not notches, so the

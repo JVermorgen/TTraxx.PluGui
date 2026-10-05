@@ -168,9 +168,16 @@ public abstract class PluginControl(IControlConfiguration config) : IDisposable
         => _openFileDialogRequest?.Invoke(title, filters);
 
     /// <summary>
-    /// Files dragged in from the OS and dropped on this control, at a point in its LOCAL coordinates.
-    /// Return true to take them; the default declines. Supported on Windows; on macOS and X11 the
-    /// window doesn't receive drops yet, so a control should offer another way in (a file dialog).
+    /// Whether files dragged from the OS could be dropped at a point in this control's LOCAL
+    /// coordinates: the drag cursor shows "copy" there, "not allowed" elsewhere. The default declines.
+    /// </summary>
+    public virtual bool AcceptsFiles(PointerEventArgs e) => false;
+
+    /// <summary>
+    /// Files dragged in from the OS and dropped on this control, at a point in its LOCAL coordinates
+    /// (only where <see cref="AcceptsFiles"/> said yes). Return true to take them; the default
+    /// declines. Supported on Windows; on macOS and X11 the window doesn't receive drops yet, so a
+    /// control should offer another way in (a file dialog).
     /// </summary>
     public virtual bool OnFilesDropped(PointerEventArgs e, IReadOnlyList<string> paths) => false;
 

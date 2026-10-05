@@ -894,3 +894,4 @@ static TTraxx.PluGui.Gui.FileDialogFilter.operator ==(TTraxx.PluGui.Gui.FileDial
 TTraxx.PluGui.Gui.PluginControl.BindOpenFileDialog(System.Func<string!, System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.FileDialogFilter!>!, string?>! openFileDialogRequest) -> void
 TTraxx.PluGui.Gui.PluginControl.ShowOpenFileDialog(string! title, System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.FileDialogFilter!>! filters) -> string?
 virtual TTraxx.PluGui.Gui.PluginControl.OnFilesDropped(TTraxx.PluGui.Gui.PointerEventArgs e, System.Collections.Generic.IReadOnlyList<string!>! paths) -> bool
+virtual TTraxx.PluGui.Gui.PluginControl.AcceptsFiles(TTraxx.PluGui.Gui.PointerEventArgs e) -> bool

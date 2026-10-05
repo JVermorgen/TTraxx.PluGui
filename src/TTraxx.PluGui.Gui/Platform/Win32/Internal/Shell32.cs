@@ -24,24 +24,11 @@ internal static partial class Shell32
     internal static partial void DragFinish(nint hDrop);
 
     /// <summary>Every path in a drop, and the point (client coordinates) it landed on. Frees the drop.</summary>
-    internal static unsafe (List<string> Paths, Point Point) TakeDrop(nint hDrop)
+    internal static (List<string> Paths, Point Point) TakeDrop(nint hDrop)
     {
-        var paths = new List<string>();
         try
         {
-            var count = DragQueryFile(hDrop, 0xFFFFFFFF, null, 0);
-            for (uint index = 0; index < count; index++)
-            {
-                var length = DragQueryFile(hDrop, index, null, 0);
-                var buffer = new char[length + 1];
-                fixed (char* pointer = buffer)
-                {
-                    DragQueryFile(hDrop, index, pointer, (uint)buffer.Length);
-                }
-
-                paths.Add(new string(buffer, 0, (int)length));
-            }
-
+            var paths = ReadDropPaths(hDrop);
             DragQueryPoint(hDrop, out var point);
             return (paths, point);
         }
@@ -49,5 +36,25 @@ internal static partial class Shell32
         {
             DragFinish(hDrop);
         }
+    }
+
+    /// <summary>Every path in an HDROP - from WM_DROPFILES, or an OLE drag's CF_HDROP data. Doesn't free it.</summary>
+    internal static unsafe List<string> ReadDropPaths(nint hDrop)
+    {
+        var paths = new List<string>();
+        var count = DragQueryFile(hDrop, 0xFFFFFFFF, null, 0);
+        for (uint index = 0; index < count; index++)
+        {
+            var length = DragQueryFile(hDrop, index, null, 0);
+            var buffer = new char[length + 1];
+            fixed (char* pointer = buffer)
+            {
+                DragQueryFile(hDrop, index, pointer, (uint)buffer.Length);
+            }
+
+            paths.Add(new string(buffer, 0, (int)length));
+        }
+
+        return paths;
     }
 }

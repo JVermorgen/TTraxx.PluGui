@@ -38,17 +38,6 @@ internal static partial class User32
     [LibraryImport("user32.dll")]
     internal static partial nint GetAncestor(nint hWnd, uint flags);
 
-    /// <summary>MSGFLT_ALLOW: let a message through to this window from a process at a lower integrity level.</summary>
-    internal const uint MSGFLT_ALLOW = 1;
-
-    /// <summary>
-    /// Lets one message through User Interface Privilege Isolation to this window. Without it, a
-    /// window in an elevated process (a DAW run as administrator) never receives what an ordinary
-    /// process - Explorer - sends it.
-    /// </summary>
-    [LibraryImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    internal static partial bool ChangeWindowMessageFilterEx(nint hWnd, uint message, uint action, nint changeFilterStruct);
 
     [LibraryImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
     internal static partial nint SetWindowLongPtr(nint hWnd, int nIndex, nint dwNewLong);
