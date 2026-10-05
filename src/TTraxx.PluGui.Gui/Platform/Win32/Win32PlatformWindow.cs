@@ -70,8 +70,14 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
         User32.SetWindowUserData(_hwnd, GCHandle.ToIntPtr(_selfHandle));
         _origWndProc = User32.SetWindowLongPtr(_hwnd, WindowMessageConstants.GWL_WNDPROC, GetStaticWndProcPointer());
 
-        // Files dragged from Explorer arrive as WM_DROPFILES.
+        // Files dragged from Explorer arrive as WM_DROPFILES. When the host runs elevated, Windows
+        // blocks that message (and the two that carry the file list) coming from Explorer, which
+        // isn't: let all three through, or a drop does nothing.
         Shell32.DragAcceptFiles(_hwnd, true);
+        foreach (var message in (ReadOnlySpan<uint>)[WindowMessageConstants.WM_DROPFILES, WindowMessageConstants.WM_COPYDATA, WindowMessageConstants.WM_COPYGLOBALDATA])
+        {
+            User32.ChangeWindowMessageFilterEx(_hwnd, message, User32.MSGFLT_ALLOW, nint.Zero);
+        }
         return true;
     }
 
