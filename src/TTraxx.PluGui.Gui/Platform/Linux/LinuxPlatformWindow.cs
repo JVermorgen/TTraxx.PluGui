@@ -1,4 +1,4 @@
-﻿using SkiaSharp;
+using SkiaSharp;
 using System.Runtime.InteropServices;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal;
 using TTraxx.PluGui.Gui.Platform.Linux.Internal.Constants;
@@ -156,6 +156,9 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     /// responsible for registering/unregistering that with the host.
     /// </summary>
     public void SetContinuousRepaint(bool enabled) => _continuousRepaintEnabled = enabled;
+
+    /// <summary>Dragging files out of the window needs the XDND protocol as a source - not done yet; declines, so a control offers another way out.</summary>
+    public bool StartFileDrag(IReadOnlyList<string> paths) => false;
 
     /// <summary>
     /// X11 has no dialog of its own: this runs the desktop's - zenity (GNOME and most others), else

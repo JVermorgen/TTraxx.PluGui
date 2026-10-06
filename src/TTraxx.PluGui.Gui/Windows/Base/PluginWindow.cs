@@ -410,6 +410,7 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
             control.BindInvalidate(PlatformWindow.Invalidate);
             control.BindShowMenu(OpenMenu);
             control.BindOpenFileDialog(PlatformWindow.ShowOpenFileDialog);
+            control.BindFileDrag(PlatformWindow.StartFileDrag);
             control.SetContainerBackgroundReference(_windowWidth, _windowHeight);
             control.SetBounds(x, y, w, h, Context);
         }

@@ -40,4 +40,12 @@ internal interface IPlatformWindow
     /// the UI thread while the dialog is open, as a modal dialog does.
     /// </summary>
     string? ShowOpenFileDialog(string title, IReadOnlyList<FileDialogFilter> filters);
+
+    /// <summary>
+    /// Starts dragging files out of the window - to a DAW's track, say - while the left button is
+    /// down, and blocks until the drag ends; true when they were dropped somewhere that took them.
+    /// The press ends with it: the host gets OnPointerUp before this returns. False at once where the
+    /// platform can't drag out yet.
+    /// </summary>
+    bool StartFileDrag(IReadOnlyList<string> paths);
 }

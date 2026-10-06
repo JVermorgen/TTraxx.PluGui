@@ -77,9 +77,13 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
         // makes OLE accept files anywhere in the window, ahead of our own target, so the cursor
         // couldn't say where a drop lands. Into a host run as administrator Windows refuses a drag
         // from Explorer either way.
+        // A drag out of a plugin window (FileDrag) isn't taken back in by one.
         _dropTarget = OleDropTarget.Register(new OleDropTarget.Callbacks(
-            (x, y) => _host?.CanDropFilesAt(x, y) ?? false,
-            (x, y, paths) => _host?.OnFilesDropped(x, y, paths),
+            (x, y) => !FileDrag.IsDragging && (_host?.CanDropFilesAt(x, y) ?? false),
+            (x, y, paths) =>
+            {
+                if (!FileDrag.IsDragging) _host?.OnFilesDropped(x, y, paths);
+            },
             _hwnd));
         if (_dropTarget == nint.Zero) Shell32.DragAcceptFiles(_hwnd, true);
         return true;
@@ -91,6 +95,21 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
 
         var owner = User32.GetAncestor(_hwnd, User32.GA_ROOT);
         return Comdlg32.ShowOpen(owner != nint.Zero ? owner : _hwnd, title, filters);
+    }
+
+    public bool StartFileDrag(IReadOnlyList<string> paths)
+    {
+        if (_hwnd == nint.Zero || paths.Count == 0) return false;
+
+        // OLE runs the mouse from here until the button comes up, so the window never sees the
+        // release: the press is ended here, where the pointer is now.
+        User32.ReleaseCapture();
+        var dropped = FileDrag.Start(_hwnd, paths);
+
+        User32.GetCursorPos(out var point);
+        User32.ScreenToClient(_hwnd, ref point);
+        _host?.OnPointerUp(point.X, point.Y);
+        return dropped;
     }
 
     public void SetBounds(int x, int y, int width, int height)

@@ -1,4 +1,4 @@
-﻿using SkiaSharp;
+using SkiaSharp;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using TTraxx.PluGui.Gui.Platform.MacOS.Internal;
@@ -203,6 +203,9 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
     /// NeedsContinuousRepaint simply won't animate on macOS until this is wired up.
     /// </summary>
     public void SetContinuousRepaint(bool enabled) { }
+
+    /// <summary>Dragging files out of the window needs NSDraggingSource (beginDraggingSession) - not done yet; declines, so a control offers another way out.</summary>
+    public bool StartFileDrag(IReadOnlyList<string> paths) => false;
 
     /// <summary>
     /// NSOpenPanel, run modally: one file, of the filters' extensions. Not verified on a Mac yet. (Files
