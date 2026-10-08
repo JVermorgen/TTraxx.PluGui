@@ -185,9 +185,64 @@ public abstract class PluginView<TWindow> : IPluGuiPluginView
 
     public virtual void OnWheel(float distance) { }
 
-    public virtual void OnKeyDown(ushort key, short keyCode, short modifiers) { }
+    public virtual void OnKeyDown(ushort key, short keyCode, short modifiers) => HandleHostKeyDown(key, keyCode, modifiers);
 
     public virtual void OnKeyUp(ushort key, short keyCode, short modifiers) { }
+
+    /// <summary>
+    /// A key the host passes on (VST3 onKeyDown), to the control that has the keyboard - a text
+    /// field editing; true when it used the key. A view whose NPlug can report that back to the host
+    /// returns this from onKeyDown, so every other key stays the host's (IPlugView: kResultTrue only
+    /// for a key really handled). The VST3 codes are mapped here: a character is typed text, unless
+    /// Ctrl (Cmd on macOS) is held - then A, C, V and X are the clipboard shortcuts.
+    /// </summary>
+    /// <param name="key">The key's character, or 0.</param>
+    /// <param name="keyCode">A VST3 VirtualKeyCodes value (keycodes.h) for a key without one, or 0.</param>
+    /// <param name="modifiers">VST3 KeyModifier flags.</param>
+    protected bool HandleHostKeyDown(ushort key, short keyCode, short modifiers)
+    {
+        if (_window is not { HasKeyboardControl: true } window) return false;
+
+        var keyModifiers = KeyModifiers.None;
+        if ((modifiers & ShiftKey) != 0) keyModifiers |= KeyModifiers.Shift;
+        if ((modifiers & CommandKey) != 0) keyModifiers |= KeyModifiers.Control;
+
+        if (keyCode == KeySpace) return window.HandleTextInput(" ");
+        if (KeyOf(keyCode) is var named and not Key.None) return window.HandleKeyDown(new KeyEventArgs(named, keyModifiers));
+        if (key == 0 || char.IsControl((char)key)) return false;
+
+        if ((keyModifiers & KeyModifiers.Control) != 0)
+        {
+            var shortcut = char.ToUpperInvariant((char)key) switch { 'A' => Key.A, 'C' => Key.C, 'V' => Key.V, 'X' => Key.X, _ => Key.None };
+            return shortcut != Key.None && window.HandleKeyDown(new KeyEventArgs(shortcut, keyModifiers));
+        }
+
+        return window.HandleTypedCharacter((char)key, keyModifiers);
+    }
+
+    /// <summary>A key released that the host passes on: the window's while a control has the keyboard, as its press was.</summary>
+    protected bool HandleHostKeyUp() => _window is { HasKeyboardControl: true };
+
+    // VST3's KeyModifier flags and the VirtualKeyCodes this maps (keycodes.h).
+    private const short ShiftKey = 1 << 0;
+    private const short CommandKey = 1 << 2;
+    private const short KeySpace = 7;
+
+    private static Key KeyOf(short keyCode) => keyCode switch
+    {
+        1 => Key.Backspace,
+        2 => Key.Tab,
+        4 or 19 => Key.Enter, // KEY_RETURN, KEY_ENTER
+        6 => Key.Escape,
+        9 => Key.End,
+        10 => Key.Home,
+        11 => Key.Left,
+        12 => Key.Up,
+        13 => Key.Right,
+        14 => Key.Down,
+        22 => Key.Delete,
+        _ => Key.None,
+    };
 
     public virtual void SetContentScaleFactor(float factor)
     {

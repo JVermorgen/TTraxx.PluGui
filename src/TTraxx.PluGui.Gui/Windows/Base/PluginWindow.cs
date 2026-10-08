@@ -54,6 +54,8 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
     private List<ControlPlacement> _layout = [];
     private List<IPluginPanel> _registeredPanels = [];
     private ContextMenuOverlay? _contextMenu;
+    // The control that has the keyboard, if any - see PluginControl.TakeKeyboardFocus.
+    private PluginControl? _keyboardControl;
     // Set once ConfigureSizing() has run for this window instance, so it's called exactly once
     // regardless of how many times Build() (via RebuildControls()) runs afterward.
     private bool _sizingConfigured;
@@ -150,6 +152,7 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
 
         _isDestroyed = true;
         _isAttached = false;
+        _keyboardControl = null;
 
         OnDestroying();
         PlatformWindow.Destroy();
@@ -411,6 +414,8 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
             control.BindShowMenu(OpenMenu);
             control.BindOpenFileDialog(PlatformWindow.ShowOpenFileDialog);
             control.BindFileDrag(PlatformWindow.StartFileDrag);
+            control.BindKeyboardFocus(SetKeyboardFocus);
+            control.BindClipboard(PlatformWindow.GetClipboardText, PlatformWindow.SetClipboardText);
             control.SetContainerBackgroundReference(_windowWidth, _windowHeight);
             control.SetBounds(x, y, w, h, Context);
         }
@@ -442,7 +447,73 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
             PlatformWindow.Invalidate();
             return;
         }
+
+        // A press anywhere but on the control that has the keyboard ends its editing.
+        if (_keyboardControl is { } editing && !ReferenceEquals(_controlManager.FindControlAt(x, y), editing)) SetKeyboardFocus(editing, false);
         _controlManager.OnPointerDown(x, y, modifiers);
+    }
+
+    /// <inheritdoc/>
+    public bool HasKeyboardControl => IsLive && _keyboardControl is not null;
+
+    /// <inheritdoc/>
+    public bool HandleKeyDown(KeyEventArgs e) => IsLive && ((IPlatformWindowHost)this).OnKeyDown(e);
+
+    /// <inheritdoc/>
+    public bool HandleTextInput(string text) => IsLive && ((IPlatformWindowHost)this).OnTextInput(text);
+
+    /// <inheritdoc/>
+    public bool HandleTypedCharacter(char character, KeyModifiers modifiers)
+        => IsLive && HandleTextInput(PlatformWindow.TranslateTypedCharacter(character, modifiers));
+
+    bool IPlatformWindowHost.OnKeyDown(KeyEventArgs e)
+    {
+        if (_keyboardControl is not { } control || !control.OnKeyDown(e)) return false;
+
+        PlatformWindow.Invalidate();
+        return true;
+    }
+
+    bool IPlatformWindowHost.OnTextInput(string text)
+    {
+        if (_keyboardControl is not { } control || !control.OnTextInput(text)) return false;
+
+        PlatformWindow.Invalidate();
+        return true;
+    }
+
+    void IPlatformWindowHost.OnKeyboardFocusLost()
+    {
+        if (_keyboardControl is not { } control) return;
+
+        _keyboardControl = null;
+        control.SetKeyboardFocusState(false);
+        PlatformWindow.Invalidate();
+    }
+
+    // A control taking (or giving back) the keyboard - see PluginControl.TakeKeyboardFocus.
+    private void SetKeyboardFocus(PluginControl control, bool focused)
+    {
+        if (focused)
+        {
+            if (ReferenceEquals(_keyboardControl, control)) return;
+
+            var previous = _keyboardControl;
+            _keyboardControl = control;
+            previous?.SetKeyboardFocusState(false);
+            PlatformWindow.SetKeyboardFocus(true);
+            control.SetKeyboardFocusState(true);
+        }
+        else
+        {
+            if (!ReferenceEquals(_keyboardControl, control)) return;
+
+            _keyboardControl = null;
+            control.SetKeyboardFocusState(false);
+            PlatformWindow.SetKeyboardFocus(false);
+        }
+
+        PlatformWindow.Invalidate();
     }
 
     void IPlatformWindowHost.OnPointerMove(int x, int y, KeyModifiers modifiers)

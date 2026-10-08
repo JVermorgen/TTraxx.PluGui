@@ -182,6 +182,62 @@ public abstract class PluginControl(IControlConfiguration config) : IDisposable
     /// </summary>
     protected bool StartFileDrag(IReadOnlyList<string> paths) => _fileDragRequest?.Invoke(paths) ?? false;
 
+    private Action<PluginControl, bool>? _keyboardFocusRequest;
+    private Func<string?>? _clipboardRead;
+    private Action<string>? _clipboardWrite;
+
+    /// <summary>Wired by the owning window so <see cref="TakeKeyboardFocus"/> and <see cref="ReleaseKeyboardFocus"/> reach it.</summary>
+    public void BindKeyboardFocus(Action<PluginControl, bool> keyboardFocusRequest) => _keyboardFocusRequest = keyboardFocusRequest;
+
+    /// <summary>Wired by the owning window so <see cref="GetClipboardText"/> and <see cref="SetClipboardText"/> reach the platform.</summary>
+    public void BindClipboard(Func<string?> read, Action<string> write)
+    {
+        _clipboardRead = read;
+        _clipboardWrite = write;
+    }
+
+    /// <summary>
+    /// Whether this control has the keyboard: key presses (<see cref="OnKeyDown"/>) and typed text
+    /// (<see cref="OnTextInput"/>) come here. One control in a window at most; set by the window.
+    /// </summary>
+    public bool HasKeyboardFocus { get; private set; }
+
+    /// <summary>
+    /// Takes the keyboard - a text field starting to edit. The window takes it from the host for as
+    /// long as this control keeps it; a press on another control, or the window losing the keyboard,
+    /// ends it (see <see cref="OnKeyboardFocusChanged"/>). Windows only so far: elsewhere the control
+    /// is told it has the keyboard, but no keys arrive.
+    /// </summary>
+    protected void TakeKeyboardFocus() => _keyboardFocusRequest?.Invoke(this, true);
+
+    /// <summary>Gives the keyboard back to the host, if this control has it.</summary>
+    protected void ReleaseKeyboardFocus() => _keyboardFocusRequest?.Invoke(this, false);
+
+    /// <summary>Called by the window as this control gets or loses the keyboard.</summary>
+    public void SetKeyboardFocusState(bool focused)
+    {
+        if (HasKeyboardFocus == focused) return;
+
+        HasKeyboardFocus = focused;
+        OnKeyboardFocusChanged(focused);
+        Refresh();
+    }
+
+    /// <summary>This control got (true) or lost (false) the keyboard. Nothing by default.</summary>
+    public virtual void OnKeyboardFocusChanged(bool focused) { }
+
+    /// <summary>A key pressed while this control has the keyboard. Return true when it was used; the default declines.</summary>
+    public virtual bool OnKeyDown(KeyEventArgs e) => false;
+
+    /// <summary>Text typed while this control has the keyboard. Return true when it was used; the default declines.</summary>
+    public virtual bool OnTextInput(string text) => false;
+
+    /// <summary>The clipboard's text, or null when it holds none or the platform can't read it yet (Windows only so far).</summary>
+    protected string? GetClipboardText() => _clipboardRead?.Invoke();
+
+    /// <summary>Puts text on the clipboard (Windows only so far).</summary>
+    protected void SetClipboardText(string text) => _clipboardWrite?.Invoke(text);
+
     /// <summary>
     /// Whether files dragged from the OS could be dropped at a point in this control's LOCAL
     /// coordinates: the drag cursor shows "copy" there, "not allowed" elsewhere. The default declines.

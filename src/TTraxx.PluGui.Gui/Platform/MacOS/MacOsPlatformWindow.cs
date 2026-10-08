@@ -207,6 +207,16 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
     /// <summary>Dragging files out of the window needs NSDraggingSource (beginDraggingSession) - not done yet; declines, so a control offers another way out.</summary>
     public bool StartFileDrag(IReadOnlyList<string> paths) => false;
 
+    // No keyboard or clipboard yet: a control can take the keyboard, but no keys arrive.
+    public void SetKeyboardFocus(bool focused) { }
+
+    public string? GetClipboardText() => null;
+
+    public void SetClipboardText(string text) { }
+
+    public string TranslateTypedCharacter(char character, KeyModifiers modifiers)
+        => ((modifiers & KeyModifiers.Shift) != 0 ? char.ToUpperInvariant(character) : character).ToString();
+
     /// <summary>
     /// NSOpenPanel, run modally: one file, of the filters' extensions. Not verified on a Mac yet. (Files
     /// dropped from Finder aren't received: that needs the view to register for dragged types and

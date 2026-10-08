@@ -38,6 +38,11 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
     private IPlatformWindowHost? _host;
     private nint _dropTarget;
 
+    // Whatever had the keyboard before a control took it (see SetKeyboardFocus), and the first half
+    // of a character typed as a surrogate pair.
+    private nint _focusBefore;
+    private char _highSurrogate;
+
     // DIB-backed surface, Skia (controls).
     // Reused between paints, only rebuilt on resize.
     private nint _dibMemDc;
@@ -110,6 +115,64 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
         User32.ScreenToClient(_hwnd, ref point);
         _host?.OnPointerUp(point.X, point.Y);
         return dropped;
+    }
+
+    /// <summary>
+    /// The window never takes the focus on a click (WM_MOUSEACTIVATE answers MA_NOACTIVATE, so the
+    /// host keeps its shortcuts) - only while a control edits text, and it hands the focus back to
+    /// whatever had it when the editing ends.
+    /// </summary>
+    public void SetKeyboardFocus(bool focused)
+    {
+        if (_hwnd == nint.Zero) return;
+
+        if (focused)
+        {
+            var current = Keyboard.GetFocus();
+            if (current == _hwnd) return;
+
+            _focusBefore = current;
+            Keyboard.SetFocus(_hwnd);
+            return;
+        }
+
+        if (Keyboard.GetFocus() != _hwnd) return;
+
+        var back = _focusBefore != nint.Zero && Keyboard.IsWindow(_focusBefore) ? _focusBefore : Keyboard.GetParent(_hwnd);
+        _focusBefore = nint.Zero;
+        Keyboard.SetFocus(back);
+    }
+
+    public string? GetClipboardText() => _hwnd == nint.Zero ? null : Keyboard.GetClipboardText(_hwnd);
+
+    public void SetClipboardText(string text)
+    {
+        if (_hwnd != nint.Zero) Keyboard.SetClipboardText(_hwnd, text);
+    }
+
+    public string TranslateTypedCharacter(char character, KeyModifiers modifiers)
+        => Keyboard.Translate(character)
+            ?? ((modifiers & KeyModifiers.Shift) != 0 ? char.ToUpperInvariant(character) : character).ToString();
+
+    // A WM_CHAR as text: control characters (Enter, Backspace, Ctrl+letter) are keys, not text, and
+    // a character beyond the first plane arrives in two halves.
+    private string? TakeCharacter(char character)
+    {
+        if (char.IsHighSurrogate(character))
+        {
+            _highSurrogate = character;
+            return null;
+        }
+
+        if (char.IsLowSurrogate(character))
+        {
+            var high = _highSurrogate;
+            _highSurrogate = default;
+            return high == default ? null : new string([high, character]);
+        }
+
+        _highSurrogate = default;
+        return char.IsControl(character) ? null : character.ToString();
     }
 
     public void SetBounds(int x, int y, int width, int height)
@@ -214,6 +277,18 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
             case WindowMessageConstants.WM_TIMER:
                 if (wParam == ContinuousRepaintTimerId) Invalidate();
                 return nint.Zero;
+            case Keyboard.WM_GETDLGCODE:
+                return Keyboard.DLGC_WANTALLKEYS | Keyboard.DLGC_WANTCHARS;
+            case Keyboard.WM_KEYDOWN:
+                if (_host?.OnKeyDown(new KeyEventArgs(Keyboard.KeyOf(wParam), Keyboard.CurrentModifiers())) == true) return nint.Zero;
+                break;
+            case Keyboard.WM_CHAR:
+                if (TakeCharacter((char)wParam) is { } text && _host?.OnTextInput(text) == true) return nint.Zero;
+                break;
+            case Keyboard.WM_KILLFOCUS:
+                _highSurrogate = default;
+                _host?.OnKeyboardFocusLost();
+                break;
             case WindowMessageConstants.WM_DROPFILES:
                 var (paths, point) = Shell32.TakeDrop(wParam);
                 if (paths.Count > 0) _host?.OnFilesDropped(point.X, point.Y, paths);

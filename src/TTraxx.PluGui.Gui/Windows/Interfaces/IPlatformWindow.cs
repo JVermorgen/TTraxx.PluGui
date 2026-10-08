@@ -48,4 +48,24 @@ internal interface IPlatformWindow
     /// platform can't drag out yet.
     /// </summary>
     bool StartFileDrag(IReadOnlyList<string> paths);
+
+    /// <summary>
+    /// Takes the keyboard for the window (true) - a control is editing text - or gives it back to
+    /// whatever had it before (false). Key presses and typed text then reach the host (OnKeyDown,
+    /// OnTextInput). A no-op where the platform can't take the keyboard yet.
+    /// </summary>
+    void SetKeyboardFocus(bool focused);
+
+    /// <summary>The clipboard's text, or null when it holds none (or the platform can't read it yet).</summary>
+    string? GetClipboardText();
+
+    /// <summary>Puts text on the clipboard, where the platform can.</summary>
+    void SetClipboardText(string text);
+
+    /// <summary>
+    /// The text a key's character makes as the keyboard stands now - Shift, Caps Lock, the layout -
+    /// for a host that passes on the key's plain character (FL Studio sends "a" for Shift+A). Where
+    /// the platform can't tell, Shift makes a letter upper case.
+    /// </summary>
+    string TranslateTypedCharacter(char character, KeyModifiers modifiers);
 }

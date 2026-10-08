@@ -897,3 +897,84 @@ TTraxx.PluGui.Gui.PluginControl.BindFileDrag(System.Func<System.Collections.Gene
 TTraxx.PluGui.Gui.PluginControl.StartFileDrag(System.Collections.Generic.IReadOnlyList<string!>! paths) -> bool
 virtual TTraxx.PluGui.Gui.PluginControl.OnFilesDropped(TTraxx.PluGui.Gui.PointerEventArgs e, System.Collections.Generic.IReadOnlyList<string!>! paths) -> bool
 virtual TTraxx.PluGui.Gui.PluginControl.AcceptsFiles(TTraxx.PluGui.Gui.PointerEventArgs e) -> bool
+TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.A = 12 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.Backspace = 1 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.C = 13 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.Delete = 2 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.Down = 6 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.End = 8 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.Enter = 9 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.Escape = 10 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.Home = 7 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.Left = 3 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.None = 0 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.Right = 4 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.Tab = 11 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.Up = 5 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.V = 14 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.Key.X = 15 -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.KeyEventArgs
+TTraxx.PluGui.Gui.KeyEventArgs.Deconstruct(out TTraxx.PluGui.Gui.Key Key, out TTraxx.PluGui.Gui.KeyModifiers Modifiers) -> void
+TTraxx.PluGui.Gui.KeyEventArgs.Equals(TTraxx.PluGui.Gui.KeyEventArgs other) -> bool
+TTraxx.PluGui.Gui.KeyEventArgs.Key.get -> TTraxx.PluGui.Gui.Key
+TTraxx.PluGui.Gui.KeyEventArgs.Key.init -> void
+TTraxx.PluGui.Gui.KeyEventArgs.KeyEventArgs() -> void
+TTraxx.PluGui.Gui.KeyEventArgs.KeyEventArgs(TTraxx.PluGui.Gui.Key Key, TTraxx.PluGui.Gui.KeyModifiers Modifiers = TTraxx.PluGui.Gui.KeyModifiers.None) -> void
+TTraxx.PluGui.Gui.KeyEventArgs.Modifiers.get -> TTraxx.PluGui.Gui.KeyModifiers
+TTraxx.PluGui.Gui.KeyEventArgs.Modifiers.init -> void
+TTraxx.PluGui.Gui.PluginControl.BindClipboard(System.Func<string?>! read, System.Action<string!>! write) -> void
+TTraxx.PluGui.Gui.PluginControl.BindKeyboardFocus(System.Action<TTraxx.PluGui.Gui.PluginControl!, bool>! keyboardFocusRequest) -> void
+TTraxx.PluGui.Gui.PluginControl.GetClipboardText() -> string?
+TTraxx.PluGui.Gui.PluginControl.HasKeyboardFocus.get -> bool
+TTraxx.PluGui.Gui.PluginControl.ReleaseKeyboardFocus() -> void
+TTraxx.PluGui.Gui.PluginControl.SetClipboardText(string! text) -> void
+TTraxx.PluGui.Gui.PluginControl.SetKeyboardFocusState(bool focused) -> void
+TTraxx.PluGui.Gui.PluginControl.TakeKeyboardFocus() -> void
+TTraxx.PluGui.Gui.TextFieldControl
+TTraxx.PluGui.Gui.TextFieldControl.TextFieldControl(TTraxx.PluGui.Gui.TextFieldControlConfiguration! config) -> void
+TTraxx.PluGui.Gui.TextFieldControlConfiguration
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.FocusRequest.get -> TTraxx.PluGui.Gui.TextFieldFocusRequest?
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.FocusRequest.init -> void
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.FontSize.get -> float
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.FontSize.init -> void
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.GetText.get -> System.Func<string!>!
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.GetText.init -> void
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.MaxLength.get -> int
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.MaxLength.init -> void
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.OnCancel.get -> System.Action?
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.OnCancel.init -> void
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.OnCommit.get -> System.Action<string!>?
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.OnCommit.init -> void
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.OnTextChanged.get -> System.Action<string!>?
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.OnTextChanged.init -> void
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.Placeholder.get -> string!
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.Placeholder.init -> void
+TTraxx.PluGui.Gui.TextFieldControlConfiguration.TextFieldControlConfiguration() -> void
+TTraxx.PluGui.Gui.TextFieldFocusRequest
+TTraxx.PluGui.Gui.TextFieldFocusRequest.Request() -> void
+TTraxx.PluGui.Gui.TextFieldFocusRequest.TextFieldFocusRequest() -> void
+override TTraxx.PluGui.Gui.KeyEventArgs.GetHashCode() -> int
+override TTraxx.PluGui.Gui.TextFieldControl.Draw(SkiaSharp.SKCanvas! canvas) -> void
+override TTraxx.PluGui.Gui.TextFieldControl.OnDoubleClick(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.TextFieldControl.OnKeyDown(TTraxx.PluGui.Gui.KeyEventArgs e) -> bool
+override TTraxx.PluGui.Gui.TextFieldControl.OnKeyboardFocusChanged(bool focused) -> void
+override TTraxx.PluGui.Gui.TextFieldControl.OnPointerDown(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.TextFieldControl.OnPointerMove(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.TextFieldControl.OnPointerUp(TTraxx.PluGui.Gui.PointerEventArgs e) -> void
+override TTraxx.PluGui.Gui.TextFieldControl.OnTextInput(string! text) -> bool
+static TTraxx.PluGui.Gui.KeyEventArgs.operator !=(TTraxx.PluGui.Gui.KeyEventArgs left, TTraxx.PluGui.Gui.KeyEventArgs right) -> bool
+static TTraxx.PluGui.Gui.KeyEventArgs.operator ==(TTraxx.PluGui.Gui.KeyEventArgs left, TTraxx.PluGui.Gui.KeyEventArgs right) -> bool
+virtual TTraxx.PluGui.Gui.PluginControl.OnKeyDown(TTraxx.PluGui.Gui.KeyEventArgs e) -> bool
+virtual TTraxx.PluGui.Gui.PluginControl.OnKeyboardFocusChanged(bool focused) -> void
+virtual TTraxx.PluGui.Gui.PluginControl.OnTextInput(string! text) -> bool
+~override TTraxx.PluGui.Gui.KeyEventArgs.Equals(object obj) -> bool
+~override TTraxx.PluGui.Gui.KeyEventArgs.ToString() -> string
+TTraxx.PluGui.Gui.IPluginWindow.HandleKeyDown(TTraxx.PluGui.Gui.KeyEventArgs e) -> bool
+TTraxx.PluGui.Gui.IPluginWindow.HandleTextInput(string! text) -> bool
+TTraxx.PluGui.Gui.IPluginWindow.HasKeyboardControl.get -> bool
+TTraxx.PluGui.Gui.PluginWindow.HandleKeyDown(TTraxx.PluGui.Gui.KeyEventArgs e) -> bool
+TTraxx.PluGui.Gui.PluginWindow.HandleTextInput(string! text) -> bool
+TTraxx.PluGui.Gui.PluginWindow.HasKeyboardControl.get -> bool
+TTraxx.PluGui.Gui.IPluginWindow.HandleTypedCharacter(char character, TTraxx.PluGui.Gui.KeyModifiers modifiers) -> bool
+TTraxx.PluGui.Gui.PluginWindow.HandleTypedCharacter(char character, TTraxx.PluGui.Gui.KeyModifiers modifiers) -> bool

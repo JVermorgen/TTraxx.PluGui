@@ -67,6 +67,28 @@ public interface IPluginWindow
     /// <summary>Initial DPI/content scale for the current platform (see <see cref="IPlatformWindow.GetInitialScaleFactor"/>).</summary>
     float GetInitialScaleFactor(nint parentHandle);
 
+    /// <summary>
+    /// Whether a control has the keyboard - a text field editing. Keys a host passes on (VST3
+    /// onKeyDown) belong to the window only then; otherwise they are the host's.
+    /// </summary>
+    bool HasKeyboardControl { get; }
+
+    /// <summary>
+    /// A key the host passes on rather than the window receiving it itself (FL Studio sends keys
+    /// through VST3 onKeyDown): to the control that has the keyboard. True when it used it.
+    /// </summary>
+    bool HandleKeyDown(KeyEventArgs e);
+
+    /// <summary>Text typed that the host passes on: to the control that has the keyboard. True when it used it.</summary>
+    bool HandleTextInput(string text);
+
+    /// <summary>
+    /// A character key the host passes on as its plain character (FL Studio sends "a" for Shift+A):
+    /// made into the text it types as the keyboard stands now, then to the control that has the
+    /// keyboard. True when it used it.
+    /// </summary>
+    bool HandleTypedCharacter(char character, KeyModifiers modifiers);
+
     /// <summary>Non-null when this platform requires an external event pump (see <see cref="IEventPumpSource"/>).</summary>
     IEventPumpSource? EventPumpSource { get; }
 

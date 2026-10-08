@@ -21,4 +21,13 @@ internal interface IPlatformWindowHost
 
     /// <summary>Files dropped onto the window from the OS (Explorer, Finder) at (x, y): offered to the control there.</summary>
     void OnFilesDropped(int x, int y, IReadOnlyList<string> paths);
+
+    /// <summary>A key pressed while the window has the keyboard; true when a control took it (the platform then keeps it from the host).</summary>
+    bool OnKeyDown(KeyEventArgs e);
+
+    /// <summary>Text typed while the window has the keyboard, through the keyboard layout; true when a control took it.</summary>
+    bool OnTextInput(string text);
+
+    /// <summary>The window lost the keyboard to something else (the host, another window): whichever control had it no longer does.</summary>
+    void OnKeyboardFocusLost();
 }

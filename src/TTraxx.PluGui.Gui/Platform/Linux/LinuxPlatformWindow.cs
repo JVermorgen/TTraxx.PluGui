@@ -160,6 +160,16 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     /// <summary>Dragging files out of the window needs the XDND protocol as a source - not done yet; declines, so a control offers another way out.</summary>
     public bool StartFileDrag(IReadOnlyList<string> paths) => false;
 
+    // No keyboard or clipboard yet: a control can take the keyboard, but no keys arrive.
+    public void SetKeyboardFocus(bool focused) { }
+
+    public string? GetClipboardText() => null;
+
+    public void SetClipboardText(string text) { }
+
+    public string TranslateTypedCharacter(char character, KeyModifiers modifiers)
+        => ((modifiers & KeyModifiers.Shift) != 0 ? char.ToUpperInvariant(character) : character).ToString();
+
     /// <summary>
     /// X11 has no dialog of its own: this runs the desktop's - zenity (GNOME and most others), else
     /// kdialog (KDE) - and reads the chosen path from its output. Null if neither is installed or the

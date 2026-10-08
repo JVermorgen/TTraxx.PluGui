@@ -36,3 +36,5 @@ virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.Size.get -> NPlug.ViewRectangle
 virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.SupportedPlatforms.get -> NPlug.AudioPluginViewPlatform[]!
 virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.TryFindParameter(int xPos, int yPos, out NPlug.AudioParameterId parameterId) -> bool
 virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.UserUiScale.get -> float
+TTraxx.PluGui.NPlug.PluginView<TWindow>.HandleHostKeyDown(ushort key, short keyCode, short modifiers) -> bool
+TTraxx.PluGui.NPlug.PluginView<TWindow>.HandleHostKeyUp() -> bool

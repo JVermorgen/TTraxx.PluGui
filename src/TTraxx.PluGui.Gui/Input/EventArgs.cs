@@ -42,3 +42,43 @@ public readonly record struct PointerEventArgs(int X, int Y, KeyModifiers Modifi
 /// <param name="Delta">Notches scrolled: positive away from the user, negative toward them. Usually +/-1, but a fast or high-resolution wheel can report more per event.</param>
 /// <param name="Modifiers">Modifiers held at the time of the event.</param>
 public readonly record struct WheelEventArgs(int X, int Y, int Delta, KeyModifiers Modifiers = KeyModifiers.None);
+
+/// <summary>
+/// The keys a control can act on while it has the keyboard (see PluginControl.TakeKeyboardFocus):
+/// editing and navigation keys, and the letters of the usual clipboard shortcuts. Typed text
+/// arrives separately, as characters (PluginControl.OnTextInput), already through the keyboard
+/// layout - so a key here is never the way to read what was typed.
+/// </summary>
+public enum Key
+{
+    /// <summary>Any key not listed below.</summary>
+    None,
+    Backspace,
+    Delete,
+    Left,
+    Right,
+    Up,
+    Down,
+    Home,
+    End,
+    Enter,
+    Escape,
+    Tab,
+
+    /// <summary>The A key - with Control, select all.</summary>
+    A,
+
+    /// <summary>The C key - with Control, copy.</summary>
+    C,
+
+    /// <summary>The V key - with Control, paste.</summary>
+    V,
+
+    /// <summary>The X key - with Control, cut.</summary>
+    X,
+}
+
+/// <summary>A key pressed while a control has the keyboard.</summary>
+/// <param name="Key">Which key, or <see cref="Key.None"/> for one a control can't act on.</param>
+/// <param name="Modifiers">Modifiers held at the time.</param>
+public readonly record struct KeyEventArgs(Key Key, KeyModifiers Modifiers = KeyModifiers.None);
