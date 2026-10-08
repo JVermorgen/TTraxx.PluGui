@@ -31,7 +31,7 @@ virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.OnUnregisterRunLoop() -> void
 virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.OnWheel(float distance) -> void
 virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.Removed() -> void
 virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.SetContentScaleFactor(float factor) -> void
-virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.SetFrame(NPlug.IAudioPluginFrame! frame) -> void
+virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.SetFrame(NPlug.IAudioPluginFrame? frame) -> void
 virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.Size.get -> NPlug.ViewRectangle
 virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.SupportedPlatforms.get -> NPlug.AudioPluginViewPlatform[]!
 virtual TTraxx.PluGui.NPlug.PluginView<TWindow>.TryFindParameter(int xPos, int yPos, out NPlug.AudioParameterId parameterId) -> bool

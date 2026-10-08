@@ -138,9 +138,17 @@ public abstract class PluginView<TWindow> : IPluGuiPluginView
         _window.RefreshUI();
     }
 
-    public virtual void SetFrame(IAudioPluginFrame frame)
+    /// <summary>
+    /// The host's frame, or null when the host takes it back - VST3 hosts call setFrame(nullptr)
+    /// before releasing the view, after removed(). From then on the old frame mustn't be used: asking
+    /// it to resize would call through a null pointer, which on Linux is a segmentation fault some
+    /// hosts' crash handlers catch before .NET can (Renoise). An NPlug that passes a null frame on
+    /// as a frame object can't be guarded against here; NPlug's fork passes null.
+    /// </summary>
+    public virtual void SetFrame(IAudioPluginFrame? frame)
     {
         _frame = frame;
+        if (frame is null) return;
 
         TryRegisterRunLoop();
 
