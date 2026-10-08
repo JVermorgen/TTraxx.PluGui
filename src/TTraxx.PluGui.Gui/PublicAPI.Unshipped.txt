@@ -480,6 +480,7 @@ TTraxx.PluGui.Gui.PluginPanel.Context.get -> TTraxx.PluGui.Gui.RenderContext!
 TTraxx.PluGui.Gui.PluginPanel.Controls.get -> System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.ControlPlacement>!
 TTraxx.PluGui.Gui.PluginPanel.CornerRadius.get -> int
 TTraxx.PluGui.Gui.PluginPanel.DrawSectionDivider(SkiaSharp.SKCanvas! canvas, int relativeY, string! text) -> void
+TTraxx.PluGui.Gui.PluginPanel.DrawSectionDivider(SkiaSharp.SKCanvas! canvas, int relativeY, string! text, int relativeLeft, int relativeRight) -> void
 TTraxx.PluGui.Gui.PluginPanel.Fonts.get -> TTraxx.PluGui.Gui.IPluginFonts!
 TTraxx.PluGui.Gui.PluginPanel.FromLeft(int pixels) -> float
 TTraxx.PluGui.Gui.PluginPanel.FromRight(int pixels) -> float

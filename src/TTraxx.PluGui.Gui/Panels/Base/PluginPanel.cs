@@ -255,9 +255,17 @@ public abstract class PluginPanel(RenderContext context, PluginPanelConfiguratio
     /// as its layout needs without the panel having to know about them.
     /// </summary>
     public void DrawSectionDivider(SKCanvas canvas, int relativeY, string text)
+        => DrawSectionDivider(canvas, relativeY, text, 16, _config.Width - 16);
+
+    /// <summary>
+    /// The same divider over part of the panel's width only - from <paramref name="relativeLeft"/>
+    /// to <paramref name="relativeRight"/>, logical units from the panel's left edge, the label
+    /// centred between them - for groups that sit side by side.
+    /// </summary>
+    public void DrawSectionDivider(SKCanvas canvas, int relativeY, string text, int relativeLeft, int relativeRight)
     {
-        var left = FromLeft(16);
-        var right = FromRight(16);
+        var left = FromLeft(relativeLeft);
+        var right = FromLeft(relativeRight);
         var lineY = FromTop(relativeY);
 
         using SKPaint textPaint = new()
@@ -273,7 +281,7 @@ public abstract class PluginPanel(RenderContext context, PluginPanelConfiguratio
 
         var textWidth = textFont.MeasureText(text, out _);
         var textPad = RescaleExact(8);
-        var centerX = Left + (Width / 2f);
+        var centerX = (left + right) / 2f;
         var textLeft = centerX - (textWidth / 2f);
         var textRight = centerX + (textWidth / 2f);
 
