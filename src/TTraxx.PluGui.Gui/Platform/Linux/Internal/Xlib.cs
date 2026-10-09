@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Runtime.InteropServices;
+using TTraxx.PluGui.Gui.Platform.Linux.Internal.Structs;
 
 namespace TTraxx.PluGui.Gui.Platform.Linux.Internal;
 
@@ -36,6 +37,41 @@ internal static partial class Xlib
 
     [LibraryImport("libX11.so.6")] internal static partial nint XDefaultVisual(nint display, int screenNumber);
     [LibraryImport("libX11.so.6")] internal static partial int XDefaultDepth(nint display, int screenNumber);
+
+    // ---- Keyboard: focus, and turning a key press into a key and its text ----
+
+    [LibraryImport("libX11.so.6")] internal static partial int XGetInputFocus(nint display, out nint focus, out int revertTo);
+    [LibraryImport("libX11.so.6")] internal static partial int XSetInputFocus(nint display, nint focus, int revertTo, nint time);
+
+    [LibraryImport("libX11.so.6")]
+    internal static unsafe partial int XQueryTree(nint display, nint window, out nint root, out nint parent, out nint* children, out uint childCount);
+
+    [LibraryImport("libX11.so.6")] internal static unsafe partial int XLookupString(XKeyEvent* keyEvent, byte* buffer, int bytes, out nuint keysym, nint composeStatus);
+    [LibraryImport("libX11.so.6")] internal static unsafe partial nuint XLookupKeysym(XKeyEvent* keyEvent, int index);
+
+    // ---- Selections (the clipboard) ----
+
+    [LibraryImport("libX11.so.6", StringMarshalling = StringMarshalling.Utf8)]
+    internal static partial nuint XInternAtom(nint display, string atomName, [MarshalAs(UnmanagedType.Bool)] bool onlyIfExists);
+
+    [LibraryImport("libX11.so.6")] internal static partial nint XGetSelectionOwner(nint display, nuint selection);
+    [LibraryImport("libX11.so.6")] internal static partial int XSetSelectionOwner(nint display, nuint selection, nint owner, nint time);
+    [LibraryImport("libX11.so.6")] internal static partial int XConvertSelection(nint display, nuint selection, nuint target, nuint property, nint requestor, nint time);
+    [LibraryImport("libX11.so.6")] internal static unsafe partial int XCheckTypedWindowEvent(nint display, nint window, int eventType, XEvent* eventReturn);
+
+    [LibraryImport("libX11.so.6")]
+    internal static unsafe partial int XGetWindowProperty(nint display, nint window, nuint property, nint longOffset, nint longLength,
+        [MarshalAs(UnmanagedType.Bool)] bool delete, nuint requestedType, out nuint actualType, out int actualFormat,
+        out nuint itemCount, out nuint bytesAfter, out byte* data);
+
+    [LibraryImport("libX11.so.6")]
+    internal static unsafe partial int XChangeProperty(nint display, nint window, nuint property, nuint type, int format, int mode,
+        void* data, int elementCount);
+
+    [LibraryImport("libX11.so.6")]
+    internal static unsafe partial int XSendEvent(nint display, nint window, [MarshalAs(UnmanagedType.Bool)] bool propagate, nint eventMask, void* eventSend);
+
+    [LibraryImport("libX11.so.6")] internal static unsafe partial int XFree(void* data);
 
     [LibraryImport("libX11.so.6")] internal static partial nint XResourceManagerString(nint display);
     [LibraryImport("libX11.so.6")] internal static partial int XDisplayWidth(nint display, int screenNumber);

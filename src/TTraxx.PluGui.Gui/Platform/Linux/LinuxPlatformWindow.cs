@@ -19,6 +19,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     private nint _window;
     private nint _gc;
     private IPlatformWindowHost? _host;
+    private X11Keyboard? _keyboard;
 
     private SKSurface? _skSurface;
     private byte[]? _pixelBuffer;
@@ -88,8 +89,11 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                 | XlibConstants.ButtonPressMask
                 | XlibConstants.ButtonReleaseMask
                 | XlibConstants.PointerMotionMask
-                | XlibConstants.StructureNotifyMask);
+                | XlibConstants.StructureNotifyMask
+                | XlibConstants.KeyPressMask
+                | XlibConstants.FocusChangeMask);
 
+        _keyboard = new X11Keyboard(_display, _window, parentHandle);
         _gc = Xlib.XCreateGC(_display, _window, 0, nint.Zero);
         _ = Xlib.XMapWindow(_display, _window);
         _ = Xlib.XFlush(_display);
@@ -160,13 +164,25 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     /// <summary>Dragging files out of the window needs the XDND protocol as a source - not done yet; declines, so a control offers another way out.</summary>
     public bool StartFileDrag(IReadOnlyList<string> paths) => false;
 
-    // No keyboard or clipboard yet: a control can take the keyboard, but no keys arrive.
-    public void SetKeyboardFocus(bool focused) { }
+    /// <summary>
+    /// Takes the X input focus while a control edits text, so the keys come here rather than to the
+    /// host, and gives it back when the editing ends (see X11Keyboard). A click alone never takes it.
+    /// </summary>
+    public void SetKeyboardFocus(bool focused)
+    {
+        if (!_isAttached || _isDestroyed) return;
+        _keyboard?.SetFocus(focused);
+    }
 
-    public string? GetClipboardText() => null;
+    public string? GetClipboardText() => _isAttached && !_isDestroyed ? _keyboard?.GetClipboardText() : null;
 
-    public void SetClipboardText(string text) { }
+    public void SetClipboardText(string text)
+    {
+        if (_isAttached && !_isDestroyed) _keyboard?.SetClipboardText(text);
+    }
 
+    // For a host that passes keys on through VST3's onKeyDown instead: X11 can't tell what a host's
+    // plain character would make, so Shift just makes a letter upper case.
     public string TranslateTypedCharacter(char character, KeyModifiers modifiers)
         => ((modifiers & KeyModifiers.Shift) != 0 ? char.ToUpperInvariant(character) : character).ToString();
 
@@ -219,6 +235,9 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     public void Destroy()
     {
         if (_isDestroyed) return;
+        // Hand the keyboard back while the window still exists to give it from.
+        if (_isAttached) _keyboard?.SetFocus(false);
+
         _isDestroyed = true;
         _isAttached = false;
 
@@ -315,16 +334,28 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                     _host?.OnResize(configure.width, configure.height);
                 }
                 break;
+            case XEventType.KeyPress:
+                // As on Win32: the key (WM_KEYDOWN), then its text (WM_CHAR) whatever became of the key -
+                // a text field takes a plain A as a key too (so the host doesn't get it), and still
+                // wants the "a". A key that types nothing (an arrow, Ctrl+C) has no text.
+                var keyEvent = (XKeyEvent*)rawEventPtr;
+                var (key, text) = X11Keyboard.Read(keyEvent);
+                if (key != Key.None) _host?.OnKeyDown(new KeyEventArgs(key, ToModifiers(keyEvent->state)));
+                if (text is not null) _host?.OnTextInput(text);
+                break;
+            case XEventType.FocusOut:
+                if (X11Keyboard.IsFocusLost(*(XFocusChangeEvent*)rawEventPtr)) _host?.OnKeyboardFocusLost();
+                break;
+            case XEventType.SelectionRequest:
+                _keyboard?.OnSelectionRequest(*(XSelectionRequestEvent*)rawEventPtr);
+                break;
+            case XEventType.SelectionClear:
+                _keyboard?.OnSelectionClear(*(XSelectionClearEvent*)rawEventPtr);
+                break;
         }
     }
 
-    private static KeyModifiers ToModifiers(uint state)
-    {
-        var modifiers = KeyModifiers.None;
-        if ((state & XlibConstants.ShiftMask) != 0) modifiers |= KeyModifiers.Shift;
-        if ((state & XlibConstants.ControlMask) != 0) modifiers |= KeyModifiers.Control;
-        return modifiers;
-    }
+    private static KeyModifiers ToModifiers(uint state) => X11Keyboard.ModifiersOf(state);
 
     private void EnsureSurface(int w, int h)
     {

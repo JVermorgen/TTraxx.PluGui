@@ -22,6 +22,12 @@ internal static class XlibConstants
     /// <summary>Selects ConfigureNotify, which is how a resize is reported.</summary>
     internal const nint StructureNotifyMask = 1 << 17;
 
+    /// <summary>Selects KeyPress - delivered only while the window has the keyboard focus.</summary>
+    internal const nint KeyPressMask = 1 << 0;
+
+    /// <summary>Selects FocusIn and FocusOut - how the window learns it lost the keyboard.</summary>
+    internal const nint FocusChangeMask = 1 << 21;
+
     /// <summary>
     /// XImage format: packed pixels, one plane, scanline-ordered - the layout matching the buffer Skia
     /// renders into, so the image can be handed to XPutImage without repacking.

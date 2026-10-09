@@ -104,8 +104,37 @@ internal static partial class ObjC
     [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]
     internal static partial nint MsgSendIdTrackingArea(nint receiver, nint selector, CGRect rect, nuint options, nint owner, nint userInfo); // [NSTrackingArea initWithRect:options:owner:userInfo:]
 
+    [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]
+    internal static partial ushort MsgSendUShort(nint receiver, nint selector); // keyCode
+
+    [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]
+    internal static partial byte MsgSendBoolWithIntPtr(nint receiver, nint selector, nint arg); // makeFirstResponder: (BOOL: one byte on both arch's)
+
+    [LibraryImport(ObjCLib, EntryPoint = "objc_msgSend")]
+    internal static partial byte MsgSendBoolWithIntPtrIntPtr(nint receiver, nint selector, nint arg1, nint arg2); // setString:forType:
+
     [LibraryImport(ObjCLib, EntryPoint = "objc_msgSendSuper")]
     internal static partial void MsgSendSuperVoidWithCGSize(ref ObjCSuper super, nint selector, CGSize size); // super's setFrameSize: (see MacOsPlatformWindow.SetFrameSizeImp)
+
+    [LibraryImport(ObjCLib, EntryPoint = "objc_msgSendSuper")]
+    internal static partial void MsgSendSuperVoidWithIntPtr(ref ObjCSuper super, nint selector, nint arg); // super's keyDown: - passes a key on up the responder chain
+
+    [LibraryImport(ObjCLib, EntryPoint = "objc_msgSendSuper")]
+    internal static partial byte MsgSendSuperBool(ref ObjCSuper super, nint selector); // super's resignFirstResponder
+
+    // --- NSString <-> string ---
+
+    /// <summary>An autoreleased NSString with the text - valid until the current autorelease pool drains (the event's).</summary>
+    internal static nint NSString(string text)
+    {
+        var utf8 = Marshal.StringToCoTaskMemUTF8(text);
+        try { return MsgSendIdWithIntPtr(GetClass("NSString"), Sel("stringWithUTF8String:"), utf8); }
+        finally { Marshal.FreeCoTaskMem(utf8); }
+    }
+
+    /// <summary>An NSString's text, or null for nil.</summary>
+    internal static string? ToManagedString(nint nsString)
+        => nsString == nint.Zero ? null : Marshal.PtrToStringUTF8(MsgSend(nsString, Sel("UTF8String")));
 
     // --- CGRect getter (e.g., -frame) with the x86_64/arm64 stret workaround ---
 

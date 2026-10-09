@@ -58,6 +58,9 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
     private static readonly nint s_selAddTrackingArea;
     private static readonly nint s_selRemoveTrackingArea;
     private static readonly nint s_selSetFrameSize;
+    private static readonly nint s_selKeyDown;
+    private static readonly nint s_selResignFirstResponder;
+    private static readonly nint s_selMakeFirstResponder;
 
     private nint _view;
     private nint _trackingArea;
@@ -71,6 +74,9 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
 
     private bool _isAttached;
     private bool _isDestroyed;
+
+    // While a control edits text: the view then accepts being first responder, and takes the keys.
+    private bool _wantsKeyboard;
 
     /// <summary>
     /// Registers the "PluginView" subclass of NSView once, with our own
@@ -113,6 +119,9 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
         s_selAddTrackingArea = ObjC.Sel("addTrackingArea:");
         s_selRemoveTrackingArea = ObjC.Sel("removeTrackingArea:");
         s_selSetFrameSize = ObjC.Sel("setFrameSize:");
+        s_selKeyDown = ObjC.Sel("keyDown:");
+        s_selResignFirstResponder = ObjC.Sel("resignFirstResponder");
+        s_selMakeFirstResponder = ObjC.Sel("makeFirstResponder:");
 
         s_viewClass = ObjC.AllocateClassPair(s_nsViewClass, ViewClassName, 0);
 
@@ -129,6 +138,10 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
         _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("mouseMoved:"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, nint, void>)&MouseMovedImp, "v@:@");
         _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("scrollWheel:"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, nint, void>)&ScrollWheelImp, "v@:@");
         _ = ObjC.AddMethod(s_viewClass, s_selSetFrameSize, (nint)(delegate* unmanaged[Cdecl]<nint, nint, CGSize, void>)&SetFrameSizeImp, "v@:{CGSize=dd}");
+        _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("acceptsFirstResponder"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, byte>)&AcceptsFirstResponderImp, "c@:");
+        _ = ObjC.AddMethod(s_viewClass, s_selResignFirstResponder, (nint)(delegate* unmanaged[Cdecl]<nint, nint, byte>)&ResignFirstResponderImp, "c@:");
+        _ = ObjC.AddMethod(s_viewClass, s_selKeyDown, (nint)(delegate* unmanaged[Cdecl]<nint, nint, nint, void>)&KeyDownImp, "v@:@");
+        _ = ObjC.AddMethod(s_viewClass, ObjC.Sel("performKeyEquivalent:"), (nint)(delegate* unmanaged[Cdecl]<nint, nint, nint, byte>)&PerformKeyEquivalentImp, "c@:@");
 
         ObjC.RegisterClassPair(s_viewClass);
 
@@ -207,13 +220,37 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
     /// <summary>Dragging files out of the window needs NSDraggingSource (beginDraggingSession) - not done yet; declines, so a control offers another way out.</summary>
     public bool StartFileDrag(IReadOnlyList<string> paths) => false;
 
-    // No keyboard or clipboard yet: a control can take the keyboard, but no keys arrive.
-    public void SetKeyboardFocus(bool focused) { }
+    /// <summary>
+    /// Makes the view its window's first responder while a control edits text, so the keys come here
+    /// rather than to the host (see CocoaKeyboard), and resigns it when the editing ends - to the
+    /// window itself, not back to the host's previous responder, which may be gone by then. A click
+    /// alone never takes it: the view accepts being first responder only while a control wants keys.
+    /// </summary>
+    public void SetKeyboardFocus(bool focused)
+    {
+        if (!_isAttached || _isDestroyed) return;
 
-    public string? GetClipboardText() => null;
+        var window = ObjC.MsgSend(_view, s_selWindow);
+        if (window == nint.Zero) return;
 
-    public void SetClipboardText(string text) { }
+        var isFirstResponder = ObjC.MsgSend(window, ObjC.Sel("firstResponder")) == _view;
+        if (focused)
+        {
+            _wantsKeyboard = true;
+            if (!isFirstResponder) _ = ObjC.MsgSendBoolWithIntPtr(window, s_selMakeFirstResponder, _view);
+        }
+        else
+        {
+            _wantsKeyboard = false;
+            if (isFirstResponder) _ = ObjC.MsgSendBoolWithIntPtr(window, s_selMakeFirstResponder, nint.Zero);
+        }
+    }
 
+    public string? GetClipboardText() => CocoaKeyboard.GetClipboardText();
+
+    public void SetClipboardText(string text) => CocoaKeyboard.SetClipboardText(text);
+
+    // For a host that passes keys on through VST3's onKeyDown instead: Shift makes a letter upper case.
     public string TranslateTypedCharacter(char character, KeyModifiers modifiers)
         => ((modifiers & KeyModifiers.Shift) != 0 ? char.ToUpperInvariant(character) : character).ToString();
 
@@ -224,12 +261,7 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
     /// </summary>
     public string? ShowOpenFileDialog(string title, IReadOnlyList<FileDialogFilter> filters)
     {
-        static nint NSString(string text)
-        {
-            var utf8 = Marshal.StringToCoTaskMemUTF8(text);
-            try { return ObjC.MsgSendIdWithIntPtr(ObjC.GetClass("NSString"), ObjC.Sel("stringWithUTF8String:"), utf8); }
-            finally { Marshal.FreeCoTaskMem(utf8); }
-        }
+        static nint NSString(string text) => ObjC.NSString(text);
 
         var panel = ObjC.MsgSend(ObjC.GetClass("NSOpenPanel"), ObjC.Sel("openPanel"));
         if (panel == nint.Zero) return null;
@@ -259,13 +291,16 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
         if (ObjC.MsgSendNInt(panel, ObjC.Sel("runModal")) != modalResponseOk) return null;
 
         var url = ObjC.MsgSend(panel, ObjC.Sel("URL"));
-        var path = url == nint.Zero ? nint.Zero : ObjC.MsgSend(url, ObjC.Sel("path"));
-        return path == nint.Zero ? null : Marshal.PtrToStringUTF8(ObjC.MsgSend(path, ObjC.Sel("UTF8String")));
+        return url == nint.Zero ? null : ObjC.ToManagedString(ObjC.MsgSend(url, ObjC.Sel("path")));
     }
 
     public void Destroy()
     {
         if (_isDestroyed) return;
+
+        // Resign first responder while the view is still in its window.
+        SetKeyboardFocus(false);
+
         _isDestroyed = true;
         _isAttached = false;
 
@@ -399,6 +434,21 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
         _host?.OnWheel(x, y, deltaY > 0 ? 1 : -1);
     }
 
+    /// <summary>
+    /// A key while the view has the keyboard: the key, then its text whatever became of the key - as
+    /// Win32's WM_KEYDOWN and WM_CHAR; a text field takes a plain A as a key too, and still wants the
+    /// "a". True when either was taken; false passes the key on.
+    /// </summary>
+    private bool HandleKeyDown(nint eventPtr)
+    {
+        if (!_wantsKeyboard || _host is null) return false;
+
+        var (key, text) = CocoaKeyboard.Read(eventPtr);
+        var keyTaken = key != Key.None && _host.OnKeyDown(new KeyEventArgs(key, CocoaKeyboard.ModifiersOf(eventPtr)));
+        var textTaken = text is not null && _host.OnTextInput(text);
+        return keyTaken || textTaken;
+    }
+
     private static bool TryGetOwner(nint self, out MacOsPlatformWindow window)
     {
         var ptr = ObjC.GetIvar(self, s_managedIvar);
@@ -446,6 +496,38 @@ internal sealed unsafe class MacOsPlatformWindow : IPlatformWindow
     {
         if (TryGetOwner(self, out var window)) window.HandleScrollWheel(evt);
     }
+
+    // Only while a control edits text: otherwise a click would make the view first responder and
+    // take the host's keyboard shortcuts away.
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static byte AcceptsFirstResponderImp(nint self, nint _cmd)
+        => TryGetOwner(self, out var window) && window._wantsKeyboard ? (byte)1 : (byte)0;
+
+    // Something else became first responder (the host's own field, another plugin): the editing ends.
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static byte ResignFirstResponderImp(nint self, nint _cmd)
+    {
+        var super = new ObjCSuper { Receiver = self, SuperClass = s_nsViewClass };
+        var resigned = ObjC.MsgSendSuperBool(ref super, s_selResignFirstResponder);
+        if (resigned != 0 && TryGetOwner(self, out var window)) window._host?.OnKeyboardFocusLost();
+        return resigned;
+    }
+
+    // A key no control takes goes on up the responder chain - to the host - as NSView's own keyDown: does.
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static void KeyDownImp(nint self, nint _cmd, nint evt)
+    {
+        if (TryGetOwner(self, out var window) && window.HandleKeyDown(evt)) return;
+
+        var super = new ObjCSuper { Receiver = self, SuperClass = s_nsViewClass };
+        ObjC.MsgSendSuperVoidWithIntPtr(ref super, s_selKeyDown, evt);
+    }
+
+    // Cmd+key comes here first, through every view of the key window, before the host's menu could
+    // take it: Cmd+C, V, X and A while a control edits text. Anything else: NO, as NSView answers.
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static byte PerformKeyEquivalentImp(nint self, nint _cmd, nint evt)
+        => TryGetOwner(self, out var window) && window.HandleKeyDown(evt) ? (byte)1 : (byte)0;
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
     private static void SetFrameSizeImp(nint self, nint _cmd, CGSize newSize)
