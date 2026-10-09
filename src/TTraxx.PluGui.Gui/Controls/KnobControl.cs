@@ -181,7 +181,9 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
             StrokeCap = SKStrokeCap.Butt
         })
         {
-            canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + filledSweep), (float)(style.SweepDeg - filledSweep), false, trackPaint);
+            // A bipolar knob's track runs the whole way; its value fills from the middle over it.
+            if (config.IsBipolar) canvas.DrawArc(arcRect, (float)SkiaArcStartAngleDeg, (float)style.SweepDeg, false, trackPaint);
+            else canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + filledSweep), (float)(style.SweepDeg - filledSweep), false, trackPaint);
         }
 
         using (SKPaint valuePaint = new()
@@ -193,7 +195,8 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
             StrokeCap = SKStrokeCap.Butt
         })
         {
-            canvas.DrawArc(arcRect, (float)SkiaArcStartAngleDeg, (float)filledSweep, false, valuePaint);
+            var fillStart = config.IsBipolar ? style.SweepDeg / 2 : 0;
+            canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + fillStart), (float)(filledSweep - fillStart), false, valuePaint);
         }
 
         var pointerAngle = (style.StartAngleDeg - (style.SweepDeg * value)).DegToRad();

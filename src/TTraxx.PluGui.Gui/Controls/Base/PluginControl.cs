@@ -175,10 +175,11 @@ public abstract class PluginControl(IControlConfiguration config) : IDisposable
     /// <summary>
     /// Drags files out of the window - a rendered MIDI clip onto a DAW's track, say. Call it from
     /// <see cref="OnPointerMove"/> while the left button is down (once the pointer has moved far
-    /// enough to be a drag); it blocks until the drag ends and returns true when the files were
-    /// dropped somewhere that took them. The press ends with the drag: this control's
-    /// <see cref="OnPointerUp"/> has run by the time it returns. Supported on Windows; elsewhere it
-    /// returns false at once, so a control should offer another way out (a save dialog, a folder).
+    /// enough to be a drag). The press ends with the drag: this control's <see cref="OnPointerUp"/>
+    /// has run by the time it returns. On Windows it blocks until the drag ends and returns true when
+    /// the files were dropped somewhere that took them; on Linux (X11) it returns at once, true when
+    /// the drag started, and the drop comes later. Not on macOS yet: there it returns false at once,
+    /// so a control should offer another way out (a save dialog, a folder).
     /// </summary>
     protected bool StartFileDrag(IReadOnlyList<string> paths) => _fileDragRequest?.Invoke(paths) ?? false;
 

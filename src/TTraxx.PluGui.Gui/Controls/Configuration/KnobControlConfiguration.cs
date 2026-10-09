@@ -15,4 +15,10 @@ public class KnobControlConfiguration() : ParameterControlConfiguration, IStyled
     /// style be derived from the current theme.
     /// </summary>
     public Func<KnobStyle>? Style { get; init; }
+
+    /// <summary>
+    /// A value centred on the middle (a pan, a bipolar amount): the arc fills from the top of the
+    /// knob towards the value, rather than from the bottom-left end.
+    /// </summary>
+    public bool IsBipolar { get; init; }
 }

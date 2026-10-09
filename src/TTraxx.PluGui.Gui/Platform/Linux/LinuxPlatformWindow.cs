@@ -20,6 +20,13 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     private nint _gc;
     private IPlatformWindowHost? _host;
     private X11Keyboard? _keyboard;
+    private X11FileDrag? _fileDrag;
+    private X11FileDrop? _fileDrop;
+
+    // The pointer and the time of the last event that had them: where a drag starts, and its timestamp.
+    private int _pointerX;
+    private int _pointerY;
+    private nint _lastEventTime;
 
     private SKSurface? _skSurface;
     private byte[]? _pixelBuffer;
@@ -94,6 +101,8 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                 | XlibConstants.FocusChangeMask);
 
         _keyboard = new X11Keyboard(_display, _window, parentHandle);
+        _fileDrag = new X11FileDrag(_display, _window);
+        _fileDrop = new X11FileDrop(_display, _window);
         _gc = Xlib.XCreateGC(_display, _window, 0, nint.Zero);
         _ = Xlib.XMapWindow(_display, _window);
         _ = Xlib.XFlush(_display);
@@ -161,8 +170,19 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     /// </summary>
     public void SetContinuousRepaint(bool enabled) => _continuousRepaintEnabled = enabled;
 
-    /// <summary>Dragging files out of the window needs the XDND protocol as a source - not done yet; declines, so a control offers another way out.</summary>
-    public bool StartFileDrag(IReadOnlyList<string> paths) => false;
+    /// <summary>
+    /// Drags files out over XDND (see X11FileDrag). Unlike Win32's this returns at once - true when
+    /// the drag started - and the drag goes on from the event loop, since the target (the host, as a
+    /// rule) answers from its own. The press ends here, as on Win32: the host gets OnPointerUp now.
+    /// </summary>
+    public bool StartFileDrag(IReadOnlyList<string> paths)
+    {
+        if (!_isAttached || _isDestroyed || paths.Count == 0 || _fileDrag is null) return false;
+        if (!_fileDrag.Start(paths, _lastEventTime)) return false;
+
+        _host?.OnPointerUp(_pointerX, _pointerY);
+        return true;
+    }
 
     /// <summary>
     /// Takes the X input focus while a control edits text, so the keys come here rather than to the
@@ -189,8 +209,8 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     /// <summary>
     /// X11 has no dialog of its own: this runs the desktop's - zenity (GNOME and most others), else
     /// kdialog (KDE) - and reads the chosen path from its output. Null if neither is installed or the
-    /// user cancels. (Files dropped from a file manager aren't received: that needs the XDND
-    /// protocol - not done yet.)
+    /// user cancels. (Files dropped from a file manager come through XDND - see X11FileDrop - from the
+    /// sources that look inside the host's window for this one.)
     /// </summary>
     public string? ShowOpenFileDialog(string title, IReadOnlyList<FileDialogFilter> filters)
     {
@@ -237,6 +257,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
         if (_isDestroyed) return;
         // Hand the keyboard back while the window still exists to give it from.
         if (_isAttached) _keyboard?.SetFocus(false);
+        if (_isAttached) _fileDrag?.Dispose();
 
         _isDestroyed = true;
         _isAttached = false;
@@ -282,6 +303,8 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                 break;
             case XEventType.ButtonPress:
                 var buttonDown = Marshal.PtrToStructure<XButtonEvent>(rawEventPtr);
+                _lastEventTime = buttonDown.time;
+                (_pointerX, _pointerY) = (buttonDown.x, buttonDown.y);
                 if (buttonDown.button is 4 or 5)
                 {
                     // X11 has no separate wheel event — scroll comes in as
@@ -320,11 +343,31 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                 break;
             case XEventType.ButtonRelease:
                 var buttonUp = Marshal.PtrToStructure<XButtonEvent>(rawEventPtr);
-                if (buttonUp.button == 1) _host?.OnPointerUp(buttonUp.x, buttonUp.y);
+                _lastEventTime = buttonUp.time;
+                if (buttonUp.button != 1) break;
+
+                // A drag out ended the press when it started; the release is the drop.
+                if (_fileDrag is { IsDragging: true }) _fileDrag.OnRelease(buttonUp.time);
+                else _host?.OnPointerUp(buttonUp.x, buttonUp.y);
                 break;
             case XEventType.MotionNotify:
                 var motion = Marshal.PtrToStructure<XMotionEvent>(rawEventPtr);
+                _lastEventTime = motion.time;
+                if (_fileDrag is { IsDragging: true })
+                {
+                    _fileDrag.OnMotion(motion.x_root, motion.y_root, motion.time);
+                    break;
+                }
+
+                (_pointerX, _pointerY) = (motion.x, motion.y);
                 _host?.OnPointerMove(motion.x, motion.y, ToModifiers(motion.state));
+                break;
+            case XEventType.ClientMessage:
+                var message = (XClientMessageEvent*)rawEventPtr;
+                if (_fileDrag?.OnClientMessage(message) != true) _ = _fileDrop?.OnClientMessage(message, _host);
+                break;
+            case XEventType.SelectionNotify:
+                _ = _fileDrop?.OnSelectionNotify(*(XSelectionEvent*)rawEventPtr, _host);
                 break;
             case XEventType.ConfigureNotify:
                 var configure = Marshal.PtrToStructure<XConfigureEvent>(rawEventPtr);
@@ -347,7 +390,8 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                 if (X11Keyboard.IsFocusLost(*(XFocusChangeEvent*)rawEventPtr)) _host?.OnKeyboardFocusLost();
                 break;
             case XEventType.SelectionRequest:
-                _keyboard?.OnSelectionRequest(*(XSelectionRequestEvent*)rawEventPtr);
+                var request = *(XSelectionRequestEvent*)rawEventPtr;
+                if (_fileDrag?.OnSelectionRequest(request) != true) _keyboard?.OnSelectionRequest(request);
                 break;
             case XEventType.SelectionClear:
                 _keyboard?.OnSelectionClear(*(XSelectionClearEvent*)rawEventPtr);

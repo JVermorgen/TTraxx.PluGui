@@ -43,9 +43,10 @@ internal interface IPlatformWindow
 
     /// <summary>
     /// Starts dragging files out of the window - to a DAW's track, say - while the left button is
-    /// down, and blocks until the drag ends; true when they were dropped somewhere that took them.
-    /// The press ends with it: the host gets OnPointerUp before this returns. False at once where the
-    /// platform can't drag out yet.
+    /// down. The press ends with it: the host gets OnPointerUp before this returns. On Win32 it blocks
+    /// until the drag ends and is true when the files were dropped somewhere that took them; on X11 it
+    /// returns at once, true when the drag started, and the drag goes on from the event loop. False at
+    /// once where the platform can't drag out yet (macOS).
     /// </summary>
     bool StartFileDrag(IReadOnlyList<string> paths);
 

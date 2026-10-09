@@ -17,4 +17,5 @@ internal static class XEventType
     internal const int SelectionClear = 29;
     internal const int SelectionRequest = 30;
     internal const int SelectionNotify = 31;
+    internal const int ClientMessage = 33;
 }

@@ -73,6 +73,25 @@ internal static partial class Xlib
 
     [LibraryImport("libX11.so.6")] internal static unsafe partial int XFree(void* data);
 
+    // ---- Dragging out (XDND): the pointer, the windows under it, and trapping errors on windows that vanish ----
+
+    [LibraryImport("libX11.so.6")]
+    internal static partial int XGrabPointer(nint display, nint grabWindow, [MarshalAs(UnmanagedType.Bool)] bool ownerEvents, uint eventMask,
+        int pointerMode, int keyboardMode, nint confineTo, nint cursor, nint time);
+
+    [LibraryImport("libX11.so.6")] internal static partial int XUngrabPointer(nint display, nint time);
+    [LibraryImport("libX11.so.6")] internal static partial int XChangeActivePointerGrab(nint display, uint eventMask, nint cursor, nint time);
+    [LibraryImport("libX11.so.6")] internal static partial nint XCreateFontCursor(nint display, uint shape);
+    [LibraryImport("libX11.so.6")] internal static partial int XFreeCursor(nint display, nint cursor);
+
+    [LibraryImport("libX11.so.6")]
+    internal static partial int XTranslateCoordinates(nint display, nint sourceWindow, nint destinationWindow, int sourceX, int sourceY,
+        out int destinationX, out int destinationY, out nint child);
+
+    [LibraryImport("libX11.so.6")] internal static partial int XSync(nint display, [MarshalAs(UnmanagedType.Bool)] bool discard);
+    // The handler is a C function pointer (int (*)(Display*, XErrorEvent*)); the previous one comes back to be restored.
+    [LibraryImport("libX11.so.6")] internal static partial nint XSetErrorHandler(nint handler);
+
     [LibraryImport("libX11.so.6")] internal static partial nint XResourceManagerString(nint display);
     [LibraryImport("libX11.so.6")] internal static partial int XDisplayWidth(nint display, int screenNumber);
     [LibraryImport("libX11.so.6")] internal static partial int XDisplayWidthMM(nint display, int screenNumber);

@@ -979,3 +979,5 @@ TTraxx.PluGui.Gui.PluginWindow.HandleTextInput(string! text) -> bool
 TTraxx.PluGui.Gui.PluginWindow.HasKeyboardControl.get -> bool
 TTraxx.PluGui.Gui.IPluginWindow.HandleTypedCharacter(char character, TTraxx.PluGui.Gui.KeyModifiers modifiers) -> bool
 TTraxx.PluGui.Gui.PluginWindow.HandleTypedCharacter(char character, TTraxx.PluGui.Gui.KeyModifiers modifiers) -> bool
+TTraxx.PluGui.Gui.KnobControlConfiguration.IsBipolar.get -> bool
+TTraxx.PluGui.Gui.KnobControlConfiguration.IsBipolar.init -> void
