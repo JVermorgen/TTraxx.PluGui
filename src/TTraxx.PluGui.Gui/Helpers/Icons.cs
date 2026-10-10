@@ -23,6 +23,7 @@ public static class Icons
     private static volatile SKPath? _pulse;
     private static volatile SKPath? _triangle;
     private static volatile SKPath? _padlock;
+    private static volatile SKPath? _alert;
 
     /// <summary>Right-pointing triangle with a notched back edge - a play/next marker. Filled.</summary>
     public static SKPath ArrowRight => _arrowRight ??= BuildArrowRight();
@@ -42,6 +43,9 @@ public static class Icons
     /// <summary>A closed padlock with a keyhole - "locked", "left alone". Filled.</summary>
     public static SKPath Padlock => _padlock ??= BuildPadlock();
 
+    /// <summary>An exclamation mark cut out of a disc - "needs attention". Filled.</summary>
+    public static SKPath Alert => _alert ??= BuildAlert();
+
     internal static void InvalidateCache()
     {
         // Deliberately not disposing: a draw on the UI thread may still
@@ -52,6 +56,7 @@ public static class Icons
         _pulse = null;
         _triangle = null;
         _padlock = null;
+        _alert = null;
     }
 
     #region Private Methods
@@ -123,6 +128,16 @@ public static class Icons
         builder.AddRoundRect(new SKRoundRect(new SKRect(-0.17f, -0.37f, 0.17f, 0.05f), 0.17f), SKPathDirection.CounterClockwise);
         builder.AddRoundRect(new SKRoundRect(new SKRect(-0.42f, -0.06f, 0.42f, 0.5f), 0.08f), SKPathDirection.Clockwise);
         builder.AddCircle(0f, 0.19f, 0.08f, SKPathDirection.CounterClockwise);
+        return builder.Detach();
+    }
+
+    private static SKPath BuildAlert()
+    {
+        // The disc clockwise, the bar and the dot counter-clockwise inside it: they come out as holes.
+        using SKPathBuilder builder = new();
+        builder.AddCircle(0f, 0f, 0.5f, SKPathDirection.Clockwise);
+        builder.AddRoundRect(new SKRoundRect(new SKRect(-0.07f, -0.32f, 0.07f, 0.1f), 0.07f), SKPathDirection.CounterClockwise);
+        builder.AddCircle(0f, 0.24f, 0.075f, SKPathDirection.CounterClockwise);
         return builder.Detach();
     }
     #endregion

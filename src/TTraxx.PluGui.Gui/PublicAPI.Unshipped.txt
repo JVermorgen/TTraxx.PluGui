@@ -628,6 +628,8 @@ TTraxx.PluGui.Gui.ToggleControlConfiguration.Parameter.get -> TTraxx.PluGui.Gui.
 TTraxx.PluGui.Gui.ToggleControlConfiguration.Parameter.init -> void
 TTraxx.PluGui.Gui.ToggleControlConfiguration.Style.get -> System.Func<TTraxx.PluGui.Gui.ToggleStyle!>?
 TTraxx.PluGui.Gui.ToggleControlConfiguration.Style.init -> void
+TTraxx.PluGui.Gui.ToggleControlConfiguration.IdleReason.get -> System.Func<string?>?
+TTraxx.PluGui.Gui.ToggleControlConfiguration.IdleReason.init -> void
 TTraxx.PluGui.Gui.ToggleControlConfiguration.ToggleControlConfiguration() -> void
 TTraxx.PluGui.Gui.ToggleMetrics
 TTraxx.PluGui.Gui.ToggleMetrics.Deconstruct(out int Width, out int Height, out int PillHeight, out int PillCenterY) -> void
@@ -874,6 +876,7 @@ TTraxx.PluGui.Gui.ToggleStyle.ChipFontSize.init -> void
 TTraxx.PluGui.Gui.ToggleStyle.ChipOffIcon.get -> SkiaSharp.SKPath?
 TTraxx.PluGui.Gui.ToggleStyle.ChipOffIcon.init -> void
 static TTraxx.PluGui.Gui.Icons.Padlock.get -> SkiaSharp.SKPath!
+static TTraxx.PluGui.Gui.Icons.Alert.get -> SkiaSharp.SKPath!
 TTraxx.PluGui.Gui.ButtonControlConfiguration.OnPress.get -> System.Action?
 TTraxx.PluGui.Gui.ButtonControlConfiguration.OnPress.init -> void
 TTraxx.PluGui.Gui.ButtonControlConfiguration.OnRelease.get -> System.Action?

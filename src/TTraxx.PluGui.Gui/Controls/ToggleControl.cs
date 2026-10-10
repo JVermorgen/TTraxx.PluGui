@@ -23,14 +23,20 @@ public sealed class ToggleControl(ToggleControlConfiguration config) : PluginCon
 
     public override IParameterControlInfo? GetParameterInfo(int localX, int localY) => Parameter.Info;
 
-    public override IReadOnlyList<ContextMenuItem> GetContextMenuItems() =>
-    [
-        new("Reset to Default", () =>
+    public override IReadOnlyList<ContextMenuItem> GetContextMenuItems()
+    {
+        ContextMenuItem reset = new("Reset to Default", () =>
         {
             Parameter.Edit(Parameter.Quantize(Parameter.Info.DefaultNormalizedValue));
             Refresh();
-        }, IsEnabled)
-    ];
+        }, IsEnabled);
+
+        // Held idle: the reason first, greyed - something to read, not to pick.
+        return IdleReason is { } reason ? [new(reason, () => { }, IsEnabled: false), reset] : [reset];
+    }
+
+    /// <summary>Why the toggle is on but can't act (see <see cref="ToggleControlConfiguration.IdleReason"/>); null while it can, or is off.</summary>
+    private string? IdleReason => IsOn ? config.IdleReason?.Invoke() : null;
 
     public override void Draw(SKCanvas canvas)
     {
@@ -92,29 +98,37 @@ public sealed class ToggleControl(ToggleControlConfiguration config) : PluginCon
     /// <summary>
     /// <see cref="ToggleAppearance.Chip"/>: the whole box, tinted and outlined in the accent while on;
     /// while off a plain groove, outlined only on hover like a button, with the style's off icon (if
-    /// any) in front of the label.
+    /// any) in front of the label. On but idle (<see cref="ToggleControlConfiguration.IdleReason"/>):
+    /// the groove with a dashed accent outline, and <see cref="Icons.Alert"/> in front of the label.
     /// </summary>
     private void DrawChip(SKCanvas canvas, ToggleStyle style)
     {
         var isOn = IsOn;
         var enabled = IsEnabled;
+        var idle = IdleReason is not null;
         var radius = RescaleExact(style.ChipCornerRadius);
         var box = new SKRect(0.5f, 0.5f, _w - 0.5f, _h - 0.5f);
 
-        var fill = isOn
+        var fill = isOn && !idle
             ? Theme.Accent.WithAlpha(enabled ? (byte)36 : (byte)18)
             : Theme.TrackBackground.WithAlpha(enabled ? (byte)200 : (byte)100);
         using (SKPaint background = new() { Color = fill, IsAntialias = true, Style = SKPaintStyle.Fill })
             canvas.DrawRoundRect(box, radius, radius, background);
 
-        if (enabled && (isOn || IsHovered))
+        if (enabled && idle)
+        {
+            using var dash = SKPathEffect.CreateDash([RescaleExact(3f), RescaleExact(2f)], 0);
+            using SKPaint outline = new() { Color = Theme.Accent.WithAlpha(IsHovered ? (byte)230 : (byte)170), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = RescaleExact(1f), PathEffect = dash };
+            canvas.DrawRoundRect(box, radius, radius, outline);
+        }
+        else if (enabled && (isOn || IsHovered))
         {
             var outlineAlpha = !isOn ? (byte)150 : IsHovered ? (byte)200 : (byte)90;
             using SKPaint outline = new() { Color = Theme.Accent.WithAlpha(outlineAlpha), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = RescaleExact(1f) };
             canvas.DrawRoundRect(box, radius, radius, outline);
         }
 
-        var textColor = !enabled ? Theme.TextDisabled : isOn ? Theme.TextPrimary : Theme.TextDim;
+        var textColor = !enabled ? Theme.TextDisabled : isOn && !idle ? Theme.TextPrimary : Theme.TextDim;
         using SKFont font = new() { Size = RescaleExact(style.ChipFontSize), Typeface = Fonts.Bold };
         using SKPaint textPaint = new() { Color = textColor, IsAntialias = true };
         var metrics = font.Metrics;
@@ -122,13 +136,13 @@ public sealed class ToggleControl(ToggleControlConfiguration config) : PluginCon
         var label = Parameter.Info.Label;
 
         // The icon and the label are centred as one group, so the label shifts over to make room.
-        var icon = isOn ? null : style.ChipOffIcon;
+        var icon = idle ? Icons.Alert : isOn ? null : style.ChipOffIcon;
         var iconSize = icon is null ? 0f : RescaleExact(style.ChipFontSize);
         var gap = icon is null ? 0f : RescaleExact(4f);
         var groupLeft = (_w - (iconSize + gap + font.MeasureText(label))) / 2f;
 
         if (icon is not null)
-            canvas.DrawIconFill(icon, groupLeft + (iconSize / 2f), _h / 2f, iconSize, textColor);
+            canvas.DrawIconFill(icon, groupLeft + (iconSize / 2f), _h / 2f, iconSize, idle && enabled ? Theme.Accent : textColor);
 
         canvas.DrawTextTopAligned(label, groupLeft + iconSize + gap, textTop, SKTextAlign.Left, font, textPaint);
     }

@@ -15,4 +15,12 @@ public class ToggleControlConfiguration() : ParameterControlConfiguration, IStyl
     /// instance so the style is resolved on each use - see <see cref="KnobControlConfiguration.Style"/>.
     /// </summary>
     public Func<ToggleStyle>? Style { get; init; }
+
+    /// <summary>
+    /// While the toggle is on but has nothing to act on - an output the host hasn't switched on, say -
+    /// why, in a few words; null while it can act (and when this is unset). A chip held so is drawn
+    /// idle: a dashed outline and <see cref="Icons.Alert"/> before its label. Either appearance leads
+    /// its right-click menu with the reason.
+    /// </summary>
+    public Func<string?>? IdleReason { get; init; }
 }

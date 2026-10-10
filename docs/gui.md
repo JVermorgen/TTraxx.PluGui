@@ -239,7 +239,7 @@ surface as an explicit `IHotReloadTarget` implementation — a production host n
 | --- | --- | --- | --- |
 | `KnobControl` | `KnobControlConfiguration` | `Parameter` | Vertical drag (Shift = fine-tune), mouse wheel, double-click resets to default. Stepped parameters snap to their positions and draw tick marks. |
 | `SliderControl` | `SliderControlConfiguration` | `Parameter` | Horizontal bar with the value printed on it. Relative horizontal drag (Shift = fine-tune), wheel, double-click resets. `IsBipolar` fills from the centre. |
-| `ToggleControl` | `ToggleControlConfiguration` | `Parameter` | Click toggles. Reads *on* at normalized ≥ 0.5 and writes a full 0.0/1.0, so it suits a genuinely two-state parameter. |
+| `ToggleControl` | `ToggleControlConfiguration` | `Parameter` | Click toggles. Reads *on* at normalized ≥ 0.5 and writes a full 0.0/1.0, so it suits a genuinely two-state parameter. `IdleReason` (optional) says why a toggle that is on can't act yet - an output the host hasn't switched on, say: a chip then draws idle (dashed outline, `Icons.Alert`), and the reason leads its right-click menu. |
 | `DropdownControl` | `DropdownControlConfiguration` | `Parameter` (stepped) + `Items` | Click opens the list with the current choice checked; the wheel steps through the choices without opening it. |
 | `XYPadControl` | `XYPadControlConfiguration` | `XParameter` + `YParameter` | Drag places the dot under the pointer, driving one parameter per axis. See [XY pad](#xy-pad). |
 | `TabStripControl` | `TabStripControlConfiguration` | Delegates, no parameter | Click selects a tab. See [Tab strips and paged panels](#tab-strips-and-paged-panels). |
