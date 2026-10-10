@@ -296,12 +296,15 @@ under the pointer. Everything else is optional:
 | `Snap` | `(x, y) => (x, y)` quantizer applied to dragged positions (and to Reset to Default) before they are written — to snap to corners or a grid, say. Read on every use, so it can follow a mode parameter. |
 | `SnapPoints` | Where `Snap` can land, for display: a point inside the pad draws as a dot, one on an edge as a tick, one on a corner lights that corner's icon. |
 | `ModulationIndicator` | A read-only second dot plus connecting line, offset from the main dot by two bipolar (−1..1) delegates. |
-| `Footer` | A segmented selector (`XYPadFooter`: labels + get/set index delegates) drawn inside the pad's frame, below the pad area; adds `XYPadStyle.FooterHeight` to the control's height. Its optional `Toggle` (`XYPadFooterToggle`) adds an on/off switch at the right end. Neither is bound to a parameter — the delegates decide what they do. |
+| `Footer` | A segmented selector (`XYPadFooter`: labels + get/set index delegates) drawn inside the pad's frame, below the pad area; adds `XYPadStyle.FooterHeight` to the control's height. Its optional `Toggle` (`XYPadFooterToggle`) adds an on/off switch at the right end, and its optional `IsItemDimmed` draws a choice that holds nothing of its own yet dimmed (an outline when selected). Neither is bound to a parameter — the delegates decide what they do. |
 | `LivePoints` | Read-only points (`XYPadLivePoint`: id, x, y, weight) showing where values actually are — per-voice modulation, say — each with a short fading trail, in the theme's `XYLivePoint` colour. While set, the pad repaints continuously. Give a point a new `Id` when it stands for something new (a new note), or its trail will connect to the old one. |
+| `CornerLabels` | Text in the corners instead of the style's icons — for corners that are named states (a morph's A–D). |
+| `IsCornerLit` | Lights a corner's icon or label besides those a snap point lights — the corner the footer has picked, say. |
+| `ContextMenuItems` | Extra rows for the right-click menu, after "Reset to Default"; built each time the menu opens. |
 
 The pad has no wheel or double-click behaviour. `XYPadStyle.CornerIcons` draws the waveform glyphs in
 the corners by default (order: top-left, top-right, bottom-left, bottom-right); set it to `null` for a
-pad whose corners mean nothing.
+pad whose corners mean nothing, or give `CornerLabels` for corners with names.
 
 ### Tab strips and paged panels
 
@@ -401,7 +404,7 @@ Style = () => KnobStyle.Default with
 | `TabStripStyle` | `CornerRadius`, `FontSize`. |
 | `ButtonStyle` | `CornerRadius`, `FontSize`, an optional `Icon` before the label (sized by `IconScale`, a multiple of `FontSize`), and `IsPrimary` — tinted and outlined with the accent at rest, for an area's main action. |
 | `MeterStyle` | Segment count and gap, warning/clip thresholds with their colours, a silence floor, and the peak-hold timing. |
-| `XYPadStyle` | Corner radius, glow and indicator radii, `CornerIcons` and their size, the footer's height/font/toggle width, live-point radius and trail length, snap-marker sizes. |
+| `XYPadStyle` | Corner radius, glow and indicator radii, `CornerIcons` and their size, the corner labels' font size, the footer's height/font/toggle width, live-point radius and trail length, snap-marker sizes. |
 
 **Colours are not in styles** (`MeterStyle`'s fixed green/amber/red aside) — they come from the
 window's theme, so one style works against any theme.

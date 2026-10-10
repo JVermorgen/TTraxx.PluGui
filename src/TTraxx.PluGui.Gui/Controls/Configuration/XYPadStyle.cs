@@ -16,6 +16,9 @@ public sealed record XYPadStyle : IControlStyle<XYPadStyle>
     public int IconHeight { get; init; } = 12;
     public float IconStrokeWidth { get; init; } = 1.5f;
 
+    /// <summary>Text size of the corner labels, when the pad has them (see <see cref="XYPadControlConfiguration.CornerLabels"/>).</summary>
+    public float CornerLabelFontSize { get; init; } = 11f;
+
     /// <summary>
     /// Corner glyphs, in the order top-left, top-right, bottom-left, bottom-right. Defaults to the waveform set;
     /// pass null to draw none (e.g. a cutoff/resonance pad).

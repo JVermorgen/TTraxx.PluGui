@@ -58,6 +58,25 @@ public class XYPadControlConfiguration() : ParameterControlConfiguration, IStyle
     public Func<IReadOnlyList<XYPadLivePoint>>? LivePoints { get; init; }
 
     /// <summary>
+    /// Optional text for the corners, in the order top-left, top-right, bottom-left, bottom-right -
+    /// for a pad whose corners are named states (the corners of a morph) rather than shapes. Drawn
+    /// instead of <see cref="XYPadStyle.CornerIcons"/>; null draws the icons.
+    /// </summary>
+    public IReadOnlyList<string>? CornerLabels { get; init; }
+
+    /// <summary>
+    /// Optional: lights a corner's icon or label (0 = top-left .. 3 = bottom-right) besides those a
+    /// snap point lights - the corner a footer has picked, say. Read on every repaint.
+    /// </summary>
+    public Func<int, bool>? IsCornerLit { get; init; }
+
+    /// <summary>
+    /// Optional rows for the pad's right-click menu, after its own "Reset to Default" - built each
+    /// time the menu opens, so they can follow what the pad shows.
+    /// </summary>
+    public Func<IReadOnlyList<ContextMenuItem>>? ContextMenuItems { get; init; }
+
+    /// <summary>
     /// Look and feel override, or null for <see cref="XYPadStyle.Default"/>. A factory rather than an
     /// instance so the style is resolved on each use - see <see cref="KnobControlConfiguration.Style"/>.
     /// </summary>
@@ -84,6 +103,12 @@ public class XYPadControlConfiguration() : ParameterControlConfiguration, IStyle
 /// <param name="SetSelectedIndex">Makes a choice. The pad repaints the window itself afterwards.</param>
 public sealed record XYPadFooter(IReadOnlyList<string> Items, Func<int> GetSelectedIndex, Action<int> SetSelectedIndex)
 {
+    /// <summary>
+    /// Optional: whether a choice is drawn dimmed - one that's there but holds nothing of its own yet
+    /// (an empty slot, say). Still selectable; selected, it shows as an outline instead of a filled pill.
+    /// </summary>
+    public Func<int, bool>? IsItemDimmed { get; init; }
+
     /// <summary>Optional on/off switch at the footer's right end, beside the choices.</summary>
     public XYPadFooterToggle? Toggle { get; init; }
 }

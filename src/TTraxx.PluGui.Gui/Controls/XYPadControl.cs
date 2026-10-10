@@ -119,7 +119,8 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
             config.YParameter.Edit(config.YParameter.Quantize(y));
             config.EndGroupEdit?.Invoke();
             Refresh();
-        }, IsEnabled)
+        }, IsEnabled),
+        .. config.ContextMenuItems?.Invoke() ?? []
     ];
 
     private void ApplyFromPointer(int localX, int localY)
@@ -290,13 +291,27 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
 
         var pill = new SKRect(band.Left + inset + (selected * segmentWidth), band.Top + inset,
             band.Left + inset + ((selected + 1) * segmentWidth), band.Bottom - inset);
-        using (SKPaint highlight = new() { Color = Theme.Accent.WithAlpha(enabled ? (byte)150 : (byte)50), IsAntialias = true, Style = SKPaintStyle.Fill })
+        bool IsDimmed(int index) => footer.IsItemDimmed?.Invoke(index) ?? false;
+
+        // A dimmed choice selected is an outline: picked, but still holding nothing of its own.
+        var selectedDimmed = IsDimmed(selected);
+        using (SKPaint highlight = new()
+        {
+            Color = Theme.Accent.WithAlpha(enabled ? (byte)150 : (byte)50),
+            IsAntialias = true,
+            Style = selectedDimmed ? SKPaintStyle.Stroke : SKPaintStyle.Fill,
+            StrokeWidth = RescaleExact(1.2f)
+        })
+        {
+            if (selectedDimmed) pill.Inflate(-highlight.StrokeWidth / 2f, -highlight.StrokeWidth / 2f);
             canvas.DrawRoundRect(pill, pillRadius, pillRadius, highlight);
+        }
 
         for (var i = 0; i < count; i++)
         {
             var color = !enabled ? Theme.TextDisabled
                       : i == selected || i == _hoveredFooterIndex ? Theme.TextPrimary
+                      : IsDimmed(i) ? Theme.TextDisabled
                       : Theme.TextDim;
             using SKPaint text = new() { Color = color, IsAntialias = true };
             canvas.DrawTextTopAligned(footer.Items[i], band.Left + inset + ((i + 0.5f) * segmentWidth), textTop, SKTextAlign.Center, font, text);
@@ -372,9 +387,18 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
         }
     }
 
-    /// <summary>The corner glyphs - lit up where a snap point sits on that corner.</summary>
+    /// <summary>
+    /// The corner glyphs, or the corner labels in their place - lit up where a snap point sits on
+    /// that corner, or where <see cref="XYPadControlConfiguration.IsCornerLit"/> says.
+    /// </summary>
     private void DrawCornerIcons(SKCanvas canvas, IReadOnlyList<(double X, double Y)> snapPoints, int padHeight, XYPadStyle style)
     {
+        if (config.CornerLabels is { Count: > 0 } labels)
+        {
+            DrawCornerLabels(canvas, labels, snapPoints, padHeight, style);
+            return;
+        }
+
         if (style.CornerIcons is not { Count: > 0 } icons) return;
 
         float iconW = Rescale(style.IconWidth);
@@ -386,22 +410,47 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
         var leftX = Rescale(10) + (iconW / 2f);
         var rightX = _w - Rescale(38) + (iconW / 2f);
 
-        // Clockwise from top-left: TL, TR, BL, BR - the same order as the corners' (x, y) below.
+        // Clockwise from top-left: TL, TR, BL, BR - the same order as Corners.
         ReadOnlySpan<(float X, float Y)> positions =
             [(leftX, topY), (rightX, topY), (leftX, bottomY), (rightX, bottomY)];
-        ReadOnlySpan<(double X, double Y)> corners = [(0, 0), (1, 0), (0, 1), (1, 1)];
 
         for (var i = 0; i < icons.Count && i < positions.Length; i++)
         {
-            var isSnapTarget = false;
-            foreach (var point in snapPoints)
-            {
-                if (point.X == corners[i].X && point.Y == corners[i].Y) isSnapTarget = true;
-            }
-
             canvas.DrawIconStroke(icons[i], positions[i].X, positions[i].Y, iconW, iconH, strokeW,
-                isSnapTarget ? Theme.TextPrimary : Theme.TextDim);
+                IsCornerLit(i, snapPoints) ? Theme.TextPrimary : Theme.TextDim);
         }
+    }
+
+    /// <summary>The corner labels, each tucked into its corner: left-aligned on the left, right-aligned on the right.</summary>
+    private void DrawCornerLabels(SKCanvas canvas, IReadOnlyList<string> labels, IReadOnlyList<(double X, double Y)> snapPoints, int padHeight, XYPadStyle style)
+    {
+        using SKFont font = new() { Size = RescaleExact(style.CornerLabelFontSize), Typeface = Fonts.Bold };
+        using SKPaint text = new() { IsAntialias = true };
+        var textHeight = font.Metrics.Descent - font.Metrics.Ascent;
+        var inset = RescaleExact(8f);
+
+        for (var i = 0; i < labels.Count && i < Corners.Length; i++)
+        {
+            var (x, y) = Corners[i];
+            text.Color = !IsEnabled ? Theme.TextDisabled : IsCornerLit(i, snapPoints) ? Theme.TextPrimary : Theme.TextDim;
+            canvas.DrawTextTopAligned(labels[i], x == 0 ? inset : _w - inset, y == 0 ? inset : padHeight - inset - textHeight,
+                x == 0 ? SKTextAlign.Left : SKTextAlign.Right, font, text);
+        }
+    }
+
+    // The corners in normalized pad space, top-left, top-right, bottom-left, bottom-right.
+    private static readonly (double X, double Y)[] Corners = [(0, 0), (1, 0), (0, 1), (1, 1)];
+
+    private bool IsCornerLit(int corner, IReadOnlyList<(double X, double Y)> snapPoints)
+    {
+        if (config.IsCornerLit?.Invoke(corner) == true) return true;
+
+        foreach (var point in snapPoints)
+        {
+            if (point.X == Corners[corner].X && point.Y == Corners[corner].Y) return true;
+        }
+
+        return false;
     }
 
     private void DrawModulationIndicator(SKCanvas canvas, int dotX, int dotY, int padHeight, XYPadStyle style)

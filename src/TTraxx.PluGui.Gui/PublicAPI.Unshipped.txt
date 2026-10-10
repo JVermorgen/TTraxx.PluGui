@@ -981,3 +981,13 @@ TTraxx.PluGui.Gui.IPluginWindow.HandleTypedCharacter(char character, TTraxx.PluG
 TTraxx.PluGui.Gui.PluginWindow.HandleTypedCharacter(char character, TTraxx.PluGui.Gui.KeyModifiers modifiers) -> bool
 TTraxx.PluGui.Gui.KnobControlConfiguration.IsBipolar.get -> bool
 TTraxx.PluGui.Gui.KnobControlConfiguration.IsBipolar.init -> void
+TTraxx.PluGui.Gui.XYPadFooter.IsItemDimmed.get -> System.Func<int, bool>?
+TTraxx.PluGui.Gui.XYPadFooter.IsItemDimmed.init -> void
+TTraxx.PluGui.Gui.XYPadControlConfiguration.CornerLabels.get -> System.Collections.Generic.IReadOnlyList<string!>?
+TTraxx.PluGui.Gui.XYPadControlConfiguration.CornerLabels.init -> void
+TTraxx.PluGui.Gui.XYPadControlConfiguration.IsCornerLit.get -> System.Func<int, bool>?
+TTraxx.PluGui.Gui.XYPadControlConfiguration.IsCornerLit.init -> void
+TTraxx.PluGui.Gui.XYPadControlConfiguration.ContextMenuItems.get -> System.Func<System.Collections.Generic.IReadOnlyList<TTraxx.PluGui.Gui.ContextMenuItem!>!>?
+TTraxx.PluGui.Gui.XYPadControlConfiguration.ContextMenuItems.init -> void
+TTraxx.PluGui.Gui.XYPadStyle.CornerLabelFontSize.get -> float
+TTraxx.PluGui.Gui.XYPadStyle.CornerLabelFontSize.init -> void
