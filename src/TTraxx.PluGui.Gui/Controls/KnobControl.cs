@@ -242,10 +242,16 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
                 // ends too - otherwise a knob with one reads its ends in one format and its value in
                 // another. Without a formatter this is the same MinValue/MaxValue unit formatting.
                 fontPaint.Color = enabled ? Theme.TextDim : Theme.TextDisabled;
-                canvas.DrawTextTopAligned(FormatValue(0.0),
-                    Rescale(5), rangeY, SKTextAlign.Left, smallFont, fontPaint);
-                canvas.DrawTextTopAligned(FormatValue(1.0),
-                    _w - Rescale(5), rangeY, SKTextAlign.Right, smallFont, fontPaint);
+                var minimum = FormatValue(0.0);
+                var maximum = FormatValue(1.0);
+
+                // Two long ends ("0.02 Hz", "20 Hz") on a small knob would run into each other: drawn smaller, to fit
+                // with a gap between them.
+                var room = _w - Rescale(10) - Rescale(4);
+                var needed = smallFont.MeasureText(minimum) + smallFont.MeasureText(maximum);
+                using SKFont endFont = new() { Size = needed > room ? smallFont.Size * room / needed : smallFont.Size, Typeface = smallFont.Typeface };
+                canvas.DrawTextTopAligned(minimum, Rescale(5), rangeY, SKTextAlign.Left, endFont, fontPaint);
+                canvas.DrawTextTopAligned(maximum, _w - Rescale(5), rangeY, SKTextAlign.Right, endFont, fontPaint);
             }
         }
 
