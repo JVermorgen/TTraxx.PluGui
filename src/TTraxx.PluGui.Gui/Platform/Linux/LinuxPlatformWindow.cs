@@ -30,6 +30,14 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
 
     private SKSurface? _skSurface;
     private byte[]? _pixelBuffer;
+    private GCHandle _pixelPin;
+    private nint _xImage;
+
+    // Marked for a repaint (see Invalidate), and when the repaint clock may paint next: a paint's
+    // duration / MaxPaintShare after it began, as on Win32.
+    private bool _dirty;
+    private const double MaxPaintShare = 0.25;
+    private long _nextTickPaint;
     private int _w;
     private int _h;
 
@@ -62,7 +70,10 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
 
     public IEventPumpSource EventPumpSource => this; // X11 has no native message loop of its own - the host must poll our fd
 
-    public ITimerPumpSource? TimerPumpSource => _continuousRepaintEnabled ? this : null;
+    // Always: Invalidate only marks the window (see there), and the tick is one of the two places that
+    // paints what was marked, the end of an event batch the other - so it must run even without a
+    // continuously repainting control.
+    public ITimerPumpSource? TimerPumpSource => this;
 
     /// <summary>
     /// <para>
@@ -154,10 +165,17 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
         EnsureSurface(width, height);
     }
 
+    /// <summary>
+    /// Marks the window for a repaint, which comes at the end of the event batch being processed or
+    /// at the next timer tick - one paint however many asked for one. Painting here at once, as this
+    /// did, painted once per pointer move (more, as an edit asks again through the controller), and
+    /// a paint takes longer than the moves come in: the moves queued up behind the paints, and a
+    /// knob went on turning after the mouse had stopped.
+    /// </summary>
     public void Invalidate()
     {
         if (!_isAttached || _isDestroyed) return;
-        Repaint(); // no separate dirty-flag needed: X11 has no "InvalidateRect" equivalent that you trigger yourself; direct repainting here is the pragmatic approach until we fully wire up events
+        _dirty = true;
     }
 
     /// <summary>
@@ -250,7 +268,16 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
 
     int ITimerPumpSource.PreferredIntervalMilliseconds => ContinuousRepaintIntervalMs;
 
-    void ITimerPumpSource.OnTimerTick() => Invalidate();
+    /// <summary>
+    /// Paints what was marked, and while a control repaints continuously, the frame - unless painting
+    /// would take more than a quarter of the host's UI thread (as on Win32: a slow machine gets a lower
+    /// frame rate, not a slow host).
+    /// </summary>
+    void ITimerPumpSource.OnTimerTick()
+    {
+        if (!_isAttached || _isDestroyed) return;
+        if (_dirty || (_continuousRepaintEnabled && System.Diagnostics.Stopwatch.GetTimestamp() >= _nextTickPaint)) Repaint();
+    }
 
     public void Destroy()
     {
@@ -264,7 +291,7 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
 
         if (_gc != nint.Zero) _ = Xlib.XFreeGC(_display, _gc);
         if (_window != nint.Zero) _ = Xlib.XDestroyWindow(_display, _window);
-        _skSurface?.Dispose();
+        ReleaseSurface();
     }
 
     /// <summary>
@@ -279,13 +306,28 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
     {
         if (!_isAttached || _isDestroyed) return;
 
+        var evt = new XEvent();
+        var next = new XEvent();
+        var evtPtr = (nint)(&evt);
+        var nextPtr = (nint)(&next);
         while (Xlib.XPending(_display) > 0)
         {
-            var evt = new XEvent();
-            var evtPtr = (nint)(&evt);
             _ = Xlib.XNextEvent(_display, evtPtr);
+
+            // Moves that queued up behind each other: only the last counts (a knob follows where the
+            // pointer is, not every place it passed).
+            while (evt.type == XEventType.MotionNotify && Xlib.XPending(_display) > 0)
+            {
+                _ = Xlib.XPeekEvent(_display, nextPtr);
+                if (next.type != XEventType.MotionNotify) break;
+                _ = Xlib.XNextEvent(_display, evtPtr);
+            }
+
             DispatchEvent(evt, evtPtr);
         }
+
+        // One paint for the whole batch.
+        if (_dirty) Repaint();
     }
 
     #region "private"
@@ -298,8 +340,8 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
                 _ = Marshal.PtrToStructure<XExposeEvent>(rawEventPtr);
                 // We deliberately ignore _.x/y/width/height and always repaint
                 // the full surface — matches how WM_PAINT/PaintViaSkia also does it
-                // on Windows (no partial-redraw logic).
-                Repaint();
+                // on Windows (no partial-redraw logic) - at the end of the batch, with anything else marked.
+                _dirty = true;
                 break;
             case XEventType.ButtonPress:
                 var buttonDown = Marshal.PtrToStructure<XButtonEvent>(rawEventPtr);
@@ -401,18 +443,38 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
 
     private static KeyModifiers ToModifiers(uint state) => X11Keyboard.ModifiersOf(state);
 
+    /// <summary>
+    /// The pixels Skia paints into and the XImage that hands them to the server, made once per size.
+    /// The buffer stays pinned while the surface and the image point into it; the last size's buffer,
+    /// pin and image are let go (they used to stay pinned for good, and an XImage was made, and never
+    /// freed, every paint).
+    /// </summary>
     private void EnsureSurface(int w, int h)
     {
         if (_skSurface != null && w == _w && h == _h) return;
 
+        ReleaseSurface();
         _w = w;
         _h = h;
 
         _pixelBuffer = new byte[w * h * 4];
-        var pixels = GCHandle.Alloc(_pixelBuffer, GCHandleType.Pinned).AddrOfPinnedObject();
+        _pixelPin = GCHandle.Alloc(_pixelBuffer, GCHandleType.Pinned);
+        var pixels = _pixelPin.AddrOfPinnedObject();
 
         var info = new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Premul);
         _skSurface = SKSurface.Create(info, pixels, w * 4);
+        _xImage = Xlib.XCreateImage(_display, _visual, (uint)_depth, XlibConstants.ZPixmap, 0, (byte*)pixels, (uint)w, (uint)h, 32, w * 4);
+    }
+
+    private void ReleaseSurface()
+    {
+        _skSurface?.Dispose();
+        _skSurface = null;
+        // XFree, not XDestroyImage: that would free the pixels too, which are ours.
+        if (_xImage != nint.Zero) _ = Xlib.XFree((void*)_xImage);
+        _xImage = nint.Zero;
+        if (_pixelPin.IsAllocated) _pixelPin.Free();
+        _pixelBuffer = null;
     }
 
     private void Repaint()
@@ -421,7 +483,10 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
         // Destroy(), or before Attach() has fully completed) can call
         // XPutImage with _display/_window set to nint.Zero -> SIGSEGV.
         if (!_isAttached || _isDestroyed) return;
-        if (_skSurface is null || _pixelBuffer is null) return;
+        if (_skSurface is null || _xImage == nint.Zero) return;
+
+        _dirty = false;
+        var paintStart = System.Diagnostics.Stopwatch.GetTimestamp();
 
         var canvas = _skSurface.Canvas;
         _ = canvas.Save();
@@ -430,11 +495,13 @@ internal sealed unsafe class LinuxPlatformWindow : IPlatformWindow, IEventPumpSo
         canvas.Restore();
         _skSurface.Flush();
 
-        fixed (byte* ptr = _pixelBuffer)
-        {
-            var image = Xlib.XCreateImage(_display, _visual, (uint)_depth, XlibConstants.ZPixmap, 0, ptr, (uint)_w, (uint)_h, 32, _w * 4);
-            _ = Xlib.XPutImage(_display, _window, _gc, image, 0, 0, 0, 0, (uint)_w, (uint)_h);
-        }
+        _ = Xlib.XPutImage(_display, _window, _gc, _xImage, 0, 0, 0, 0, (uint)_w, (uint)_h);
+        // Sent now: Xlib buffers requests, and nothing else may touch the connection until the
+        // host's next callback - the frame would show a tick late.
+        _ = Xlib.XFlush(_display);
+
+        var paintTicks = System.Diagnostics.Stopwatch.GetTimestamp() - paintStart;
+        _nextTickPaint = paintStart + (long)(paintTicks / MaxPaintShare);
     }
 
     #endregion

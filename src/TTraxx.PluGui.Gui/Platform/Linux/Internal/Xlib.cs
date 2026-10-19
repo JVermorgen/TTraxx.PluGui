@@ -23,6 +23,7 @@ internal static partial class Xlib
     [LibraryImport("libX11.so.6")] internal static partial int XFlush(nint display);
     [LibraryImport("libX11.so.6")] internal static partial int XPending(nint display);
     [LibraryImport("libX11.so.6")] internal static partial int XNextEvent(nint display, nint eventReturn);
+    [LibraryImport("libX11.so.6")] internal static partial int XPeekEvent(nint display, nint eventReturn);
 
     [LibraryImport("libX11.so.6")] internal static partial nint XCreateGC(nint display, nint window, nuint valueMask, nint values);
     [LibraryImport("libX11.so.6")] internal static partial int XFreeGC(nint display, nint gc);
