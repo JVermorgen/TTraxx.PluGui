@@ -20,7 +20,7 @@ public sealed record ToggleStyle : IControlStyle<ToggleStyle>
     {
         //      Width Height Pill CenterY
         S = new(58, 94, 14, 44),
-        M = new(64, 100, 14, 44),
+        M = new(64, 100, 14, 48),
         L = new(67, 105, 18, 54),
         XL = new(74, 116, 18, 54)
     };

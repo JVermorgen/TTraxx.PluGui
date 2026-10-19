@@ -47,6 +47,28 @@ public static class SkiaGradientExtensions
     }
 
     /// <summary>
+    /// Fills a rectangle with a top-to-bottom gradient whose ends are bands of a FIXED height:
+    /// <paramref name="colorTop"/> fades into <paramref name="colorMiddle"/> over
+    /// <paramref name="topHeight"/>, the middle colour fills whatever height is left, and it fades
+    /// into <paramref name="colorBottom"/> over <paramref name="bottomHeight"/> - so a short rectangle
+    /// and a tall one look the same at their edges, where a gradient placed by 0..1 positions would
+    /// stretch its bands with the height. Both heights are in pixels; where the two don't fit, they
+    /// shrink in proportion and meet.
+    /// </summary>
+    public static void FillVerticalGradient(this SKCanvas canvas, float x, float y, float w, float h,
+        SKColor colorTop, SKColor colorMiddle, SKColor colorBottom, float topHeight, float bottomHeight)
+    {
+        if (h <= 0) return;
+        topHeight = Math.Max(0, topHeight);
+        bottomHeight = Math.Max(0, bottomHeight);
+        var bands = topHeight + bottomHeight;
+        var fit = bands > h ? h / bands : 1f;
+        var middleTop = topHeight * fit / h;
+        var middleBottom = 1 - (bottomHeight * fit / h);
+        canvas.FillVerticalGradient(x, y, w, h, [colorTop, colorMiddle, colorMiddle, colorBottom], [0, middleTop, middleBottom, 1]);
+    }
+
+    /// <summary>
     /// Fills a rounded rectangle with a top-to-bottom two-stop gradient.
     /// <paramref name="cornerRadius"/> is in pixels and applies to both axes.
     /// </summary>
