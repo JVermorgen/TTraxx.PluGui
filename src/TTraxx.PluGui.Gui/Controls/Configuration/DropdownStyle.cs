@@ -17,7 +17,7 @@ public sealed record DropdownStyle : IControlStyle<DropdownStyle>
     public (int Width, int Height) BoundsFor(ControlSizes size) => Sizes[size];
 
     /// <summary>Corner rounding of the box.</summary>
-    public float CornerRadius { get; init; } = 3f;
+    public float CornerRadius { get; init; } = 6f;
 
     /// <summary>Gap between the box edge and the text, and between the chevron and the right edge.</summary>
     public int Padding { get; init; } = 7;

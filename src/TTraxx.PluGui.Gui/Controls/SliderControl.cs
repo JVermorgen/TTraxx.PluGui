@@ -93,17 +93,24 @@ public sealed class SliderControl(SliderControlConfiguration config) : PluginCon
         var radius = RescaleExact(style.CornerRadius);
         var bar = new SKRect(0.5f, 0.5f, _w - 0.5f, _h - 0.5f);
 
-        using (SKPaint track = new() { Color = enabled ? Theme.TrackBackground : Theme.TrackBackground.WithAlpha(120), IsAntialias = true, Style = SKPaintStyle.Fill })
-            canvas.DrawRoundRect(bar, radius, radius, track);
+        // Lit from above (see SkiaDepthExtensions): the bar is a recessed track, and the fill in it a
+        // raised strip - lighter at its top, catching the light along its top edge.
+        canvas.FillRecessed(bar, radius, enabled ? Theme.TrackBackground : Theme.TrackBackground.WithAlpha(120));
+        if (enabled) canvas.DrawBottomLip(bar, radius, RescaleExact(0.6f), 24);
 
         // The fill, clipped to the bar's rounded outline so its ends follow the corners.
         var valueX = bar.Left + (float)(value * bar.Width);
         var originX = config.IsBipolar ? bar.MidX : bar.Left;
         var fillColor = !enabled ? Theme.Accent.WithAlpha(60) : _isDragging || IsHovered ? Theme.Accent2 : Theme.Accent;
+        var fillRect = new SKRect(Math.Min(originX, valueX), bar.Top, Math.Max(originX, valueX), bar.Bottom);
         canvas.Save();
         canvas.ClipRoundRect(new SKRoundRect(bar, radius, radius), SKClipOperation.Intersect, antialias: true);
-        using (SKPaint fill = new() { Color = fillColor.WithAlpha((byte)(fillColor.Alpha * 0.55f)), IsAntialias = true, Style = SKPaintStyle.Fill })
-            canvas.DrawRect(new SKRect(Math.Min(originX, valueX), bar.Top, Math.Max(originX, valueX), bar.Bottom), fill);
+        canvas.FillRaised(fillRect, 0, fillColor.WithAlpha((byte)(fillColor.Alpha * 0.55f)));
+        if (enabled && fillRect.Width > 0)
+        {
+            canvas.ClipRect(fillRect);
+            canvas.DrawTopHighlight(bar, radius, RescaleExact(0.7f), 60);
+        }
         canvas.Restore();
 
         // A bipolar bar marks its zero, so a small amount either way still reads as a direction. Two

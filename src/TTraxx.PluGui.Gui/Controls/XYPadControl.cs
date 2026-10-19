@@ -31,6 +31,9 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
     public override bool NeedsContinuousRepaint => config.LivePoints is not null;
 
     /// <summary>Height of the pad area, in pixels: the whole control, less the footer band if there is one.</summary>
+    /// <summary>How far, in design units, the screen's top edge casts its shadow into it.</summary>
+    private const float InsetShadowDepth = 14;
+
     private int PadHeight => config.Footer is null ? _h : _h - Rescale(Style.FooterHeight);
 
     private bool IsInFooter(int localY) => config.Footer is not null && localY >= PadHeight;
@@ -162,6 +165,11 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
         canvas.FillRoundRectRadialGradient(1, 1, _w - 1, _h - 1, Math.Max(_w, _h) * 0.75f, radius,
             [Theme.XYPanelBackgroundShadow, Theme.XYPanelBackgroundShadow, Theme.XYPanelBackgroundHighlight], [0, 0.3f, 1f]);
 
+        // A screen set into the panel, lit from above (see SkiaDepthExtensions): its top edge casts
+        // a shadow into it, and its lower lip catches the light.
+        canvas.DrawInsetShadow(card, RescaleExact(InsetShadowDepth), 130);
+        canvas.DrawBottomLip(card.Rect, radius, RescaleExact(0.8f), 30);
+
         if (config.Footer is { } footer) DrawFooter(canvas, footer, card, padHeight, style);
 
         using (SKPaint gridPaint = new()
@@ -278,7 +286,7 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
         using SKFont font = new() { Size = RescaleExact(style.FooterFontSize), Typeface = Fonts.Bold };
         var textTop = band.Top + ((band.Height - (font.Metrics.Descent - font.Metrics.Ascent)) / 2f);
         var inset = RescaleExact(3f);
-        var pillRadius = RescaleExact(3f);
+        var pillRadius = RescaleExact(5f);
 
         if (footer.Toggle is { } toggle) DrawFooterToggle(canvas, toggle, band, font, textTop, inset, enabled);
 
@@ -294,17 +302,33 @@ public sealed class XYPadControl(XYPadControlConfiguration config) : PluginContr
         bool IsDimmed(int index) => footer.IsItemDimmed?.Invoke(index) ?? false;
 
         // A dimmed choice selected is an outline: picked, but still holding nothing of its own.
+        // Otherwise a key raised in the footer, as the tab strips' selected tab.
         var selectedDimmed = IsDimmed(selected);
-        using (SKPaint highlight = new()
+        if (selectedDimmed)
         {
-            Color = Theme.Accent.WithAlpha(enabled ? (byte)150 : (byte)50),
-            IsAntialias = true,
-            Style = selectedDimmed ? SKPaintStyle.Stroke : SKPaintStyle.Fill,
-            StrokeWidth = RescaleExact(1.2f)
-        })
+            using SKPaint outline = new()
+            {
+                Color = Theme.Accent.WithAlpha(enabled ? (byte)150 : (byte)50),
+                IsAntialias = true,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = RescaleExact(1.2f)
+            };
+            pill.Inflate(-outline.StrokeWidth / 2f, -outline.StrokeWidth / 2f);
+            canvas.DrawRoundRect(pill, pillRadius, pillRadius, outline);
+        }
+        else
         {
-            if (selectedDimmed) pill.Inflate(-highlight.StrokeWidth / 2f, -highlight.StrokeWidth / 2f);
-            canvas.DrawRoundRect(pill, pillRadius, pillRadius, highlight);
+            if (enabled)
+            {
+                using SKRoundRect shape = new(pill, pillRadius, pillRadius);
+                canvas.DrawDropShadow(shape, RescaleExact(1), RescaleExact(1.5f), 150);
+            }
+            var accent = Theme.Accent.WithAlpha(enabled ? (byte)170 : (byte)50);
+            using (var shader = SKShader.CreateLinearGradient(new SKPoint(pill.Left, pill.Top), new SKPoint(pill.Left, pill.Bottom),
+                       [accent, accent.WithAlpha(enabled ? (byte)120 : (byte)40)], null, SKShaderTileMode.Clamp))
+            using (SKPaint highlight = new() { Shader = shader, IsAntialias = true, Style = SKPaintStyle.Fill })
+                canvas.DrawRoundRect(pill, pillRadius, pillRadius, highlight);
+            if (enabled) canvas.DrawTopHighlight(pill, pillRadius, RescaleExact(0.7f), 60);
         }
 
         for (var i = 0; i < count; i++)

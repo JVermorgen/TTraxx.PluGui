@@ -56,24 +56,39 @@ public sealed class ToggleControl(ToggleControlConfiguration config) : PluginCon
         var pillX = (_w - pillW) / 2;
         var pillY = RescaleExact(metrics.PillCenterY) - (pillH / 2);
 
-        var pillColor = !enabled
-                            ? Theme.TrackBackground.WithAlpha(120)
-                            : isOn ? Theme.Accent : Theme.TrackBackground;
-
-        using (var pillPaint = new SKPaint { Color = pillColor, IsAntialias = true, Style = SKPaintStyle.Fill })
+        // Lit from above: the track is recessed (shaded from its top, its lower lip catching the
+        // light), the thumb raised in it (a shadow below, lighter at its top). On, the track fills
+        // with the accent, deepening towards the top as the groove does.
+        var pillRect = new SKRect(pillX, pillY, pillX + pillW, pillY + pillH);
+        var pillRadius = pillH / 2f;
+        if (enabled && isOn)
         {
-            var pillRect = new SKRect(pillX, pillY, pillX + pillW, pillY + pillH);
-            canvas.DrawRoundRect(pillRect, pillH / 2f, pillH / 2f, pillPaint);
+            using var shader = SKShader.CreateLinearGradient(new SKPoint(pillX, pillRect.Top), new SKPoint(pillX, pillRect.Bottom),
+                [Theme.Accent.Towards(Theme.AccentDim, 0.6f), Theme.Accent], null, SKShaderTileMode.Clamp);
+            using var pillPaint = new SKPaint { Shader = shader, IsAntialias = true, Style = SKPaintStyle.Fill };
+            canvas.DrawRoundRect(pillRect, pillRadius, pillRadius, pillPaint);
         }
+        else
+        {
+            canvas.FillRecessed(pillRect, pillRadius, enabled ? Theme.TrackBackground : Theme.TrackBackground.WithAlpha(120));
+        }
+        if (enabled) canvas.DrawBottomLip(pillRect, pillRadius, RescaleExact(0.6f), 30);
 
-        var knobColor = enabled
-                        ? Theme.TextPrimary
-                        : Theme.TextPrimary.WithAlpha(70);
         var knobRadius = (pillH / 2) - Rescale(1);
         var knobCx = isOn ? pillX + pillW - (pillH / 2) : pillX + (pillH / 2);
         var knobCy = pillY + (pillH / 2);
+        var thumbAlpha = enabled ? (byte)255 : (byte)70;
 
-        using (var knobPaint = new SKPaint { Color = knobColor, IsAntialias = true, Style = SKPaintStyle.Fill })
+        using (var shadow = SKShader.CreateRadialGradient(new SKPoint(knobCx, knobCy + RescaleExact(1.2f)), knobRadius * 1.35f,
+                   [SKColors.Black.WithAlpha(enabled ? (byte)160 : (byte)50), SKColors.Black.WithAlpha(0)], [0.7f, 1], SKShaderTileMode.Clamp))
+        using (var shadowPaint = new SKPaint { Shader = shadow, IsAntialias = true })
+        {
+            canvas.DrawCircle(knobCx, knobCy + RescaleExact(1.2f), knobRadius * 1.35f, shadowPaint);
+        }
+
+        using (var face = SKShader.CreateLinearGradient(new SKPoint(knobCx, knobCy - knobRadius), new SKPoint(knobCx, knobCy + knobRadius),
+                   [Theme.TextPrimary.Lighter(0.4f).WithAlpha(thumbAlpha), Theme.TextPrimary.Darker(0.22f).WithAlpha(thumbAlpha)], null, SKShaderTileMode.Clamp))
+        using (var knobPaint = new SKPaint { Shader = face, IsAntialias = true, Style = SKPaintStyle.Fill })
         {
             canvas.DrawCircle(knobCx, knobCy, knobRadius, knobPaint);
         }
@@ -109,11 +124,20 @@ public sealed class ToggleControl(ToggleControlConfiguration config) : PluginCon
         var radius = RescaleExact(style.ChipCornerRadius);
         var box = new SKRect(0.5f, 0.5f, _w - 0.5f, _h - 0.5f);
 
-        var fill = isOn && !idle
-            ? Theme.Accent.WithAlpha(enabled ? (byte)36 : (byte)18)
-            : Theme.TrackBackground.WithAlpha(enabled ? (byte)200 : (byte)100);
-        using (SKPaint background = new() { Color = fill, IsAntialias = true, Style = SKPaintStyle.Fill })
-            canvas.DrawRoundRect(box, radius, radius, background);
+        // A raised key, lit from above (see SkiaDepthExtensions); while on, the accent tints it.
+        var surface = Theme.TrackBackground.WithAlpha(enabled ? (byte)200 : (byte)100);
+        if (enabled)
+        {
+            using SKRoundRect shape = new(box, radius, radius);
+            canvas.DrawDropShadow(shape, RescaleExact(1.5f), RescaleExact(2), 140);
+        }
+        canvas.FillRaised(box, radius, surface);
+        if (isOn && !idle)
+        {
+            using SKPaint tint = new() { Color = Theme.Accent.WithAlpha(enabled ? (byte)36 : (byte)18), IsAntialias = true, Style = SKPaintStyle.Fill };
+            canvas.DrawRoundRect(box, radius, radius, tint);
+        }
+        if (enabled) canvas.DrawTopHighlight(box, radius, RescaleExact(0.7f), 50);
 
         if (enabled && idle)
         {

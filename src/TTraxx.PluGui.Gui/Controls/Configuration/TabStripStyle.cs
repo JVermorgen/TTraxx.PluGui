@@ -20,7 +20,7 @@ public sealed record TabStripStyle : IControlStyle<TabStripStyle>
     public (int Width, int Height) BoundsFor(ControlSizes size) => Sizes[size];
 
     /// <summary>Corner rounding of the strip and of the selected tab's highlight.</summary>
-    public float CornerRadius { get; init; } = 3f;
+    public float CornerRadius { get; init; } = 6f;
 
     /// <summary>Text size of the tab labels.</summary>
     public float FontSize { get; init; } = 10f;

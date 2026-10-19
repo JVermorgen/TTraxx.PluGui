@@ -36,7 +36,7 @@ public sealed record ToggleStyle : IControlStyle<ToggleStyle>
     public ToggleAppearance Appearance { get; init; } = ToggleAppearance.Pill;
 
     /// <summary>Corner rounding of a chip.</summary>
-    public float ChipCornerRadius { get; init; } = 3f;
+    public float ChipCornerRadius { get; init; } = 6f;
 
     /// <summary>Text size of a chip's label.</summary>
     public float ChipFontSize { get; init; } = 10f;

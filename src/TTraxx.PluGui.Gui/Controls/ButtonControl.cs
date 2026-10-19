@@ -55,12 +55,29 @@ public sealed class ButtonControl(ButtonControlConfiguration config) : PluginCon
         // Held down (and still over the button - or anywhere, for a momentary one whose action is still
         // running): filled with the accent, like a selected tab. A primary button carries a tint of it
         // at rest, so it stands out before it is touched.
+        //
+        // At rest a raised key, lit from above (see SkiaDepthExtensions); held, it is pressed in: no
+        // shadow, no highlight, and the accent shaded from the top like a groove.
         var held = _isPressed && ((enabled && _isHovered) || config.OnRelease is not null);
-        var fill = held ? Theme.Accent.WithAlpha(150)
-            : style.IsPrimary && enabled ? Theme.Accent.WithAlpha(_isHovered ? (byte)45 : (byte)22)
-            : Theme.TrackBackground.WithAlpha(enabled ? (byte)200 : (byte)100);
-        using (SKPaint background = new() { Color = fill, IsAntialias = true, Style = SKPaintStyle.Fill })
-            canvas.DrawRoundRect(box, radius, radius, background);
+        if (held)
+        {
+            canvas.FillRecessed(box, radius, Theme.Accent.WithAlpha(150));
+        }
+        else
+        {
+            if (enabled)
+            {
+                using SKRoundRect shape = new(box, radius, radius);
+                canvas.DrawDropShadow(shape, RescaleExact(1.5f), RescaleExact(2), 140);
+            }
+            canvas.FillRaised(box, radius, Theme.TrackBackground.WithAlpha(enabled ? (byte)200 : (byte)100));
+            if (style.IsPrimary && enabled)
+            {
+                using SKPaint tint = new() { Color = Theme.Accent.WithAlpha(_isHovered ? (byte)45 : (byte)22), IsAntialias = true, Style = SKPaintStyle.Fill };
+                canvas.DrawRoundRect(box, radius, radius, tint);
+            }
+            if (enabled) canvas.DrawTopHighlight(box, radius, RescaleExact(0.7f), 50);
+        }
 
         if (enabled && !held && (_isHovered || style.IsPrimary))
         {

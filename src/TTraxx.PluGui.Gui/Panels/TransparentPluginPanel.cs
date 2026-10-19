@@ -30,4 +30,7 @@ public sealed class TransparentPluginPanel(RenderContext context, PluginPanelCon
     /// the cleaner fit.
     /// </summary>
     protected override bool RoundedBodyTop => false;
+
+    /// <summary>No surface, so no shadow under the body: it would show through. The band still casts one.</summary>
+    protected override bool ShadowsBody => false;
 }

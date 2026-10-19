@@ -29,7 +29,7 @@ public sealed class PluginPanelConfiguration
     public required int Height { get; init; }
 
     /// <summary>Corner rounding of the panel body.</summary>
-    public int CornerRadius { get; init; } = 8;
+    public int CornerRadius { get; init; } = 12;
 
     /// <summary>
     /// Text drawn in the panel's header. Required, so a panel is always labelled - pass an empty

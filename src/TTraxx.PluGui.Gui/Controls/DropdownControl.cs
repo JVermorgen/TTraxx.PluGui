@@ -81,8 +81,14 @@ public sealed class DropdownControl(DropdownControlConfiguration config) : Plugi
         var radius = RescaleExact(style.CornerRadius);
         var box = new SKRect(0.5f, 0.5f, _w - 0.5f, _h - 0.5f);
 
-        using (SKPaint fill = new() { Color = enabled ? Theme.TrackBackground : Theme.TrackBackground.WithAlpha(120), IsAntialias = true, Style = SKPaintStyle.Fill })
-            canvas.DrawRoundRect(box, radius, radius, fill);
+        // A raised box, lit from above (see SkiaDepthExtensions).
+        if (enabled)
+        {
+            using SKRoundRect shape = new(box, radius, radius);
+            canvas.DrawDropShadow(shape, RescaleExact(1.5f), RescaleExact(2), 140);
+        }
+        canvas.FillRaised(box, radius, enabled ? Theme.TrackBackground : Theme.TrackBackground.WithAlpha(120));
+        if (enabled) canvas.DrawTopHighlight(box, radius, RescaleExact(0.7f), 40);
 
         var borderColor = !enabled ? Theme.AccentDim.WithAlpha(60) : IsHovered ? Theme.Accent : Theme.AccentDim;
         using (SKPaint border = new() { Color = borderColor, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = RescaleExact(1f) })

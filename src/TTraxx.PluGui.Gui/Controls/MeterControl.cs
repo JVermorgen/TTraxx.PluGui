@@ -19,6 +19,9 @@ public sealed class MeterControl(MeterControlConfiguration config) : PluginContr
     /// <summary>Meters animate independently of user interaction, so the window needs to keep repainting on its own.</summary>
     public override bool NeedsContinuousRepaint => true;
 
+    /// <summary>How much of an unlit segment shows: white at this alpha, a trace on the well whatever the theme.</summary>
+    private const byte UnlitAlpha = 14;
+
     public override void Draw(SKCanvas canvas)
     {
         var style = Style;
@@ -41,6 +44,16 @@ public sealed class MeterControl(MeterControlConfiguration config) : PluginContr
 
         var litSegments = Math.Min(segmentCount, (int)Math.Ceiling(Math.Min(level, 1.0) * segmentCount));
 
+        // The segments sit in a dark well, recessed as the toggles' tracks are (its lower lip
+        // catching the light), rounded at the corners; an unlit segment is only a faint trace.
+        var wellMargin = RescaleExact(3);
+        var well = new SKRect(barXStart - wellMargin, barYStart - wellMargin, barXStart + barWidth + wellMargin, barYStart + barHeight + wellMargin);
+        var wellRadius = RescaleExact(4);
+        using (SKPaint wellPaint = new() { Color = Theme.BackgroundShadow.WithAlpha(220), IsAntialias = true, Style = SKPaintStyle.Fill })
+            canvas.DrawRoundRect(well, wellRadius, wellRadius, wellPaint);
+        canvas.DrawBottomLip(well, wellRadius, RescaleExact(0.6f), 28);
+        var segmentRadius = Math.Min(RescaleExact(1.5f), segmentHeight / 2);
+
         for (var i = 0; i < segmentCount; i++)
         {
             var segmentTop = barYStart + barHeight - ((i + 1) * segmentHeight) - (i * gap);
@@ -53,17 +66,17 @@ public sealed class MeterControl(MeterControlConfiguration config) : PluginContr
 
             using SKPaint segmentPaint = new()
             {
-                Color = i < litSegments ? litColor : Theme.TrackBackground,
+                Color = i < litSegments ? litColor : SKColors.White.WithAlpha(UnlitAlpha),
                 IsAntialias = true,
                 Style = SKPaintStyle.Fill
             };
-            canvas.DrawRect(rect, segmentPaint);
+            canvas.DrawRoundRect(rect, segmentRadius, segmentRadius, segmentPaint);
         }
 
         if (_peakHoldValue > 0)
         {
             var markerHeight = RescaleExact(2f);
-            var markerY = Math.Clamp(barHeight - (float)(Math.Min(_peakHoldValue, 1.0) * barHeight), 0, barHeight - markerHeight);
+            var markerY = barYStart + Math.Clamp(barHeight - (float)(Math.Min(_peakHoldValue, 1.0) * barHeight), 0, barHeight - markerHeight);
             using SKPaint markerPaint = new() { Color = Theme.TextPrimary, IsAntialias = true, Style = SKPaintStyle.Fill };
             canvas.DrawRect(new SKRect(barXStart, markerY, barXStart + barWidth, markerY + markerHeight), markerPaint);
         }

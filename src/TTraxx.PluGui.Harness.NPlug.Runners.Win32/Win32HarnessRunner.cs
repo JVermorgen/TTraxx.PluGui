@@ -1,4 +1,5 @@
 ﻿using NPlug;
+using SkiaSharp;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using TTraxx.PluGui.Gui;
@@ -28,6 +29,12 @@ public sealed class Win32HarnessRunner : IHarnessRunner
     private const uint WM_TIMER = 0x0113;
     private const int RefreshTimerId = 1;
     private const uint RefreshIntervalMs = 250; // ~4x/sec: fast enough to see a save immediately, light enough to leave the CPU alone
+
+    // --snapshot <file.png>: paint the editor, save its client area as a PNG and close - for
+    // looking at a layout or a style change without opening the window by hand.
+    private const int SnapshotTimerId = 2;
+    private const uint SnapshotDelayMs = 1500; // time for the first paints to land
+    private static string? _snapshotPath;
 
     private static Action? _refreshAction;
     private static Action? _rebuildControlsAction;
@@ -109,6 +116,14 @@ public sealed class Win32HarnessRunner : IHarnessRunner
 
         _ = ShowWindow(hwnd, SW_SHOW);
 
+        var commandLine = Environment.GetCommandLineArgs();
+        var snapshotAt = Array.IndexOf(commandLine, "--snapshot");
+        if (snapshotAt >= 0 && snapshotAt + 1 < commandLine.Length)
+        {
+            _snapshotPath = Path.GetFullPath(commandLine[snapshotAt + 1]);
+            SetTimer(hwnd, SnapshotTimerId, SnapshotDelayMs, nint.Zero);
+        }
+
         while (GetMessageW(out var msg, nint.Zero, 0, 0) > 0)
         {
             TranslateMessage(ref msg);
@@ -173,6 +188,11 @@ public sealed class Win32HarnessRunner : IHarnessRunner
                         if (_rebuildControlsAction is null) _refreshAction?.Invoke();
                     }
                     break;
+                case SnapshotTimerId:
+                    KillTimer(hWnd, SnapshotTimerId);
+                    if (_snapshotPath is { } path) SaveSnapshot(_containerHwnd, path);
+                    DestroyWindow(hWnd);
+                    break;
             }
             return 0;
         }
@@ -180,7 +200,66 @@ public sealed class Win32HarnessRunner : IHarnessRunner
         return DefWindowProcW(hWnd, msg, wParam, lParam);
     }
 
+    /// <summary>
+    /// Saves what <paramref name="hwnd"/> shows (the editor, without the settings bar) as a PNG:
+    /// PrintWindow renders it into a bitmap of our own, which Skia then encodes.
+    /// </summary>
+    private static void SaveSnapshot(nint hwnd, string path)
+    {
+        GetClientRect(hwnd, out var client);
+        var width = client.Right - client.Left;
+        var height = client.Bottom - client.Top;
+        if (width <= 0 || height <= 0) return;
+
+        var screen = GetDC(hwnd);
+        var memory = CreateCompatibleDC(screen);
+        var bitmap = CreateCompatibleBitmap(screen, width, height);
+        var previous = SelectObject(memory, bitmap);
+        try
+        {
+            PrintWindow(hwnd, memory, PW_RENDERFULLCONTENT);
+
+            // Top-down 32-bit BGRA, as Skia's Bgra8888 lays it out.
+            BITMAPINFOHEADER header = new() { biSize = (uint)Marshal.SizeOf<BITMAPINFOHEADER>(), biWidth = width, biHeight = -height, biPlanes = 1, biBitCount = 32 };
+            using SKBitmap image = new(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Opaque));
+            if (GetDIBits(memory, bitmap, 0, (uint)height, image.GetPixels(), ref header, DIB_RGB_COLORS) == 0) return;
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(path, data.ToArray());
+        }
+        finally
+        {
+            SelectObject(memory, previous);
+            DeleteObject(bitmap);
+            DeleteDC(memory);
+            ReleaseDC(hwnd, screen);
+        }
+    }
+
     #region P/Invoke
+    private const uint PW_RENDERFULLCONTENT = 2;
+    private const uint DIB_RGB_COLORS = 0;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct BITMAPINFOHEADER
+    {
+        public uint biSize; public int biWidth; public int biHeight; public ushort biPlanes; public ushort biBitCount;
+        public uint biCompression; public uint biSizeImage; public int biXPelsPerMeter; public int biYPelsPerMeter;
+        public uint biClrUsed; public uint biClrImportant;
+    }
+
+    [DllImport("user32.dll")] private static extern bool GetClientRect(nint hWnd, out RECT lpRect);
+    [DllImport("user32.dll")] private static extern nint GetDC(nint hWnd);
+    [DllImport("user32.dll")] private static extern int ReleaseDC(nint hWnd, nint hDC);
+    [DllImport("user32.dll")] private static extern bool PrintWindow(nint hWnd, nint hdcBlt, uint nFlags);
+    [DllImport("user32.dll")] private static extern bool DestroyWindow(nint hWnd);
+    [DllImport("gdi32.dll")] private static extern nint CreateCompatibleDC(nint hdc);
+    [DllImport("gdi32.dll")] private static extern nint CreateCompatibleBitmap(nint hdc, int cx, int cy);
+    [DllImport("gdi32.dll")] private static extern nint SelectObject(nint hdc, nint h);
+    [DllImport("gdi32.dll")] private static extern bool DeleteObject(nint ho);
+    [DllImport("gdi32.dll")] private static extern bool DeleteDC(nint hdc);
+    [DllImport("gdi32.dll")] private static extern int GetDIBits(nint hdc, nint hbm, uint start, uint cLines, nint lpvBits, ref BITMAPINFOHEADER lpbmi, uint usage);
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct WNDCLASSEXW
     {

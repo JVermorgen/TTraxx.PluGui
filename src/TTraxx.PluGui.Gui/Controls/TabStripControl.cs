@@ -48,12 +48,26 @@ public sealed class TabStripControl(TabStripControlConfiguration config) : Plugi
         var selected = Math.Clamp(config.GetSelectedIndex(), 0, Count - 1);
         var tabWidth = strip.Width / Count;
 
-        using (SKPaint track = new() { Color = Theme.TrackBackground.WithAlpha(enabled ? (byte)200 : (byte)100), IsAntialias = true, Style = SKPaintStyle.Fill })
-            canvas.DrawRoundRect(strip, radius, radius, track);
+        // Lit from above (see SkiaDepthExtensions): the strip is a recessed track, the selected tab a
+        // key raised in it, inset all round, with a shadow below and the light along its top edge.
+        canvas.FillRecessed(strip, radius, Theme.TrackBackground.WithAlpha(enabled ? (byte)200 : (byte)100));
+        if (enabled) canvas.DrawBottomLip(strip, radius, RescaleExact(0.6f), 24);
 
-        var selectedRect = new SKRect(strip.Left + (selected * tabWidth), strip.Top, strip.Left + ((selected + 1) * tabWidth), strip.Bottom);
-        using (SKPaint highlight = new() { Color = enabled ? Theme.Accent.WithAlpha(150) : Theme.Accent.WithAlpha(50), IsAntialias = true, Style = SKPaintStyle.Fill })
-            canvas.DrawRoundRect(selectedRect, radius, radius, highlight);
+        var inset = RescaleExact(2);
+        var selectedRect = new SKRect(strip.Left + (selected * tabWidth) + inset, strip.Top + inset,
+            strip.Left + ((selected + 1) * tabWidth) - inset, strip.Bottom - inset);
+        var selectedRadius = Math.Max(0, radius - inset);
+        if (enabled)
+        {
+            using SKRoundRect shape = new(selectedRect, selectedRadius, selectedRadius);
+            canvas.DrawDropShadow(shape, RescaleExact(1), RescaleExact(1.5f), 150);
+        }
+        var accent = Theme.Accent.WithAlpha(enabled ? (byte)170 : (byte)50);
+        using (var shader = SKShader.CreateLinearGradient(new SKPoint(selectedRect.Left, selectedRect.Top), new SKPoint(selectedRect.Left, selectedRect.Bottom),
+                   [accent, accent.WithAlpha(enabled ? (byte)120 : (byte)40)], null, SKShaderTileMode.Clamp))
+        using (SKPaint highlight = new() { Shader = shader, IsAntialias = true, Style = SKPaintStyle.Fill })
+            canvas.DrawRoundRect(selectedRect, selectedRadius, selectedRadius, highlight);
+        if (enabled) canvas.DrawTopHighlight(selectedRect, selectedRadius, RescaleExact(0.7f), 60);
 
         using SKFont font = new() { Size = RescaleExact(style.FontSize), Typeface = Fonts.Bold };
         var metrics = font.Metrics;

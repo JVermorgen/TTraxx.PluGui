@@ -118,6 +118,36 @@ public abstract class PluginPanel(RenderContext context, PluginPanelConfiguratio
     /// </summary>
     protected virtual bool RoundedBodyTop => true;
 
+    /// <summary>
+    /// Draws every panel's shadow, then every panel: the way a window draws its panels, so a shadow
+    /// lands on the background alone and never over a neighbour drawn before it.
+    /// </summary>
+    public static void DrawPanels(SKCanvas canvas, IEnumerable<IPluginPanel> panels)
+    {
+        foreach (var panel in panels) panel.DrawShadow(canvas);
+        foreach (var panel in panels) panel.Draw(canvas);
+    }
+
+    /// <summary>
+    /// The panel lifts off the window, lit from above: a soft shadow under the band and the body,
+    /// a few units down. A style without a body surface (<see cref="ShadowsBody"/>) casts it from
+    /// the band alone.
+    /// </summary>
+    public virtual void DrawShadow(SKCanvas canvas)
+    {
+        float radius = CornerRadius;
+        var bottom = ShadowsBody ? Top + Height : Top;
+        using SKRoundRect shape = new(new SKRect(Left, FromTop(-HeaderOverhang), Left + Width, bottom), radius, radius);
+        canvas.DrawDropShadow(shape, RescaleExact(ShadowOffset), RescaleExact(ShadowBlur), ShadowAlpha);
+    }
+
+    /// <summary>Whether the body casts a shadow too - false for a style with no surface of its own, which would show it through.</summary>
+    protected virtual bool ShadowsBody => true;
+
+    private const float ShadowOffset = 4;
+    private const float ShadowBlur = 7;
+    private const byte ShadowAlpha = 150;
+
 
     /// <summary>
     /// Fills the panel's body - the style's actual surface, and the one thing a panel style has to

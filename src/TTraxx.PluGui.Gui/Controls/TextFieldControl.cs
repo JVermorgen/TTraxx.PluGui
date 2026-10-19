@@ -152,11 +152,13 @@ public sealed class TextFieldControl : PluginControl
     {
         var focused = HasKeyboardFocus;
         var enabled = IsEnabled;
-        var radius = RescaleExact(3f);
+        var radius = RescaleExact(6f);
         var box = new SKRect(0.5f, 0.5f, _w - 0.5f, _h - 0.5f);
 
-        using (SKPaint background = new() { Color = Theme.TrackBackground.WithAlpha(enabled ? (byte)220 : (byte)110), IsAntialias = true })
-            canvas.DrawRoundRect(box, radius, radius, background);
+        // A field set into the surface, lit from above (see SkiaDepthExtensions): shaded from its top,
+        // its lower lip catching the light.
+        canvas.FillRecessed(box, radius, Theme.TrackBackground.WithAlpha(enabled ? (byte)220 : (byte)110));
+        if (enabled) canvas.DrawBottomLip(box, radius, RescaleExact(0.6f), 24);
 
         if (focused || (IsHovered && enabled))
         {

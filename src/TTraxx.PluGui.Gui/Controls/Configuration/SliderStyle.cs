@@ -17,7 +17,7 @@ public sealed record SliderStyle : IControlStyle<SliderStyle>
     public (int Width, int Height) BoundsFor(ControlSizes size) => Sizes[size];
 
     /// <summary>Corner rounding of the bar.</summary>
-    public float CornerRadius { get; init; } = 3f;
+    public float CornerRadius { get; init; } = 6f;
 
     /// <summary>
     /// Horizontal drag distance, in unscaled pixels, for a full 0..1 sweep. Deliberately not tied to

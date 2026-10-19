@@ -25,6 +25,14 @@ public interface IPluginPanel
     void Draw(SKCanvas canvas);
 
     /// <summary>
+    /// Draws the soft shadow the panel casts on the window behind it, in the same coordinates as
+    /// <see cref="Draw"/>. A window draws every panel's shadow before any panel (see
+    /// PluginPanel.DrawPanels), so a shadow falls on the background and never over a neighbour.
+    /// Nothing by default.
+    /// </summary>
+    void DrawShadow(SKCanvas canvas) { }
+
+    /// <summary>
     /// Registers a control as a child of this panel and returns its placement with
     /// ABSOLUTE (window-relative) coordinates - directly yield-returnable from
     /// BuildLayout(), the same way as a control placed with no panel at all.

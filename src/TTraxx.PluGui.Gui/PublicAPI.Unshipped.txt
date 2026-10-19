@@ -995,3 +995,22 @@ TTraxx.PluGui.Gui.XYPadControlConfiguration.ContextMenuItems.get -> System.Func<
 TTraxx.PluGui.Gui.XYPadControlConfiguration.ContextMenuItems.init -> void
 TTraxx.PluGui.Gui.XYPadStyle.CornerLabelFontSize.get -> float
 TTraxx.PluGui.Gui.XYPadStyle.CornerLabelFontSize.init -> void
+TTraxx.PluGui.Gui.IPluginPanel.DrawShadow(SkiaSharp.SKCanvas! canvas) -> void
+static TTraxx.PluGui.Gui.PluginPanel.DrawPanels(SkiaSharp.SKCanvas! canvas, System.Collections.Generic.IEnumerable<TTraxx.PluGui.Gui.IPluginPanel!>! panels) -> void
+virtual TTraxx.PluGui.Gui.PluginPanel.DrawShadow(SkiaSharp.SKCanvas! canvas) -> void
+virtual TTraxx.PluGui.Gui.PluginPanel.ShadowsBody.get -> bool
+TTraxx.PluGui.Gui.PluginControl.DrawRaised(SkiaSharp.SKCanvas! canvas, SkiaSharp.SKRect box, float radius, SkiaSharp.SKColor fill, bool lit = true) -> void
+TTraxx.PluGui.Gui.PluginControl.DrawScreen(SkiaSharp.SKCanvas! canvas, SkiaSharp.SKRect box, float radius, SkiaSharp.SKColor fill) -> void
+TTraxx.PluGui.Gui.SkiaDepthExtensions
+static TTraxx.PluGui.Gui.SkiaDepthExtensions.Darker(this SkiaSharp.SKColor color, float amount) -> SkiaSharp.SKColor
+static TTraxx.PluGui.Gui.SkiaDepthExtensions.DrawBottomLip(this SkiaSharp.SKCanvas! canvas, SkiaSharp.SKRect box, float radius, float strokeWidth, byte alpha) -> void
+static TTraxx.PluGui.Gui.SkiaDepthExtensions.DrawDropShadow(this SkiaSharp.SKCanvas! canvas, SkiaSharp.SKRoundRect! shape, float offsetY, float blur, byte alpha) -> void
+static TTraxx.PluGui.Gui.SkiaDepthExtensions.DrawInsetShadow(this SkiaSharp.SKCanvas! canvas, SkiaSharp.SKRoundRect! shape, float depth, byte alpha) -> void
+static TTraxx.PluGui.Gui.SkiaDepthExtensions.DrawTopHighlight(this SkiaSharp.SKCanvas! canvas, SkiaSharp.SKRect box, float radius, float strokeWidth, byte alpha) -> void
+static TTraxx.PluGui.Gui.SkiaDepthExtensions.FillRaised(this SkiaSharp.SKCanvas! canvas, SkiaSharp.SKRect box, float radius, SkiaSharp.SKColor fill) -> void
+static TTraxx.PluGui.Gui.SkiaDepthExtensions.FillRecessed(this SkiaSharp.SKCanvas! canvas, SkiaSharp.SKRect box, float radius, SkiaSharp.SKColor fill) -> void
+static TTraxx.PluGui.Gui.SkiaDepthExtensions.Lighter(this SkiaSharp.SKColor color, float amount) -> SkiaSharp.SKColor
+static TTraxx.PluGui.Gui.SkiaDepthExtensions.Towards(this SkiaSharp.SKColor color, SkiaSharp.SKColor target, float amount) -> SkiaSharp.SKColor
+TTraxx.PluGui.Gui.PluginWindow.InvalidateStaticBackground() -> void
+virtual TTraxx.PluGui.Gui.PluginWindow.DrawStaticBackground(SkiaSharp.SKCanvas! canvas, int width, int height) -> void
+virtual TTraxx.PluGui.Gui.PluginWindow.StaticBackgroundVersion.get -> int

@@ -90,7 +90,11 @@ internal sealed class ContextMenuOverlay
     /// </summary>
     public void Draw(SKCanvas canvas)
     {
-        var radius = _context.RescaleExact(4f);
+        var radius = _context.RescaleExact(6f);
+
+        // The menu floats over the editor, lit from above as the rest is: a soft shadow below it.
+        using (SKRoundRect shape = new(_bounds, radius, radius))
+            canvas.DrawDropShadow(shape, _context.RescaleExact(4), _context.RescaleExact(6), 160);
 
         using (SKPaint bgPaint = new() { Color = _context.Theme.MenuBackground, IsAntialias = true, Style = SKPaintStyle.Fill })
             canvas.DrawRoundRect(_bounds, radius, radius, bgPaint);

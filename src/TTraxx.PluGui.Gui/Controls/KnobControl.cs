@@ -20,6 +20,12 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
 
     private KnobMetrics Metrics => Style.Sizes[config.ControlSize];
 
+    /// <summary>The cap's radius, a share of the arc's.</summary>
+    private const float CapRadiusFactor = 0.68f;
+
+    /// <summary>The value arc's glow: how much wider than the arc each stroke is (design units), and its alpha.</summary>
+    private static readonly (float Extra, byte Alpha)[] GlowStrokes = [(4f, 28), (2f, 48)];
+
     private float CenterX => _w / 2f;
     private float CenterY(KnobMetrics metrics) => (RescaleExact(metrics.Diameter) / 2f) + RescaleExact(21);
     private float Radius(KnobMetrics metrics) => Math.Max(2, (RescaleExact(metrics.Diameter) / 2f) - Rescale(2));
@@ -103,6 +109,34 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
         Refresh();
     }
 
+    /// <summary>
+    /// The raised cap: a soft shadow below it (a radial fade, not a blur - see the glow), a face from
+    /// a little lighter than the metal's top to a little darker than its bottom, and a rim that
+    /// catches the light at the top and fades out by the middle. Dimmed when the knob is disabled.
+    /// </summary>
+    private void DrawCap(SKCanvas canvas, float cx, float cy, float radius, bool enabled)
+    {
+        var faceAlpha = enabled ? (byte)255 : (byte)110;
+        var shadowCenter = new SKPoint(cx, cy + RescaleExact(2));
+        var shadowRadius = radius * 1.3f;
+        using (var shadow = SKShader.CreateRadialGradient(shadowCenter, shadowRadius,
+                   [SKColors.Black.WithAlpha(enabled ? (byte)170 : (byte)70), SKColors.Black.WithAlpha(0)], [radius * 0.85f / shadowRadius, 1], SKShaderTileMode.Clamp))
+        using (SKPaint shadowPaint = new() { Shader = shadow, IsAntialias = true })
+            canvas.DrawCircle(shadowCenter, shadowRadius, shadowPaint);
+
+        var top = MetallicTheme.PanelMetalTop.Lighter(0.06f).WithAlpha(faceAlpha);
+        var bottom = MetallicTheme.PanelMetalBottom.Darker(0.15f).WithAlpha(faceAlpha);
+        using (var face = SKShader.CreateLinearGradient(new SKPoint(cx, cy - radius), new SKPoint(cx, cy + radius), [top, bottom], null, SKShaderTileMode.Clamp))
+        using (SKPaint facePaint = new() { Shader = face, IsAntialias = true })
+            canvas.DrawCircle(cx, cy, radius, facePaint);
+
+        var rimWidth = RescaleExact(0.8f);
+        using var rim = SKShader.CreateLinearGradient(new SKPoint(cx, cy - radius), new SKPoint(cx, cy),
+            [SKColors.White.WithAlpha(enabled ? (byte)80 : (byte)30), SKColors.White.WithAlpha(0)], null, SKShaderTileMode.Clamp);
+        using SKPaint rimPaint = new() { Shader = rim, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = rimWidth };
+        canvas.DrawCircle(cx, cy, radius - (rimWidth / 2), rimPaint);
+    }
+
     public override bool HitTest(int localX, int localY)
     {
         var metrics = Metrics;
@@ -132,9 +166,15 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
         var drawRadius = Radius(metrics);
         var filledSweep = style.SweepDeg * value;
 
-        var trackColor = enabled
+        // Lit from above: the arc is a groove the value runs in, glowing faintly, and inside it a
+        // raised cap - a shadow below, lighter at its top, its rim catching the light - carries the
+        // pointer.
+        var tickColor = enabled
                             ? Theme.AccentDim
                             : Theme.AccentDim.WithAlpha(40);
+        var grooveColor = enabled
+                            ? Theme.TrackBackground
+                            : Theme.TrackBackground.WithAlpha(90);
         var valueColor = !enabled
                             ? Theme.Accent.WithAlpha(60)
                             : _isDragging || IsHovered ? Theme.Accent2 : Theme.Accent;
@@ -149,7 +189,7 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
 
             using SKPaint tickPaint = new()
             {
-                Color = trackColor,
+                Color = tickColor,
                 IsAntialias = true,
                 StrokeWidth = RescaleExact(1.0f),
                 StrokeCap = SKStrokeCap.Butt
@@ -167,23 +207,41 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
             }
         }
 
-        var trackWidth = RescaleExact(metrics.TrackStrokeWidth);
+        // The groove is as wide as the value arc, so the value fills it.
         var valueWidth = RescaleExact(metrics.ValueStrokeWidth);
 
         SKRect arcRect = new(cx - drawRadius, cy - drawRadius, cx + drawRadius, cy + drawRadius);
 
-        using (SKPaint trackPaint = new()
+        using (SKPaint groovePaint = new()
         {
-            Color = trackColor,
+            Color = grooveColor,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
-            StrokeWidth = trackWidth,
-            StrokeCap = SKStrokeCap.Butt
+            StrokeWidth = valueWidth,
+            StrokeCap = SKStrokeCap.Round
         })
         {
-            // A bipolar knob's track runs the whole way; its value fills from the middle over it.
-            if (config.IsBipolar) canvas.DrawArc(arcRect, (float)SkiaArcStartAngleDeg, (float)style.SweepDeg, false, trackPaint);
-            else canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + filledSweep), (float)(style.SweepDeg - filledSweep), false, trackPaint);
+            canvas.DrawArc(arcRect, (float)SkiaArcStartAngleDeg, (float)style.SweepDeg, false, groovePaint);
+        }
+
+        var fillStart = config.IsBipolar ? style.SweepDeg / 2 : 0;
+        var fillSweep = (float)(filledSweep - fillStart);
+        if (enabled)
+        {
+            // The glow: two wider, fainter strokes under the value - cheaper than a blur, which the
+            // meters' continuous repaint would run for every knob on every frame.
+            foreach (var (extra, alpha) in GlowStrokes)
+            {
+                using SKPaint glowPaint = new()
+                {
+                    Color = valueColor.WithAlpha(alpha),
+                    IsAntialias = true,
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = valueWidth + RescaleExact(extra),
+                    StrokeCap = SKStrokeCap.Round
+                };
+                canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + fillStart), fillSweep, false, glowPaint);
+            }
         }
 
         using (SKPaint valuePaint = new()
@@ -192,21 +250,23 @@ public sealed class KnobControl(KnobControlConfiguration config) : PluginControl
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
             StrokeWidth = valueWidth,
-            StrokeCap = SKStrokeCap.Butt
+            StrokeCap = SKStrokeCap.Round
         })
         {
-            var fillStart = config.IsBipolar ? style.SweepDeg / 2 : 0;
-            canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + fillStart), (float)(filledSweep - fillStart), false, valuePaint);
+            canvas.DrawArc(arcRect, (float)(SkiaArcStartAngleDeg + fillStart), fillSweep, false, valuePaint);
         }
 
+        var capRadius = drawRadius * CapRadiusFactor;
+        DrawCap(canvas, cx, cy, capRadius, enabled);
+
         var pointerAngle = (style.StartAngleDeg - (style.SweepDeg * value)).DegToRad();
-        var innerR = drawRadius * 0.25;
-        var outerR = drawRadius * 0.85;
+        var innerR = capRadius * 0.35;
+        var outerR = capRadius * 0.85;
         using (SKPaint pointerPaint = new()
         {
             Color = pointerColor,
             IsAntialias = true,
-            StrokeWidth = RescaleExact(1.3f),
+            StrokeWidth = RescaleExact(metrics.ValueStrokeWidth / 2f),
             StrokeCap = SKStrokeCap.Round
         })
         {

@@ -90,6 +90,14 @@ internal static partial class User32
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static partial bool KillTimer(nint hWnd, nint uIDEvent);
 
+    [LibraryImport("user32.dll", EntryPoint = "PostMessageW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool PostMessage(nint hWnd, uint msg, nint wParam, nint lParam);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool UpdateWindow(nint hWnd);
+
     [LibraryImport("user32.dll")]
     private static partial int GetDpiForWindow(nint hWnd);
 

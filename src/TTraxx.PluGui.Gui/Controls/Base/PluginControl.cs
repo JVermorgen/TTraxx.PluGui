@@ -82,6 +82,40 @@ public abstract class PluginControl(IControlConfiguration config) : IDisposable
     /// <summary>This control's window fonts.</summary>
     protected IPluginFonts Fonts => _context.Fonts;
 
+    /// <summary>
+    /// A raised key, lit from above as the line's controls are (see <see cref="SkiaDepthExtensions"/>):
+    /// a soft shadow below it, <paramref name="fill"/> lighter at its top, and the light along its top
+    /// edge. Unlit (<paramref name="lit"/> false: disabled, or pressed in) it is the fill alone.
+    /// <paramref name="radius"/> is in pixels.
+    /// </summary>
+    protected void DrawRaised(SKCanvas canvas, SKRect box, float radius, SKColor fill, bool lit = true)
+    {
+        if (lit)
+        {
+            using SKRoundRect shape = new(box, radius, radius);
+            canvas.DrawDropShadow(shape, RescaleExact(1.5f), RescaleExact(2), 140);
+        }
+        canvas.FillRaised(box, radius, fill);
+        if (lit) canvas.DrawTopHighlight(box, radius, RescaleExact(0.7f), 50);
+    }
+
+    /// <summary>
+    /// A screen set into the surface - a display, a waveform, a grid - lit from above: filled with
+    /// <paramref name="fill"/>, its top edge casting a shadow into it and its lower lip catching the
+    /// light. <paramref name="radius"/> is in pixels.
+    /// </summary>
+    protected void DrawScreen(SKCanvas canvas, SKRect box, float radius, SKColor fill)
+    {
+        using SKRoundRect shape = new(box, radius, radius);
+        using (SKPaint paint = new() { Color = fill, IsAntialias = true, Style = SKPaintStyle.Fill })
+            canvas.DrawRoundRect(shape, paint);
+        canvas.DrawInsetShadow(shape, RescaleExact(ScreenShadowDepth), 120);
+        canvas.DrawBottomLip(box, radius, RescaleExact(0.7f), 26);
+    }
+
+    /// <summary>How far, in design units, a screen's top edge casts its shadow into it.</summary>
+    private const float ScreenShadowDepth = 12;
+
     /// <summary>This control's identity - its configuration's Id, which is what the window's cache keys on.</summary>
     protected Guid Id => Config.Id;
 

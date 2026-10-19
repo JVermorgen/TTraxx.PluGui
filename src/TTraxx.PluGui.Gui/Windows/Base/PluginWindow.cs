@@ -156,6 +156,7 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
 
         OnDestroying();
         PlatformWindow.Destroy();
+        InvalidateStaticBackground();
     }
 
     /// <inheritdoc/>
@@ -198,11 +199,54 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
     protected virtual bool ParticipatesInDebugBoundsOverlay => true;
 
     /// <summary>
-    /// Paints everything in the window that isn't a control: background, gradients, dividers, static
-    /// text/logo, etc. Called every frame before controls are drawn on top. Call <see cref="DrawRegisteredPanels"/>
-    /// from here if the window has any panels, so they draw beneath their own controls.
+    /// Paints what isn't a control and changes from frame to frame (a live readout, a selection's
+    /// details), over <see cref="DrawStaticBackground"/>'s image and beneath the controls. Called
+    /// every frame - keep what never changes in <see cref="DrawStaticBackground"/>, which is drawn
+    /// once.
     /// </summary>
     protected abstract void DrawBackground(SKCanvas canvas, int width, int height);
+
+    /// <summary>
+    /// Paints what isn't a control and only changes with the layout: the background, the panels
+    /// (<see cref="DrawRegisteredPanels"/>, so they lie beneath their controls), dividers, labels,
+    /// the title. Drawn into an image once and reused every frame until the size, the scale, the
+    /// layout (a rebuild) or <see cref="StaticBackgroundVersion"/> changes - a repaint at 30 Hz
+    /// would otherwise redraw all of it, two thirds of a frame's cost. Nothing by default.
+    /// </summary>
+    protected virtual void DrawStaticBackground(SKCanvas canvas, int width, int height) { }
+
+    /// <summary>
+    /// Whatever <see cref="DrawStaticBackground"/> draws that can change without a rebuild (the page
+    /// shown, say), as a number that differs when it does: the image is drawn again then.
+    /// </summary>
+    protected virtual int StaticBackgroundVersion => 0;
+
+    /// <summary>Drops the static background's image, so the next frame draws it again.</summary>
+    protected void InvalidateStaticBackground()
+    {
+        _staticBackground?.Dispose();
+        _staticBackground = null;
+    }
+
+    private SKImage? _staticBackground;
+    private (int Width, int Height, float Scale, int Version) _staticBackgroundKey;
+
+    /// <summary>The static background's image, drawn again first if anything it depends on changed.</summary>
+    private void DrawStaticBackgroundImage(SKCanvas canvas, int width, int height)
+    {
+        var key = (width, height, Context.Scale, StaticBackgroundVersion);
+        if (_staticBackground is null || key != _staticBackgroundKey)
+        {
+            InvalidateStaticBackground();
+            using var surface = SKSurface.Create(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Premul));
+            if (surface is null) return;
+            surface.Canvas.Clear(SKColors.Transparent);
+            DrawStaticBackground(surface.Canvas, width, height);
+            _staticBackground = surface.Snapshot();
+            _staticBackgroundKey = key;
+        }
+        canvas.DrawImage(_staticBackground, 0, 0, SKSamplingOptions.Default); // pixel for pixel: same size, no scaling
+    }
 
     /// <summary>
     /// Declares every control the window shows, as a sequence of <see cref="ControlPlacement"/>
@@ -344,10 +388,10 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
         return panel;
     }
 
-    /// <summary>Draws every panel registered this build, in registration order.</summary>
+    /// <summary>Draws every panel registered this build, in registration order, their shadows first (see PluginPanel.DrawPanels).</summary>
     protected void DrawRegisteredPanels(SKCanvas canvas)
     {
-        foreach (var panel in _registeredPanels) panel.Draw(canvas);
+        PluginPanel.DrawPanels(canvas, _registeredPanels);
     }
 
     private (int W, int H) ResolveBounds<TConfig>(TConfig config, int? width, int? height) where TConfig : IControlConfiguration
@@ -389,6 +433,7 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
 
         _buildIdsInProgress = [];
         _registeredPanels = [];
+        InvalidateStaticBackground(); // the layout it shows may have changed
         _layout = [.. BuildLayout()];
 
         // Clean up cache entries that this build no longer used (e.g.
@@ -423,6 +468,7 @@ public abstract class PluginWindow : IPluginWindow, IHotReloadTarget, IPlatformW
 
     void IPlatformWindowHost.OnPaint(SKCanvas canvas, int width, int height)
     {
+        DrawStaticBackgroundImage(canvas, width, height);
         DrawBackground(canvas, width, height);
         _controlManager.Draw(canvas, ParticipatesInDebugBoundsOverlay && Globals.ShowControlBounds);
         _contextMenu?.Draw(canvas);

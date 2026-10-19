@@ -22,7 +22,7 @@ public sealed record ButtonStyle : IControlStyle<ButtonStyle>
     public (int Width, int Height) BoundsFor(ControlSizes size) => Sizes[size];
 
     /// <summary>Corner rounding.</summary>
-    public float CornerRadius { get; init; } = 3f;
+    public float CornerRadius { get; init; } = 6f;
 
     /// <summary>Text size of the label.</summary>
     public float FontSize { get; init; } = 10f;

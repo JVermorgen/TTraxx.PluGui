@@ -1,4 +1,5 @@
 ﻿using SkiaSharp;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using TTraxx.PluGui.Gui.Platform.Win32.Internal;
@@ -23,13 +24,24 @@ namespace TTraxx.PluGui.Gui.Platform.Win32;
 /// keeps this object alive while native code holds a pointer to it; <see cref="Destroy"/> restores the
 /// original WndProc and frees it.
 ///
-/// Neither pump source applies here: Win32 already has a message loop for events and SetTimer for the
-/// repaint clock, which is why both properties are null.
+/// Neither pump source applies here: Win32 already has a message loop for events, and the repaint
+/// clock is a thread-pool timer posting to it (see SetContinuousRepaint), which is why both
+/// properties are null.
 /// </summary>
 internal sealed class Win32PlatformWindow : IPlatformWindow
 {
-    private const nint ContinuousRepaintTimerId = 1;
     private const uint ContinuousRepaintIntervalMs = 33; // ~30 Hz
+
+    // The repaint clock's message, posted to the window by a thread-pool timer (see
+    // SetContinuousRepaint). WM_APP + 0x2A: private to this window, which is our own subclass.
+    private const uint WM_REPAINT_TICK = 0x8000 + 0x2A;
+    private Timer? _repaintTicker;
+    private int _repaintTickPending;
+
+    // The UI thread's share the repaint clock may take: after a paint of d, ticks are skipped until
+    // d / MaxPaintShare has passed since it began.
+    private const double MaxPaintShare = 0.25;
+    private long _nextTickPaint;
 
     private nint _hwnd;
     private bool _continuousRepaintActive;
@@ -57,7 +69,7 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
 
     public IEventPumpSource? EventPumpSource => null; // Win32 has its own message loop (WndProc) — no external pump needed
 
-    public ITimerPumpSource? TimerPumpSource => null; // Win32 drives its own repaint timer via SetTimer/WM_TIMER — no external pump needed
+    public ITimerPumpSource? TimerPumpSource => null; // Win32 drives its own repaint clock (see SetContinuousRepaint) — no external pump needed
 
     public float GetInitialScaleFactor(nint parentHandle) => Shcore.DetermineInitialScale(parentHandle);
 
@@ -185,18 +197,47 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
         if (_hwnd != nint.Zero) User32.InvalidateRect(_hwnd, nint.Zero, false);
     }
 
+    /// <summary>
+    /// Starts or stops the repaint clock, about 30 Hz. Not a WM_TIMER: Windows hands one out only when
+    /// no window on the thread is waiting to be painted, and a host repainting its own windows all
+    /// the while it plays (FL Studio does) starves it - the meters and live views stood still for
+    /// bars at a time, coming back whenever the mouse made the editor repaint. A thread-pool timer
+    /// posts WM_REPAINT_TICK instead (a posted message goes ahead of every paint), at most one
+    /// waiting at a time. Measured in FL Studio (2026-10-19): a WM_TIMER beside it stalled for up to
+    /// 7.8 s while playing, the posted tick not at all.
+    ///
+    /// The tick only invalidates: the paint then waits its turn behind the host's input, so the host
+    /// stays responsive (painting at once, with UpdateWindow, ahead of it made FL sluggish). And it
+    /// skips a tick while painting would take more than a quarter of the UI thread
+    /// (<see cref="MaxPaintShare"/>): a slow machine gets a lower frame rate, not a slow host.
+    /// </summary>
     public void SetContinuousRepaint(bool enabled)
     {
         if (enabled == _continuousRepaintActive) return;
         _continuousRepaintActive = enabled;
         if (_hwnd == nint.Zero) return;
 
-        if (enabled) User32.SetTimer(_hwnd, ContinuousRepaintTimerId, ContinuousRepaintIntervalMs, nint.Zero);
-        else User32.KillTimer(_hwnd, ContinuousRepaintTimerId);
+        if (enabled) _repaintTicker ??= new Timer(_ => PostRepaintTick(), null, 0, ContinuousRepaintIntervalMs);
+        else StopRepaintTicker();
+    }
+
+    /// <summary>On a thread-pool thread: one tick to the window, unless the last one is still waiting.</summary>
+    private void PostRepaintTick()
+    {
+        var hwnd = _hwnd;
+        if (hwnd == nint.Zero || Interlocked.Exchange(ref _repaintTickPending, 1) == 1) return;
+        if (!User32.PostMessage(hwnd, WM_REPAINT_TICK, 0, 0)) Volatile.Write(ref _repaintTickPending, 0);
+    }
+
+    private void StopRepaintTicker()
+    {
+        _repaintTicker?.Dispose();
+        _repaintTicker = null;
     }
 
     public void Destroy()
     {
+        StopRepaintTicker();
         OleDropTarget.Revoke(_dropTarget);
         _dropTarget = nint.Zero;
 
@@ -274,8 +315,9 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
             case WindowMessageConstants.WM_RBUTTONDOWN:
                 _host?.OnContextMenu(User32Helpers.GetX(lParam), User32Helpers.GetY(lParam));
                 return nint.Zero;
-            case WindowMessageConstants.WM_TIMER:
-                if (wParam == ContinuousRepaintTimerId) Invalidate();
+            case WM_REPAINT_TICK:
+                Volatile.Write(ref _repaintTickPending, 0);
+                if (Stopwatch.GetTimestamp() >= _nextTickPaint) Invalidate();
                 return nint.Zero;
             case Keyboard.WM_GETDLGCODE:
                 return Keyboard.DLGC_WANTALLKEYS | Keyboard.DLGC_WANTCHARS;
@@ -304,6 +346,7 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
         int w = Math.Max(1, rect.Right - rect.Left);
         int h = Math.Max(1, rect.Bottom - rect.Top);
 
+        var paintStart = Stopwatch.GetTimestamp();
         EnsureDibSurface(hdc, w, h);
 
         SKCanvas canvas = _skSurface!.Canvas;
@@ -314,6 +357,9 @@ internal sealed class Win32PlatformWindow : IPlatformWindow
         _skSurface.Flush();
 
         Gdi32.BitBlt(hdc, 0, 0, w, h, _dibMemDc, 0, 0, GdiConstants.SRCCOPY);
+
+        var paintTicks = Stopwatch.GetTimestamp() - paintStart;
+        _nextTickPaint = paintStart + (long)(paintTicks / MaxPaintShare);
     }
 
     private void EnsureDibSurface(nint hdc, int w, int h)
